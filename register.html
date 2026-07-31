@@ -99,5 +99,21 @@
 
     <!-- ربط ملف الأكواد JS -->
     <script type="module" src="script.js"></script>
+    <!-- نافذة النجاح (Modal) -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal-content">
+            <!-- أنيميشن Lottie لعلامة النجاح -->
+            <lottie-player 
+                src="https://assets10.lottiefiles.com/packages/lf20_lk80fpsm.json" 
+                background="transparent" 
+                speed="1" 
+                style="width: 150px; height: 150px; margin: 0 auto;" 
+                autoplay>
+            </lottie-player>
+            <h3>تم إنشاء الحساب بنجاح!</h3>
+            <p>أهلاً بك يا بطل في Primee Academy 🚀</p>
+            <button class="btn-close-modal" onclick="closeModal()">متابعة</button>
+        </div>
+    </div>
 </body>
 </html>
