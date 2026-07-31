@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - Primee Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- هنستخدم نفس ملف الستايل بتاع التسجيل عشان نوفر أكواد -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+</head>
+<body>
+
+    <div class="split-container">
+        
+        <!-- الجانب الأيمن: البراند -->
+        <div class="brand-side">
+            <img src="https://adelabdulrahman026-byte.github.io/primee/logotext.png" alt="Primee Text Logo">
+            <h2>أهلاً بعودتك يا بطل 👋</h2>
+            <p>استعد لاستكمال رحلتك التعليمية معنا.</p>
+            
+            <!-- أنيميشن Lottie معبر عن الدخول والأمان -->
+            <lottie-player 
+                src="https://assets3.lottiefiles.com/packages/lf20_jcikmacf.json"  
+                background="transparent"  
+                speed="1"  
+                style="width: 100%; max-width: 300px; height: 300px;"  
+                loop  
+                autoplay>
+            </lottie-player>
+        </div>
+
+        <!-- الجانب الأيسر: فورم الدخول -->
+        <div class="form-side">
+            <div class="form-header">
+                <h3>تسجيل الدخول</h3>
+                <button class="theme-toggle" id="themeBtn" title="تغيير المظهر">🌙</button>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>رقمك الشخصي (واتساب)</label>
+                    <input type="tel" id="loginPhone" placeholder="أدخل رقم الهاتف" required>
+                </div>
+
+                <div class="form-group">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required>
+                </div>
+
+                <button type="submit" class="btn-submit">دخول للمنصة</button>
+            </form>
+            
+            <p style="text-align: center; margin-top: 20px; color: var(--text-muted);">
+                ليس لديك حساب؟ <a href="register.html" style="color: var(--primary-color); font-weight: 800;">سجل الآن</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- نافذة التنبيهات المنبثقة -->
+    <div class="modal-overlay" id="alertModal">
+        <div class="modal-content">
+            <h3 id="alertTitle">تنبيه</h3>
+            <p id="alertMessage">رسالة التنبيه هنا</p>
+            <button class="btn-close-modal" onclick="closeAlertModal()">حسناً</button>
+        </div>
+    </div>
+
+    <script type="module" src="login-script.js"></script>
+</body>
+</html>
