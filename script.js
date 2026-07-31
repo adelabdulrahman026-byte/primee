@@ -51,6 +51,7 @@ registerForm.addEventListener('submit', async (e) => {
         fullName: document.getElementById('fullName').value,
         studentPhone: document.getElementById('studentPhone').value,
         parentPhone: document.getElementById('parentPhone').value,
+        password: document.getElementById('password').value,
         grade: document.getElementById('grade').value,
         governorate: document.getElementById('governorate').value,
         address: document.getElementById('address').value,
