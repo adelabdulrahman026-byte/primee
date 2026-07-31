@@ -66,9 +66,9 @@ registerForm.addEventListener('submit', async (e) => {
         const docRef = await addDoc(collection(db, "users"), studentData);
         console.log("تم التسجيل برقم ID: ", docRef.id);
         
-        alert("تم إنشاء الحساب بنجاح في الأكاديمية! 🚀");
-        registerForm.reset(); // تفريغ الخانات بعد النجاح
-        
+// إظهار نافذة النجاح بدل الـ alert
+        const successModal = document.getElementById('successModal');
+        successModal.classList.add('active');        
     } catch (error) {
         console.error("حصل مشكلة: ", error);
         alert("حصلت مشكلة في التسجيل. تأكد من اتصالك بالإنترنت وتصاريح قاعدة البيانات.");
