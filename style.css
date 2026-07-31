@@ -210,3 +210,72 @@ input:focus, select:focus, textarea:focus {
         gap: 0;
     }
 }
+/* تصميم نافذة النجاح (Modal) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background-color: var(--bg-card);
+    padding: 40px;
+    border-radius: 24px;
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s ease;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.modal-overlay.active .modal-content {
+    transform: translateY(0) scale(1);
+}
+
+.modal-content h3 {
+    color: var(--primary-color);
+    margin: 15px 0 10px;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.modal-content p {
+    color: var(--text-muted);
+    margin-bottom: 25px;
+    font-size: 15px;
+}
+
+.btn-close-modal {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 14px 25px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-close-modal:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
