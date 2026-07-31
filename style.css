@@ -1,0 +1,212 @@
+:root {
+    /* ألوان الوضع النهاري */
+    --bg-body: #f0f2f5;
+    --bg-card: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --input-bg: #f8fafc;
+    --input-border: #cbd5e1;
+    --primary-color: #5b21b6; 
+    --primary-hover: #4c1d95;
+}
+
+[data-theme="dark"] {
+    /* ألوان الوضع الليلي */
+    --bg-body: #0f172a;
+    --bg-card: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --input-bg: #334155;
+    --input-border: #475569;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: 'Cairo', sans-serif;
+    transition: all 0.3s ease;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.split-container {
+    display: flex;
+    background-color: var(--bg-card);
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+    width: 100%;
+    max-width: 1100px;
+    min-height: 650px;
+}
+
+.brand-side {
+    flex: 1;
+    background: linear-gradient(135deg, #6d28d9, #4c1d95);
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    position: relative;
+}
+
+.brand-side img {
+    height: 70px;
+    margin-bottom: 20px;
+    filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));
+}
+
+.brand-side h2 {
+    font-weight: 800;
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.brand-side p {
+    font-size: 16px;
+    opacity: 0.9;
+    margin-bottom: 30px;
+}
+
+.form-side {
+    flex: 1.2;
+    padding: 50px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.form-header h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--primary-color);
+}
+
+.theme-toggle {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-main);
+}
+
+.theme-toggle:hover {
+    transform: rotate(15deg);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid var(--input-border);
+    border-radius: 12px;
+    background-color: var(--input-bg);
+    color: var(--text-main);
+    font-size: 15px;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background-color: transparent;
+}
+
+.two-cols {
+    display: flex;
+    gap: 20px;
+}
+
+.two-cols .form-group {
+    flex: 1;
+}
+
+.file-upload {
+    border: 2px dashed var(--input-border);
+    padding: 20px;
+    text-align: center;
+    border-radius: 12px;
+    cursor: pointer;
+    color: var(--text-muted);
+    background-color: var(--input-bg);
+}
+
+.file-upload:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 16px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 10px;
+    box-shadow: 0 4px 15px rgba(91, 33, 182, 0.3);
+}
+
+.btn-submit:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+/* الموبايل */
+@media (max-width: 900px) {
+    .split-container {
+        flex-direction: column;
+    }
+    .brand-side {
+        padding: 30px;
+    }
+    .brand-side lottie-player {
+        height: 200px !important;
+    }
+    .form-side {
+        padding: 30px 20px;
+    }
+    .two-cols {
+        flex-direction: column;
+        gap: 0;
+    }
+}
