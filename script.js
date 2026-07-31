@@ -1,15 +1,8 @@
-// 1. استدعاء مكتبات فايربيز
+// 1. استدعاء مكتبات فايربيز (استخدام روابط الـ CDN عشان يشتغل مباشرة في المتصفح)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// --- كود الـ firebaseConfig الخاص بمشروعك (تم التحديث بنجاح) ---
 const firebaseConfig = {
   apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
   authDomain: "academy-444b6.firebaseapp.com",
@@ -18,17 +11,6 @@ const firebaseConfig = {
   messagingSenderId: "1079254330731",
   appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e",
   measurementId: "G-TQBXQ48M2W"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
 };
 // ------------------------------------------
 
