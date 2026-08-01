@@ -6,12 +6,15 @@
     <title>مشاهدة الحصة - Primee Academy</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- مكتبة Plyr لمشغل الفيديو الاحترافي -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    
     <link rel="stylesheet" href="style.css">
 </head>
-<!-- منع الكليك يمين لحماية الفيديو -->
 <body class="watch-page-body" oncontextmenu="return false;">
 
-    <!-- شاشة الحماية (بتظهر لو حد حاول يدخل برابط مباشر من غير ما يشتري) -->
+    <!-- شاشة الحماية من الدخول بدون شراء -->
     <div id="securityOverlay" class="security-overlay">
         <div class="security-box">
             <i class="fas fa-lock"></i>
@@ -34,46 +37,56 @@
             
             <!-- مشغل الفيديو -->
             <div class="video-wrapper">
+                
+                <!-- العلامة المائية برقم الطالب -->
+                <div id="studentWatermark" class="watermark-phone"></div>
+
+                <!-- شاشة قفل الامتحان (بتظهر لو عليه امتحان مخلصوش) -->
+                <div id="examLockOverlay" class="exam-lock-overlay" style="display: none;">
+                    <i class="fas fa-file-signature"></i>
+                    <h3>امتحان قبل الحصة 📝</h3>
+                    <p>لا يمكنك مشاهدة الفيديو قبل اجتياز الامتحان الخاص بهذه الحصة.</p>
+                    <button id="startExamBtn" class="btn-exam">بدء الامتحان الآن</button>
+                </div>
+
+                <!-- حاوية الفيديو اللي هيتركب فيها Plyr -->
                 <div id="videoContainer" class="video-placeholder">
                     <i class="fas fa-spinner fa-spin"></i> جاري تحميل الفيديو...
                 </div>
             </div>
             
-            <!-- تفاصيل الحصة والمذكرات -->
+            <!-- تفاصيل الحصة -->
             <div class="course-info">
                 <h1 id="courseTitle">...</h1>
                 <p id="courseInstructor" class="instructor"><i class="fas fa-chalkboard-teacher"></i> ...</p>
                 
-                <!-- زراير التنقل (تابس) -->
                 <div class="tabs">
                     <button class="tab-btn active" onclick="switchTab('description')">وصف الحصة</button>
-                    <button class="tab-btn" onclick="switchTab('materials')">المذكرات والملفات (PDF)</button>
+                    <button class="tab-btn" onclick="switchTab('materials')">المذكرات (PDF)</button>
                 </div>
                 
-                <!-- محتوى الوصف -->
                 <div id="descriptionTab" class="tab-content active">
                     <p id="courseDescription">لا يوجد وصف متاح لهذه الحصة حالياً.</p>
                 </div>
                 
-                <!-- محتوى المذكرات -->
                 <div id="materialsTab" class="tab-content" style="display:none;">
                     <ul class="materials-list" id="materialsList">
-                        <!-- ملفات الـ PDF هتظهر هنا -->
                         <li>
-                            <span><i class="fas fa-file-pdf" style="color: #ef4444;"></i> مذكرة الشرح (مثال)</span>
+                            <span><i class="fas fa-file-pdf" style="color: #ef4444;"></i> مذكرة الشرح</span>
                             <a href="#" target="_blank">تحميل</a>
                         </li>
                     </ul>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <!-- ملف الجافاسكريبت الخاص بصفحة المشاهدة -->
+    <!-- استدعاء مكتبة Plyr -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+    
+    <!-- ملف الجافاسكريبت بتاعك -->
     <script type="module" src="watch-script.js"></script>
 
-    <!-- سكريبت بسيط للتنقل بين التابس ومنع الـ F12 -->
     <script>
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -82,7 +95,6 @@
             document.getElementById(tabId + 'Tab').style.display = 'block';
         }
 
-        // قفل زرار F12 (أدوات المطورين) لمنع السرقة
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
                 e.preventDefault();
