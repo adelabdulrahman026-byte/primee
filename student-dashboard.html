@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الطالب - Primee Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+</head>
+<body style="background-color: #f4f7f6;">
+
+    <!-- شريط التنقل العلوي (Navbar) -->
+    <nav class="dashboard-nav">
+        <div class="nav-logo">
+            <!-- تقدر تحط اللوجو بتاعك هنا -->
+            <h2 style="color: var(--primary-color); font-weight: 800; margin: 0;">Primee Academy</h2>
+        </div>
+        <div class="nav-user">
+            <span id="studentNameDisplay" style="font-weight: 600; margin-left: 15px;">جاري التحميل...</span>
+            <button id="logoutBtn" class="btn-logout">تسجيل الخروج 🚪</button>
+        </div>
+    </nav>
+
+    <!-- المحتوى الأساسي -->
+    <div class="dashboard-container">
+        
+        <!-- قسم الترحيب والمحفظة -->
+        <header class="welcome-header">
+            <div class="welcome-text">
+                <h1 id="welcomeMessage">أهلاً بك يا بطل! 🚀</h1>
+                <p>جاهز تبدأ رحلتك التعليمية النهارده؟</p>
+            </div>
+            
+            <div class="wallet-card">
+                <div class="wallet-info">
+                    <p style="margin: 0; font-size: 14px; color: #e0e0e0;">رصيد المحفظة</p>
+                    <h2 style="margin: 5px 0 0; color: #fff;"><span id="walletBalance">0</span> جنيه</h2>
+                </div>
+                <div class="wallet-icon">
+                    <lottie-player 
+                        src="https://lottie.host/801aeb0e-0d86-4e5a-8b9a-4c28f5262799/p3XFz5Kj2C.json" 
+                        background="transparent" 
+                        speed="1" 
+                        style="width: 50px; height: 50px;" 
+                        loop autoplay>
+                    </lottie-player>
+                </div>
+            </div>
+        </header>
+
+        <!-- قسم الكورسات / المواد -->
+        <section class="courses-section">
+            <div class="section-header">
+                <h3>حصصي وموادي 📚</h3>
+            </div>
+            
+            <div class="courses-grid" id="coursesGrid">
+                <!-- كارت كورس تجريبي (هيتبرمج بعدين يظهر من الداتا بيز) -->
+                <div class="course-card">
+                    <div class="course-image" style="background: linear-gradient(135deg, var(--primary-color), #2d3748);">
+                        <!-- مكان لصورة الكورس -->
+                    </div>
+                    <div class="course-details">
+                        <h4>اللغة العربية - الوحدة الأولى</h4>
+                        <p>شرح تفصيلي لقواعد النحو والبلاغة</p>
+                        <button class="btn-primary" style="width: 100%; margin-top: 10px;">دخول الحصة</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- كود الجافاسكريبت الخاص بالداشبورد -->
+    <script type="module" src="dashboard-script.js"></script>
+</body>
+</html>
