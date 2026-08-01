@@ -43,10 +43,17 @@
                     <input type="tel" id="loginPhone" placeholder="أدخل رقم الهاتف" required>
                 </div>
 
-                <div class="form-group">
-                    <label>كلمة المرور</label>
-                    <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required>
-                </div>
+<div class="form-group" style="position: relative;">
+    <label>كلمة المرور</label>
+    <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required style="padding-left: 45px;">
+    <!-- أيقونة إظهار/إخفاء الباسوورد -->
+    <span id="togglePassword" style="position: absolute; left: 15px; top: 42px; font-size: 20px; cursor: pointer;">👁️</span>
+</div>
+
+<!-- رابط نسيت كلمة المرور -->
+<div style="text-align: left; margin-bottom: 20px;">
+    <a href="forgot-password.html" style="color: var(--primary-color); font-size: 14px; text-decoration: none; font-weight: 600;">نسيت كلمة المرور؟</a>
+</div>
 
                 <button type="submit" class="btn-submit">دخول للمنصة</button>
             </form>
