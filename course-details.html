@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مشاهدة الحصة - Primee Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<!-- منع الكليك يمين لحماية الفيديو -->
+<body class="watch-page-body" oncontextmenu="return false;">
+
+    <!-- شاشة الحماية (بتظهر لو حد حاول يدخل برابط مباشر من غير ما يشتري) -->
+    <div id="securityOverlay" class="security-overlay">
+        <div class="security-box">
+            <i class="fas fa-lock"></i>
+            <h3>غير مصرح لك بالدخول</h3>
+            <p>يجب شراء هذه الحصة أولاً من لوحة التحكم لتتمكن من مشاهدتها.</p>
+            <button onclick="window.location.href='student-dashboard.html'">العودة للوحة التحكم</button>
+        </div>
+    </div>
+
+    <!-- الشريط العلوي -->
+    <nav class="watch-nav">
+        <a href="student-dashboard.html" class="btn-back"><i class="fas fa-arrow-right"></i> رجوع للوحة التحكم</a>
+        <h2 id="courseTitleHeader">جاري تحميل الحصة...</h2>
+        <div class="nav-brand">Primee<span>.</span></div>
+    </nav>
+
+    <!-- محتوى الحصة -->
+    <div class="watch-container">
+        <div class="video-section">
+            
+            <!-- مشغل الفيديو -->
+            <div class="video-wrapper">
+                <div id="videoContainer" class="video-placeholder">
+                    <i class="fas fa-spinner fa-spin"></i> جاري تحميل الفيديو...
+                </div>
+            </div>
+            
+            <!-- تفاصيل الحصة والمذكرات -->
+            <div class="course-info">
+                <h1 id="courseTitle">...</h1>
+                <p id="courseInstructor" class="instructor"><i class="fas fa-chalkboard-teacher"></i> ...</p>
+                
+                <!-- زراير التنقل (تابس) -->
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('description')">وصف الحصة</button>
+                    <button class="tab-btn" onclick="switchTab('materials')">المذكرات والملفات (PDF)</button>
+                </div>
+                
+                <!-- محتوى الوصف -->
+                <div id="descriptionTab" class="tab-content active">
+                    <p id="courseDescription">لا يوجد وصف متاح لهذه الحصة حالياً.</p>
+                </div>
+                
+                <!-- محتوى المذكرات -->
+                <div id="materialsTab" class="tab-content" style="display:none;">
+                    <ul class="materials-list" id="materialsList">
+                        <!-- ملفات الـ PDF هتظهر هنا -->
+                        <li>
+                            <span><i class="fas fa-file-pdf" style="color: #ef4444;"></i> مذكرة الشرح (مثال)</span>
+                            <a href="#" target="_blank">تحميل</a>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ملف الجافاسكريبت الخاص بصفحة المشاهدة -->
+    <script type="module" src="watch-script.js"></script>
+
+    <!-- سكريبت بسيط للتنقل بين التابس ومنع الـ F12 -->
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+            event.target.classList.add('active');
+            document.getElementById(tabId + 'Tab').style.display = 'block';
+        }
+
+        // قفل زرار F12 (أدوات المطورين) لمنع السرقة
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
