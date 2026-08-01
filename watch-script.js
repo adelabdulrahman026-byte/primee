@@ -92,38 +92,47 @@ async function verifyAccessAndLoadCourse() {
             }
 
             // 🎬 4. تركيب مشغل الفيديو الاحترافي (Plyr)
+         // 🎬 4. تركيب مشغل الفيديو الذكي (يوتيوب، ڤيميو، MP4، درايف)
             const videoUrl = courseData.videoUrl || "";
             const videoContainer = document.getElementById('videoContainer');
+            const watermark = document.getElementById('studentWatermark');
+
+            let isPlyr = false;
 
             if (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) {
-                // لو رابط يوتيوب
+                // مشغل يوتيوب
                 videoContainer.innerHTML = `<div id="player" data-plyr-provider="youtube" data-plyr-embed-id="${videoUrl}"></div>`;
-            } else if (videoUrl !== "") {
-                // لو رابط مباشر (MP4 أو درايف)
+                isPlyr = true;
+            } else if (videoUrl.includes("vimeo.com")) {
+                // مشغل ڤيميو
+                videoContainer.innerHTML = `<div id="player" data-plyr-provider="vimeo" data-plyr-embed-id="${videoUrl}"></div>`;
+                isPlyr = true;
+            } else if (videoUrl.endsWith(".mp4") || videoUrl.includes("firebasestorage")) {
+                // مشغل الفيديوهات المباشرة
                 videoContainer.innerHTML = `
                     <video id="player" playsinline controls>
                         <source src="${videoUrl}" type="video/mp4" />
                     </video>`;
+                isPlyr = true;
+            } else if (videoUrl !== "") {
+                // أي رابط تاني زي جوجل درايف (Embed)
+                videoContainer.innerHTML = `<iframe src="${videoUrl}" allowfullscreen allow="autoplay; fullscreen" style="width:100%; height:100%; border:none;"></iframe>`;
             } else {
                 videoContainer.innerHTML = "لا يوجد رابط فيديو مسجل لهذه الحصة.";
             }
 
-            // تفعيل إعدادات مشغل Plyr (السرعات والجودة)
-            const player = new Plyr('#player', {
-                speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-                i18n: {
-                    speed: 'السرعة',
-                    normal: 'عادي',
-                }
-            });
+            // تفعيل Plyr وزرع العلامة المائية جواه عشان تظهر في الشاشة الكاملة
+            if (isPlyr) {
+                const player = new Plyr('#player', {
+                    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+                    i18n: { speed: 'السرعة', normal: 'عادي' }
+                });
 
-        } else {
-            alert("هذه الحصة لم تعد موجودة.");
-            window.location.replace("student-dashboard.html");
-        }
-
-    } catch (error) {
-        console.error("خطأ:", error);
-        alert("حدث خطأ في تحميل بيانات الحصة.");
-    }
-}
+                // السحر هنا: بننقل العلامة المائية جوه المشغل نفسه بعد ما يحمل
+                player.on('ready', () => {
+                    const plyrContainer = document.querySelector('.plyr');
+                    if (plyrContainer && watermark) {
+                        plyrContainer.appendChild(watermark);
+                    }
+                });
+            }
