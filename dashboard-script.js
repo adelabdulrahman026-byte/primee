@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -34,168 +34,115 @@ async function fetchStudentData(phone) {
             currentStudentId = querySnapshot.docs[0].id;
             currentStudentData = querySnapshot.docs[0].data();
             
-            if (!currentStudentData.myCourses) {
-                currentStudentData.myCourses = [];
-            }
+            if (!currentStudentData.myCourses) currentStudentData.myCourses = [];
+            if (!currentStudentData.completedExams) currentStudentData.completedExams = [];
 
             const fullName = currentStudentData.fullName || "طالب";
             const firstName = fullName.split(" ")[0]; 
 
             document.getElementById('studentNameDisplay').textContent = fullName;
             document.getElementById('welcomeMessage').textContent = `أهلاً بك يا ${firstName}! 🚀`;
+            document.getElementById('walletBalance').textContent = currentStudentData.walletBalance || 0;
             
-            const balance = currentStudentData.walletBalance || 0; 
-            document.getElementById('walletBalance').textContent = balance;
+            // تحديث الإحصائيات
+            document.getElementById('statCoursesCount').textContent = currentStudentData.myCourses.length;
+            document.getElementById('statExamsCount').textContent = currentStudentData.completedExams.length;
+
+            // جلب موادي الدراسية فقط
+            fetchMyCourses(currentStudentData.myCourses);
             
-            // بنجيب الكورسات بعد ما نتأكد إننا جبنا بيانات الطالب الأول
-            fetchCourses();
-            
+            // جلب الدرجات (لو فيه درجات متسجلة، لو مفيش هنحط رسالة وهمية مؤقتاً)
+            renderGrades(currentStudentData.completedExams);
+
         } else {
-            document.getElementById('studentNameDisplay').textContent = "حساب غير معروف";
+            window.location.replace("login.html");
         }
     } catch (error) {
-        console.error("خطأ في جلب البيانات:", error);
+        console.error("خطأ:", error);
     }
 }
 
-async function fetchCourses() {
-    const coursesGrid = document.getElementById('coursesGrid');
-    coursesGrid.innerHTML = '<p style="text-align:center; width:100%; color:var(--text-muted);">جاري تحميل المواد... ⏳</p>';
+async function fetchMyCourses(myCourseIds) {
+    const coursesGrid = document.getElementById('myCoursesGrid');
+    
+    if (myCourseIds.length === 0) {
+        coursesGrid.innerHTML = `
+            <div style="text-align:center; width:100%; padding: 40px; background: #fff; border-radius: 16px;">
+                <i class="fas fa-folder-open" style="font-size: 40px; color: #cbd5e1; margin-bottom: 15px;"></i>
+                <h3 style="color: #64748b; margin:0;">لم تقم بشراء أي مواد بعد</h3>
+                <p style="color: #94a3b8; font-size: 14px;">تصفح الصفحة الرئيسية لشراء الحصص الجديدة.</p>
+            </div>`;
+        return;
+    }
+
+    coursesGrid.innerHTML = '<p style="text-align:center; width:100%;">جاري تحميل موادك... ⏳</p>';
 
     try {
-        const coursesRef = collection(db, "courses");
-        const querySnapshot = await getDocs(coursesRef);
-
-        if (querySnapshot.empty) {
-            coursesGrid.innerHTML = '<p style="text-align:center; width:100%; color:var(--text-muted);">لا توجد مواد متاحة حالياً.</p>';
-            return;
-        }
-
         coursesGrid.innerHTML = ''; 
-
-        querySnapshot.forEach((docSnap) => {
-            const course = docSnap.data();
-            const courseId = docSnap.id;
-            const price = course.price || 0; 
+        
+        // جلب تفاصيل كل كورس الطالب اشتراه
+        for (const courseId of myCourseIds) {
+            const courseRef = doc(db, "courses", courseId);
+            const courseSnap = await getDoc(courseRef);
             
-            // 🧠 السحر هنا: بنسأل، هل الطالب ده اشترى الكورس ده؟
-            const isOwned = currentStudentData.myCourses.includes(courseId);
-
-            // لو اشتراه، بنغير شكل الزرار والسعر والبادج
-            const priceDisplay = isOwned ? '<span style="color:#10b981;">تم الشراء ✔️</span>' : (price === 0 ? 'مجانًا 🎁' : price + ' ج.م');
-            
-            const buttonHTML = isOwned 
-                ? `<button class="btn-enter-course btn-owned" onclick="openCourse('${courseId}')">دخول الحصة 🚀</button>`
-                : `<button class="btn-enter-course" onclick="initiatePurchase('${courseId}', ${price}, '${course.title}')">شراء الحصة</button>`;
-            
-            const badgeClass = isOwned ? 'badge owned-badge' : 'badge';
-            const badgeText = isOwned ? 'مملوك' : (course.badge || 'جديد');
-
-            const courseCard = `
-                <div class="modern-course-card">
-                    <div class="card-img" style="background-image: url('${course.image || ''}'); background-size: cover; background-position: center; background-color: #e2e8f0;">
-                        <span class="${badgeClass}">${badgeText}</span>
-                    </div>
-                    <div class="card-body">
-                        <h4>${course.title || 'اسم المادة'}</h4>
-                        <p class="instructor"><i class="fas fa-chalkboard-teacher"></i> ${course.instructor || 'أستاذ المادة'}</p>
-                        
-                        <p style="font-weight: 800; color: var(--primary-color); margin-bottom: 15px;">
-                            ${priceDisplay}
-                        </p>
-
-                        <div class="card-footer">
-                            ${buttonHTML}
+            if (courseSnap.exists()) {
+                const course = courseSnap.data();
+                const courseCard = `
+                    <div class="modern-course-card">
+                        <div class="card-img" style="background-image: url('${course.image || ''}'); background-size: cover; background-position: center;">
+                            <span class="badge owned-badge">مملوك</span>
+                        </div>
+                        <div class="card-body">
+                            <h4>${course.title || 'اسم المادة'}</h4>
+                            <p class="instructor"><i class="fas fa-chalkboard-teacher"></i> ${course.instructor || 'أستاذ المادة'}</p>
+                            <div class="card-footer">
+                                <button class="btn-enter-course btn-owned" onclick="window.location.href='course-details.html?id=${courseId}'">
+                                    دخول الحصة 🚀
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            coursesGrid.innerHTML += courseCard;
-        });
-
-    } catch (error) {
-        console.error("خطأ في جلب الكورسات:", error);
-    }
-}
-
-// ==================== دوال النافذة المنبثقة (Modal) ====================
-function showCustomModal(icon, title, message, buttonsHTML) {
-    document.getElementById('customModalIcon').innerHTML = icon;
-    document.getElementById('customModalTitle').textContent = title;
-    document.getElementById('customModalMessage').innerHTML = message;
-    document.getElementById('customModalActions').innerHTML = buttonsHTML;
-    document.getElementById('customModal').classList.add('active');
-}
-
-window.closeCustomModal = function() {
-    document.getElementById('customModal').classList.remove('active');
-};
-
-// ==================== دوال الدخول والشراء ====================
-
-// دالة لو الطالب معاه الكورس أصلاً
-// دالة لو الطالب معاه الكورس أصلاً
-window.openCourse = function(courseId) {
-    // التعديل هنا: هنحوله لصفحة المشاهدة ونبعت رقم الكورس في الرابط
-    window.location.href = `course-details.html?id=${courseId}`;
-};
-
-// دالة بدء الشراء
-window.initiatePurchase = function(courseId, price, courseTitle) {
-    if (price === 0) {
-        showCustomModal('🎁', 'حصة مجانية!', 'هذه الحصة مجانية. هل تريد إضافتها لموادك؟', 
-        `<button class="btn-cancel" onclick="closeCustomModal()">إلغاء</button>
-         <button class="btn-confirm" onclick="confirmPurchaseAction('${courseId}', ${price})">إضافة الآن</button>`);
-    } else {
-        showCustomModal('🛒', 'تأكيد الشراء', `قيمة حصة <strong>${courseTitle}</strong> هي <strong>${price} ج.م</strong>.<br>رصيدك الحالي: ${currentStudentData.walletBalance || 0} ج.م.<br><br>هل تريد الشراء؟`, 
-        `<button class="btn-cancel" onclick="closeCustomModal()">إلغاء</button>
-         <button class="btn-confirm" onclick="confirmPurchaseAction('${courseId}', ${price})">تأكيد وخصم</button>`);
-    }
-};
-
-// دالة تنفيذ الخصم وتحديث الداتا بيز
-window.confirmPurchaseAction = async function(courseId, price) {
-    closeCustomModal(); // نقفل رسالة التأكيد
-    
-    let currentBalance = currentStudentData.walletBalance || 0;
-    
-    if (currentBalance >= price) {
-        let newBalance = currentBalance - price;
-        
-        try {
-            // الخصم في فايربيز
-            await updateDoc(doc(db, "users", currentStudentId), {
-                walletBalance: newBalance,
-                myCourses: arrayUnion(courseId)
-            });
-
-            // تحديث البيانات في الذاكرة الحالية
-            currentStudentData.walletBalance = newBalance;
-            currentStudentData.myCourses.push(courseId);
-            document.getElementById('walletBalance').textContent = newBalance;
-
-            // إظهار رسالة النجاح
-            showCustomModal('🎉', 'مبروك!', 'تم شراء الحصة بنجاح وإضافتها لموادك.', `<button class="btn-ok" onclick="closeCustomModal()">رائع!</button>`);
-            
-            // إعادة رسم الكورسات عشان يظهر الزرار الأخضر
-            fetchCourses();
-
-        } catch (error) {
-            console.error("خطأ أثناء الشراء:", error);
-            showCustomModal('❌', 'خطأ تقني', 'حدث خطأ أثناء الاتصال. يرجى المحاولة لاحقاً.', `<button class="btn-cancel" onclick="closeCustomModal()">إغلاق</button>`);
+                `;
+                coursesGrid.innerHTML += courseCard;
+            }
         }
-    } else {
-        // لو الرصيد ميكفيش
-        showCustomModal('💳', 'رصيد غير كافٍ', 'رصيد محفظتك لا يكفي لإتمام الشراء. يرجى شحن الرصيد أولاً.', `<button class="btn-cancel" onclick="closeCustomModal()">إغلاق</button>`);
+    } catch (error) {
+        console.error("خطأ في جلب كورساتي:", error);
     }
-};
+}
 
-// ==================== تسجيل الخروج ====================
+// دالة عرض تقرير الدرجات
+function renderGrades(completedExams) {
+    const tableBody = document.getElementById('gradesTableBody');
+    
+    if (completedExams.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px;">لم تجتز أي امتحانات حتى الآن.</td></tr>`;
+        return;
+    }
+
+    // لأننا لسه مبرمجناش نظام الامتحانات الفعلي، هنعمل محاكاة للدرجات بناءً على الكورسات اللي امتحنها
+    tableBody.innerHTML = '';
+    completedExams.forEach((examId, index) => {
+        // دي داتا مؤقتة لحد ما نبرمج صفحة الامتحان الفعلي
+        const score = Math.floor(Math.random() * (100 - 60 + 1)) + 60; // رقم عشوائي بين 60 و 100
+        const statusClass = score >= 50 ? 'status-pass' : 'status-fail';
+        const statusText = score >= 50 ? 'ناجح' : 'راسب';
+        
+        tableBody.innerHTML += `
+            <tr>
+                <td><strong>امتحان حصة رقم ${examId.substring(0,4)}</strong></td>
+                <td>اليوم</td>
+                <td style="color: var(--primary-color); font-weight: 800;">${score}%</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            </tr>
+        `;
+    });
+}
+
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-        localStorage.removeItem('studentPhone');
-        localStorage.removeItem('loggedInUserId');
+        localStorage.clear();
         window.location.replace("login.html");
     });
 }
