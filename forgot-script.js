@@ -54,8 +54,21 @@ forgotForm.addEventListener('submit', async (e) => {
             console.log("اسم الطالب:", studentName);
             console.log("كلمة المرور المستخرجة:", studentPassword);
             
-            // 🚨 المكان ده هو اللي هنحط فيه كود الربط مع الواتساب في الخطوة الجاية 🚨
+// ---------------------------------------------------------
+            // كود إرسال الباسوورد على الواتساب (Google Webhook)
+            // ---------------------------------------------------------
+            const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxCMHB0UUnuBIVgQqIViu_ENLpL6OpDSBFAx7vzNc4KQmoNe3E-dlyD7ZZs4T_Wfn5w/exec";
             
+            fetch(WEBHOOK_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "forgot_password",
+                    phone: phone, // الرقم اللي الطالب دخله في الفورم
+                    password: studentPassword, // الباسوورد اللي طلعناه من الداتا بيز
+                    name: studentName // اسم الطالب
+                })
+            }).catch(err => console.error("مشكلة في إرسال الواتساب:", err));
+            // ---------------------------------------------------------            
             showAlert("تم بنجاح! ✅", "تم العثور على حسابك. (في الخطوة القادمة سيتم إرسال الباسوورد لرقمك على الواتساب).");
             
             forgotForm.reset();
