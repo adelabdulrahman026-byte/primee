@@ -296,7 +296,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .dashboard-layout {
-    display: flex;
+    display: block; /* لغينا الفليكس عشان السايدبار ثابت */
     min-height: 100vh;
 }
 
@@ -380,10 +380,9 @@ input:focus, select:focus, textarea:focus {
 
 /* --- المحتوى الرئيسي --- */
 .main-content {
-    flex: 1;
-    margin-right: 260px; /* نفس عرض السايدبار */
+    margin-right: 260px; /* بنسيب 260 بيكسل فاضيين على اليمين للقائمة الجانبية */
     padding: 30px;
-    width: calc(100% - 260px); /* لمنع التداخل */
+    width: calc(100% - 260px); /* بنطرح مساحة القائمة الجانبية عشان المحتوى ميخرجش بره الشاشة */
 }
 
 /* الشريط العلوي */
