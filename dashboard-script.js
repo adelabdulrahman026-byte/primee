@@ -134,9 +134,10 @@ window.closeCustomModal = function() {
 // ==================== دوال الدخول والشراء ====================
 
 // دالة لو الطالب معاه الكورس أصلاً
+// دالة لو الطالب معاه الكورس أصلاً
 window.openCourse = function(courseId) {
-    showCustomModal('🚀', 'جارِ التحويل', 'سيتم تحويلك لصفحة الحصة الآن...', `<button class="btn-ok" onclick="closeCustomModal()">حسناً</button>`);
-    // window.location.href = `course-details.html?id=${courseId}`;
+    // التعديل هنا: هنحوله لصفحة المشاهدة ونبعت رقم الكورس في الرابط
+    window.location.href = `course-details.html?id=${courseId}`;
 };
 
 // دالة بدء الشراء
