@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 👇 ضفنا هنا أوامر التحديث (updateDoc) وإضافة الكورس لممتلكات الطالب (arrayUnion)
+import { getFirestore, collection, query, where, getDocs, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 1. إعدادات قاعدة البيانات الخاصة بك
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
     authDomain: "academy-444b6.firebaseapp.com",
@@ -14,17 +14,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 2. نظام الحماية (Route Guard) وتشغيل الدوال
+// متغيرات عشان نحفظ فيها بيانات الطالب الحالية ونستخدمها وقت الشراء
+let currentStudentData = null;
+let currentStudentId = null;
+
+// 2. نظام الحماية (Route Guard)
 const loggedInPhone = localStorage.getItem('studentPhone');
 
 if (!loggedInPhone) {
-    console.log("لا يوجد رقم مسجل، جاري التحويل لصفحة الدخول...");
     window.location.replace("login.html");
 } else {
-    console.log("الرقم المسجل حالياً هو: ", loggedInPhone);
-    // جلب بيانات الطالب
     fetchStudentData(loggedInPhone);
-    // 👇 ده السطر اللي ضفناه عشان يجيب الكورسات أول ما الصفحة تفتح
     fetchCourses(); 
 }
 
@@ -36,28 +36,28 @@ async function fetchStudentData(phone) {
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-            const userData = querySnapshot.docs[0].data();
-            console.log("تم جلب البيانات بنجاح: ", userData); 
+            currentStudentId = querySnapshot.docs[0].id;
+            currentStudentData = querySnapshot.docs[0].data();
             
-            // استخراج الاسم
-            const fullName = userData.fullName || "طالب";
+            // التأكد إن الطالب عنده قائمة كورسات (لو لسه جديد بنعتبرها فاضية)
+            if (!currentStudentData.myCourses) {
+                currentStudentData.myCourses = [];
+            }
+
+            const fullName = currentStudentData.fullName || "طالب";
             const firstName = fullName.split(" ")[0]; 
 
-            // عرض البيانات
             document.getElementById('studentNameDisplay').textContent = fullName;
             document.getElementById('welcomeMessage').textContent = `أهلاً بك يا ${firstName}! 🚀`;
             
-            // عرض المحفظة
-            const balance = userData.walletBalance || 0; 
+            const balance = currentStudentData.walletBalance || 0; 
             document.getElementById('walletBalance').textContent = balance;
             
         } else {
-            console.log("لم يتم العثور على بيانات هذا الرقم في القاعدة.");
             document.getElementById('studentNameDisplay').textContent = "حساب غير معروف";
         }
     } catch (error) {
-        console.error("خطأ في جلب البيانات من فايربيز:", error);
-        document.getElementById('studentNameDisplay').textContent = "خطأ في الاتصال";
+        console.error("خطأ في جلب البيانات:", error);
     }
 }
 
@@ -75,11 +75,12 @@ async function fetchCourses() {
             return;
         }
 
-        coursesGrid.innerHTML = ''; // تفريغ رسالة التحميل
+        coursesGrid.innerHTML = ''; 
 
-        querySnapshot.forEach((doc) => {
-            const course = doc.data();
-            const courseId = doc.id;
+        querySnapshot.forEach((docSnap) => {
+            const course = docSnap.data();
+            const courseId = docSnap.id;
+            const price = course.price || 0; // لو مفيش سعر بيعتبره 0 (مجاني)
 
             const courseCard = `
                 <div class="modern-course-card">
@@ -89,8 +90,14 @@ async function fetchCourses() {
                     <div class="card-body">
                         <h4>${course.title || 'اسم المادة'}</h4>
                         <p class="instructor"><i class="fas fa-chalkboard-teacher"></i> ${course.instructor || 'أستاذ المادة'}</p>
+                        
+                        <!-- إظهار السعر في الكارت -->
+                        <p style="font-weight: 800; color: var(--primary-color); margin-bottom: 15px;">
+                            ${price === 0 ? 'مجانًا 🎁' : price + ' ج.م'}
+                        </p>
+
                         <div class="card-footer">
-                            <button class="btn-enter-course" onclick="enterCourse('${courseId}')">دخول الحصة</button>
+                            <button class="btn-enter-course" onclick="enterCourse('${courseId}', ${price}, '${course.title}')">دخول الحصة</button>
                         </div>
                     </div>
                 </div>
@@ -104,21 +111,71 @@ async function fetchCourses() {
     }
 }
 
-// دالة تجريبية لزرار دخول الحصة
-window.enterCourse = function(courseId) {
-    alert("سيتم توجيهك لصفحة الحصة رقم: " + courseId);
+// 5. 🧠 نظام الشراء والخصم من المحفظة
+window.enterCourse = async function(courseId, price, courseTitle) {
+    if (!currentStudentData || !currentStudentId) return;
+
+    // السيناريو الأول: الطالب اشترى الكورس ده قبل كده
+    if (currentStudentData.myCourses.includes(courseId)) {
+        alert("أنت تمتلك هذه الحصة بالفعل! سيتم فتحها الآن... 🎉");
+        // بعدين هنفعل دي: window.location.href = `course-details.html?id=${courseId}`;
+        return;
+    }
+
+    // السيناريو التاني: الكورس مجاني (سعره 0)
+    if (price === 0) {
+        alert("هذه الحصة مجانية! سيتم إضافتها لحسابك وفتحها الآن.");
+        
+        // تحديث الداتا بيز وإضافة الكورس للطالب
+        await updateDoc(doc(db, "users", currentStudentId), {
+            myCourses: arrayUnion(courseId)
+        });
+        currentStudentData.myCourses.push(courseId); 
+        return;
+    }
+
+    // السيناريو التالت: الكورس بفلوس (لازم نخصم من المحفظة)
+    const confirmPurchase = confirm(`قيمة حصة "${courseTitle}" هي ${price} ج.م.\nرصيدك الحالي: ${currentStudentData.walletBalance || 0} ج.م.\n\nهل تريد تأكيد الشراء وخصم المبلغ من محفظتك؟`);
+
+    if (confirmPurchase) {
+        let currentBalance = currentStudentData.walletBalance || 0;
+        
+        if (currentBalance >= price) {
+            // الرصيد يكفي: نخصم الفلوس ونضيف الكورس
+            let newBalance = currentBalance - price;
+
+            try {
+                // 1. الخصم في فايربيز
+                await updateDoc(doc(db, "users", currentStudentId), {
+                    walletBalance: newBalance,
+                    myCourses: arrayUnion(courseId)
+                });
+
+                // 2. تحديث الشاشة قدام الطالب في نفس اللحظة
+                currentStudentData.walletBalance = newBalance;
+                currentStudentData.myCourses.push(courseId);
+                document.getElementById('walletBalance').textContent = newBalance;
+
+                alert("تم الشراء بنجاح! 🎉 سيتم فتح الحصة الآن.");
+                // بعدين هنفعل دي: window.location.href = `course-details.html?id=${courseId}`;
+
+            } catch (error) {
+                console.error("خطأ أثناء الشراء:", error);
+                alert("حدث خطأ أثناء إتمام عملية الشراء. حاول مرة أخرى.");
+            }
+        } else {
+            // الرصيد لا يكفي
+            alert("رصيد محفظتك غير كافٍ لإتمام الشراء! ❌ يرجى شحن الرصيد أولاً.");
+        }
+    }
 };
 
-// 5. برمجة زرار تسجيل الخروج
+// 6. برمجة زرار تسجيل الخروج
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-        // بنمسح بيانات الجلسة بس
         localStorage.removeItem('studentPhone');
         localStorage.removeItem('loggedInUserId');
-        
-        // مش بنمسح بصمة الجهاز (primeeDeviceToken) عشان يفضل مسجل
-        
         window.location.replace("login.html");
     });
 }
