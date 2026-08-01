@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-// 👇 ضفنا هنا أوامر التحديث (updateDoc) وإضافة الكورس لممتلكات الطالب (arrayUnion)
 import { getFirestore, collection, query, where, getDocs, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -14,21 +13,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// متغيرات عشان نحفظ فيها بيانات الطالب الحالية ونستخدمها وقت الشراء
 let currentStudentData = null;
 let currentStudentId = null;
 
-// 2. نظام الحماية (Route Guard)
 const loggedInPhone = localStorage.getItem('studentPhone');
 
 if (!loggedInPhone) {
     window.location.replace("login.html");
 } else {
     fetchStudentData(loggedInPhone);
-    fetchCourses(); 
 }
 
-// 3. دالة جلب وعرض بيانات الطالب
 async function fetchStudentData(phone) {
     try {
         const usersRef = collection(db, "users");
@@ -39,7 +34,6 @@ async function fetchStudentData(phone) {
             currentStudentId = querySnapshot.docs[0].id;
             currentStudentData = querySnapshot.docs[0].data();
             
-            // التأكد إن الطالب عنده قائمة كورسات (لو لسه جديد بنعتبرها فاضية)
             if (!currentStudentData.myCourses) {
                 currentStudentData.myCourses = [];
             }
@@ -53,6 +47,9 @@ async function fetchStudentData(phone) {
             const balance = currentStudentData.walletBalance || 0; 
             document.getElementById('walletBalance').textContent = balance;
             
+            // بنجيب الكورسات بعد ما نتأكد إننا جبنا بيانات الطالب الأول
+            fetchCourses();
+            
         } else {
             document.getElementById('studentNameDisplay').textContent = "حساب غير معروف";
         }
@@ -61,7 +58,6 @@ async function fetchStudentData(phone) {
     }
 }
 
-// 4. دالة جلب الكورسات من قاعدة البيانات
 async function fetchCourses() {
     const coursesGrid = document.getElementById('coursesGrid');
     coursesGrid.innerHTML = '<p style="text-align:center; width:100%; color:var(--text-muted);">جاري تحميل المواد... ⏳</p>';
@@ -80,24 +76,36 @@ async function fetchCourses() {
         querySnapshot.forEach((docSnap) => {
             const course = docSnap.data();
             const courseId = docSnap.id;
-            const price = course.price || 0; // لو مفيش سعر بيعتبره 0 (مجاني)
+            const price = course.price || 0; 
+            
+            // 🧠 السحر هنا: بنسأل، هل الطالب ده اشترى الكورس ده؟
+            const isOwned = currentStudentData.myCourses.includes(courseId);
+
+            // لو اشتراه، بنغير شكل الزرار والسعر والبادج
+            const priceDisplay = isOwned ? '<span style="color:#10b981;">تم الشراء ✔️</span>' : (price === 0 ? 'مجانًا 🎁' : price + ' ج.م');
+            
+            const buttonHTML = isOwned 
+                ? `<button class="btn-enter-course btn-owned" onclick="openCourse('${courseId}')">دخول الحصة 🚀</button>`
+                : `<button class="btn-enter-course" onclick="initiatePurchase('${courseId}', ${price}, '${course.title}')">شراء الحصة</button>`;
+            
+            const badgeClass = isOwned ? 'badge owned-badge' : 'badge';
+            const badgeText = isOwned ? 'مملوك' : (course.badge || 'جديد');
 
             const courseCard = `
                 <div class="modern-course-card">
                     <div class="card-img" style="background-image: url('${course.image || ''}'); background-size: cover; background-position: center; background-color: #e2e8f0;">
-                        <span class="badge">${course.badge || 'جديد'}</span>
+                        <span class="${badgeClass}">${badgeText}</span>
                     </div>
                     <div class="card-body">
                         <h4>${course.title || 'اسم المادة'}</h4>
                         <p class="instructor"><i class="fas fa-chalkboard-teacher"></i> ${course.instructor || 'أستاذ المادة'}</p>
                         
-                        <!-- إظهار السعر في الكارت -->
                         <p style="font-weight: 800; color: var(--primary-color); margin-bottom: 15px;">
-                            ${price === 0 ? 'مجانًا 🎁' : price + ' ج.م'}
+                            ${priceDisplay}
                         </p>
 
                         <div class="card-footer">
-                            <button class="btn-enter-course" onclick="enterCourse('${courseId}', ${price}, '${course.title}')">دخول الحصة</button>
+                            ${buttonHTML}
                         </div>
                     </div>
                 </div>
@@ -107,70 +115,81 @@ async function fetchCourses() {
 
     } catch (error) {
         console.error("خطأ في جلب الكورسات:", error);
-        coursesGrid.innerHTML = '<p style="text-align:center; width:100%; color:red;">حدث خطأ أثناء تحميل المواد.</p>';
     }
 }
 
-// 5. 🧠 نظام الشراء والخصم من المحفظة
-window.enterCourse = async function(courseId, price, courseTitle) {
-    if (!currentStudentData || !currentStudentId) return;
+// ==================== دوال النافذة المنبثقة (Modal) ====================
+function showCustomModal(icon, title, message, buttonsHTML) {
+    document.getElementById('customModalIcon').innerHTML = icon;
+    document.getElementById('customModalTitle').textContent = title;
+    document.getElementById('customModalMessage').innerHTML = message;
+    document.getElementById('customModalActions').innerHTML = buttonsHTML;
+    document.getElementById('customModal').classList.add('active');
+}
 
-    // السيناريو الأول: الطالب اشترى الكورس ده قبل كده
-    if (currentStudentData.myCourses.includes(courseId)) {
-        alert("أنت تمتلك هذه الحصة بالفعل! سيتم فتحها الآن... 🎉");
-        // بعدين هنفعل دي: window.location.href = `course-details.html?id=${courseId}`;
-        return;
-    }
+window.closeCustomModal = function() {
+    document.getElementById('customModal').classList.remove('active');
+};
 
-    // السيناريو التاني: الكورس مجاني (سعره 0)
+// ==================== دوال الدخول والشراء ====================
+
+// دالة لو الطالب معاه الكورس أصلاً
+window.openCourse = function(courseId) {
+    showCustomModal('🚀', 'جارِ التحويل', 'سيتم تحويلك لصفحة الحصة الآن...', `<button class="btn-ok" onclick="closeCustomModal()">حسناً</button>`);
+    // window.location.href = `course-details.html?id=${courseId}`;
+};
+
+// دالة بدء الشراء
+window.initiatePurchase = function(courseId, price, courseTitle) {
     if (price === 0) {
-        alert("هذه الحصة مجانية! سيتم إضافتها لحسابك وفتحها الآن.");
-        
-        // تحديث الداتا بيز وإضافة الكورس للطالب
-        await updateDoc(doc(db, "users", currentStudentId), {
-            myCourses: arrayUnion(courseId)
-        });
-        currentStudentData.myCourses.push(courseId); 
-        return;
-    }
-
-    // السيناريو التالت: الكورس بفلوس (لازم نخصم من المحفظة)
-    const confirmPurchase = confirm(`قيمة حصة "${courseTitle}" هي ${price} ج.م.\nرصيدك الحالي: ${currentStudentData.walletBalance || 0} ج.م.\n\nهل تريد تأكيد الشراء وخصم المبلغ من محفظتك؟`);
-
-    if (confirmPurchase) {
-        let currentBalance = currentStudentData.walletBalance || 0;
-        
-        if (currentBalance >= price) {
-            // الرصيد يكفي: نخصم الفلوس ونضيف الكورس
-            let newBalance = currentBalance - price;
-
-            try {
-                // 1. الخصم في فايربيز
-                await updateDoc(doc(db, "users", currentStudentId), {
-                    walletBalance: newBalance,
-                    myCourses: arrayUnion(courseId)
-                });
-
-                // 2. تحديث الشاشة قدام الطالب في نفس اللحظة
-                currentStudentData.walletBalance = newBalance;
-                currentStudentData.myCourses.push(courseId);
-                document.getElementById('walletBalance').textContent = newBalance;
-
-                alert("تم الشراء بنجاح! 🎉 سيتم فتح الحصة الآن.");
-                // بعدين هنفعل دي: window.location.href = `course-details.html?id=${courseId}`;
-
-            } catch (error) {
-                console.error("خطأ أثناء الشراء:", error);
-                alert("حدث خطأ أثناء إتمام عملية الشراء. حاول مرة أخرى.");
-            }
-        } else {
-            // الرصيد لا يكفي
-            alert("رصيد محفظتك غير كافٍ لإتمام الشراء! ❌ يرجى شحن الرصيد أولاً.");
-        }
+        showCustomModal('🎁', 'حصة مجانية!', 'هذه الحصة مجانية. هل تريد إضافتها لموادك؟', 
+        `<button class="btn-cancel" onclick="closeCustomModal()">إلغاء</button>
+         <button class="btn-confirm" onclick="confirmPurchaseAction('${courseId}', ${price})">إضافة الآن</button>`);
+    } else {
+        showCustomModal('🛒', 'تأكيد الشراء', `قيمة حصة <strong>${courseTitle}</strong> هي <strong>${price} ج.م</strong>.<br>رصيدك الحالي: ${currentStudentData.walletBalance || 0} ج.م.<br><br>هل تريد الشراء؟`, 
+        `<button class="btn-cancel" onclick="closeCustomModal()">إلغاء</button>
+         <button class="btn-confirm" onclick="confirmPurchaseAction('${courseId}', ${price})">تأكيد وخصم</button>`);
     }
 };
 
-// 6. برمجة زرار تسجيل الخروج
+// دالة تنفيذ الخصم وتحديث الداتا بيز
+window.confirmPurchaseAction = async function(courseId, price) {
+    closeCustomModal(); // نقفل رسالة التأكيد
+    
+    let currentBalance = currentStudentData.walletBalance || 0;
+    
+    if (currentBalance >= price) {
+        let newBalance = currentBalance - price;
+        
+        try {
+            // الخصم في فايربيز
+            await updateDoc(doc(db, "users", currentStudentId), {
+                walletBalance: newBalance,
+                myCourses: arrayUnion(courseId)
+            });
+
+            // تحديث البيانات في الذاكرة الحالية
+            currentStudentData.walletBalance = newBalance;
+            currentStudentData.myCourses.push(courseId);
+            document.getElementById('walletBalance').textContent = newBalance;
+
+            // إظهار رسالة النجاح
+            showCustomModal('🎉', 'مبروك!', 'تم شراء الحصة بنجاح وإضافتها لموادك.', `<button class="btn-ok" onclick="closeCustomModal()">رائع!</button>`);
+            
+            // إعادة رسم الكورسات عشان يظهر الزرار الأخضر
+            fetchCourses();
+
+        } catch (error) {
+            console.error("خطأ أثناء الشراء:", error);
+            showCustomModal('❌', 'خطأ تقني', 'حدث خطأ أثناء الاتصال. يرجى المحاولة لاحقاً.', `<button class="btn-cancel" onclick="closeCustomModal()">إغلاق</button>`);
+        }
+    } else {
+        // لو الرصيد ميكفيش
+        showCustomModal('💳', 'رصيد غير كافٍ', 'رصيد محفظتك لا يكفي لإتمام الشراء. يرجى شحن الرصيد أولاً.', `<button class="btn-cancel" onclick="closeCustomModal()">إغلاق</button>`);
+    }
+};
+
+// ==================== تسجيل الخروج ====================
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
