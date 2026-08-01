@@ -3,34 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة الطالب - Primee Academy</title>
+    <title>لوحة تحكم الطالب - Primee</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
-    <!-- مكتبة الأيقونات -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </head>
 <body class="dashboard-body">
 
     <div class="dashboard-layout">
-        
-        <!-- القائمة الجانبية (Sidebar) -->
+        <!-- القائمة الجانبية -->
         <aside class="sidebar">
             <div class="sidebar-brand">
-                <h2 style="color: var(--primary-color);">Primee<span>.</span></h2>
+                <h2>.Primee</h2>
             </div>
             <ul class="sidebar-nav">
-                <li class="active"><a href="#"><i class="fas fa-home"></i> الرئيسية</a></li>
-                <li><a href="#"><i class="fas fa-book-open"></i> كورساتي</a></li>
+                <li><a href="index.html"><i class="fas fa-home"></i> الرئيسية</a></li>
+                <li class="active"><a href="student-dashboard.html"><i class="fas fa-book-open"></i> كورساتي</a></li>
                 <li><a href="#"><i class="fas fa-wallet"></i> المحفظة</a></li>
                 <li><a href="#"><i class="fas fa-chart-line"></i> تقاريري</a></li>
             </ul>
             <div class="sidebar-footer">
-                <button id="logoutBtn" class="btn-logout"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+                <button class="btn-logout" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                </button>
             </div>
         </aside>
 
-      <!-- --- المحتوى الرئيسي --- -->
+        <!-- المحتوى الرئيسي -->
         <div class="main-content">
             
             <!-- الشريط العلوي -->
@@ -68,7 +67,7 @@
                 </div>
             </div>
 
-            <!-- الإحصائيات السريعة (جديد) -->
+            <!-- الإحصائيات السريعة -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-book-reader"></i></div>
@@ -101,7 +100,7 @@
                 <!-- سيتم جلب الكورسات اللي الطالب اشتراها فقط هنا -->
             </div>
 
-            <!-- تقرير الدرجات (جديد) -->
+            <!-- تقرير الدرجات -->
             <div class="section-title" style="margin-top: 40px;">
                 <h3><i class="fas fa-clipboard-list" style="color: var(--primary-color);"></i> تقرير الدرجات</h3>
             </div>
@@ -122,3 +121,9 @@
             </div>
 
         </div>
+    </div>
+
+    <!-- استدعاء ملف الجافاسكريبت -->
+    <script type="module" src="dashboard-script.js"></script>
+</body>
+</html>
