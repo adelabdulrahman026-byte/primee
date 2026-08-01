@@ -93,21 +93,29 @@ async function verifyAccessAndLoadCourse() {
             const vimeoID = extractVimeoID(videoUrl);
             const videoContainer = document.getElementById('videoContainer');
 
-            if (vimeoID) {
-                // الكود السري لڤيميو: بيخفي العنوان، وبيخلي اللون بنفسجي زي المنصة
-                const vimeoEmbedUrl = `https://player.vimeo.com/video/${vimeoID}?color=5b21b6&title=0&byline=0&portrait=0&badge=0&dnt=1`;
-                videoContainer.innerHTML = `<iframe src="${vimeoEmbedUrl}" allowfullscreen allow="autoplay; fullscreen" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none; z-index:10;"></iframe>`;
+           if (vimeoID) {
+                // الطريقة الأصح والأكثر استقراراً لدمج ڤيميو مع Plyr
+                videoContainer.innerHTML = `
+                    <div class="plyr__video-embed" id="player">
+                        <iframe
+                            src="https://player.vimeo.com/video/${vimeoID}?loop=false&amp;byline=false&amp;portrait=false&amp;title=false&amp;speed=true&amp;transparent=0&amp;gesture=media"
+                            allowfullscreen
+                            allowtransparency
+                            allow="autoplay">
+                        </iframe>
+                    </div>`;
+                
+                const player = new Plyr('#player', {
+                    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+                    i18n: { speed: 'السرعة', normal: 'عادي' }
+                });
+
+                player.on('ready', () => {
+                    const plyrContainer = document.querySelector('.plyr');
+                    if (plyrContainer && watermark) {
+                        plyrContainer.appendChild(watermark);
+                    }
+                });
             } else {
-                videoContainer.innerHTML = `<p style="color:#ef4444; padding:20px; text-align:center;">عذراً، الرابط المدخل ليس رابط Vimeo صحيح.</p>`;
+                videoContainer.innerHTML = `<p style="color:#ef4444; padding:20px; text-align:center;">رابط الفيديو غير متوفر أو غير صحيح.</p>`;
             }
-
-        } else {
-            alert("الحصة غير موجودة.");
-            window.location.replace("student-dashboard.html");
-        }
-
-    } catch (error) {
-        console.error("خطأ:", error);
-        alert("حدث خطأ في تحميل بيانات الحصة.");
-    }
-}
