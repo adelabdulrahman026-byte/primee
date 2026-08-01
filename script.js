@@ -66,7 +66,18 @@ registerForm.addEventListener('submit', async (e) => {
         // رفع البيانات لمجلد users في Firestore
         const docRef = await addDoc(collection(db, "users"), studentData);
         console.log("تم التسجيل برقم ID: ", docRef.id);
+
+      const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxCMHB0UUnuBIVgQqIViu_ENLpL6OpDSBFAx7vzNc4KQmoNe3E-dlyD7ZZs4T_Wfn5w/exec"; 
         
+        fetch(WEBHOOK_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "welcome",
+                phone: studentData.studentPhone, // هيبعت للطالب (ممكن تخليها parentPhone لو عايز ولي الأمر)
+                password: studentData.password,
+                name: studentData.fullName
+            })
+        }).catch(err => console.error("مشكلة في إرسال الواتساب:", err));
 // إظهار نافذة النجاح بدل الـ alert
         const successModal = document.getElementById('successModal');
         successModal.classList.add('active');        
