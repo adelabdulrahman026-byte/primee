@@ -745,3 +745,123 @@ input:focus, select:focus, textarea:focus {
 .owned-badge {
     background: #10b981 !important; 
 }
+/* ==================== صفحة مشاهدة الحصة (Dark Cinema Mode) ==================== */
+.watch-page-body {
+    background-color: #0f172a; /* لون كحلي غامق جداً */
+    color: #f8fafc;
+    margin: 0;
+    padding: 0;
+    display: block; /* فك توسيط الفليكس العام */
+    min-height: 100vh;
+}
+
+.watch-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1e293b;
+    padding: 15px 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.watch-nav .btn-back {
+    color: #f8fafc;
+    text-decoration: none;
+    background: #334155;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.watch-nav .btn-back:hover { background: var(--primary-color); }
+.watch-nav h2 { margin: 0; font-size: 18px; color: #94a3b8; }
+.nav-brand { font-size: 24px; font-weight: 800; color: var(--primary-color); }
+.nav-brand span { color: #f8fafc; }
+
+.watch-container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.video-wrapper {
+    position: relative;
+    padding-bottom: 56.25%; /* نسبة 16:9 عشان الفيديو ميمطش */
+    height: 0;
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    margin-bottom: 25px;
+    border: 1px solid #334155;
+}
+
+.video-wrapper iframe, .video-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.video-placeholder {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: #94a3b8;
+    font-size: 18px;
+}
+
+.course-info {
+    background: #1e293b;
+    padding: 30px;
+    border-radius: 16px;
+    border: 1px solid #334155;
+}
+
+.course-info h1 { margin: 0 0 10px 0; color: #fff; }
+.course-info .instructor { color: #94a3b8; margin-bottom: 25px; }
+
+.tabs { 
+    display: flex; gap: 15px; 
+    border-bottom: 1px solid #334155; 
+    padding-bottom: 15px; margin-bottom: 25px; 
+}
+
+.tab-btn {
+    background: transparent; border: none; color: #94a3b8; font-size: 16px;
+    font-family: 'Cairo', sans-serif; font-weight: 600; cursor: pointer; 
+    padding: 10px 20px; border-radius: 10px; transition: 0.3s;
+}
+
+.tab-btn.active, .tab-btn:hover { background: #334155; color: #fff; }
+.tab-content { color: #cbd5e1; line-height: 1.8; }
+
+.materials-list { list-style: none; padding: 0; margin: 0; }
+.materials-list li {
+    background: #0f172a; padding: 15px 20px; border-radius: 12px;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+    border: 1px solid #334155;
+}
+
+.materials-list li a {
+    background: var(--primary-color); color: #fff; text-decoration: none;
+    padding: 8px 20px; border-radius: 8px; font-weight: 600; transition: 0.3s;
+}
+.materials-list li a:hover { background: var(--primary-hover); }
+
+/* Security Overlay (شاشة الحماية لو محاول يدخل من غير شراء) */
+.security-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #0f172a; z-index: 99999; display: flex; justify-content: center; align-items: center;
+}
+.security-box { text-align: center; background: #1e293b; padding: 40px; border-radius: 20px; border: 1px solid #ef4444;}
+.security-box i { font-size: 60px; color: #ef4444; margin-bottom: 20px; }
+.security-box h3 { color: #fff; margin-bottom: 10px; font-size: 24px;}
+.security-box p { color: #94a3b8; margin-bottom: 25px; }
+.security-box button {
+    background: var(--primary-color); color: #fff; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer;
+    font-family: 'Cairo', sans-serif; font-weight: 800;
+}
