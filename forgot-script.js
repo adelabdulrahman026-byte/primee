@@ -57,7 +57,7 @@ forgotForm.addEventListener('submit', async (e) => {
 // ---------------------------------------------------------
             // كود إرسال الباسوورد على الواتساب (Google Webhook)
             // ---------------------------------------------------------
-            const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxCMHB0UUnuBIVgQqIViu_ENLpL6OpDSBFAx7vzNc4KQmoNe3E-dlyD7ZZs4T_Wfn5w/exec";
+            const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwPAxfYz-HViOFtqJFOcDMliqCr1GIua1eQqjiGysBBOHUzpihL0SD0YOA_E7vgAh46/exec";
             
             fetch(WEBHOOK_URL, {
                 method: 'POST',
