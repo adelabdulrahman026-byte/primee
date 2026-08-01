@@ -145,7 +145,7 @@ if (togglePassword && passwordInput) {
     passwordInput.addEventListener('focus', () => {
         // بنغير الرابط لملف أنيميشن قرد بيغمي عينه
         if (loginLottie) {
-            loginLottie.load('https://assets9.lottiefiles.com/packages/lf20_bwm1z9sl.json');
+            loginLottie.load('https://lottie.host/6bc24f6a-10be-40e0-b7e2-7b0fc44e2512/zP2Kc77nro.lottie.json');
         }
     });
 
