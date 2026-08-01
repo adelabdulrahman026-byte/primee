@@ -50,6 +50,7 @@ async function verifyAccessAndLoadCourse() {
         const myCourses = studentData.myCourses || [];
         const completedExams = studentData.completedExams || []; 
 
+        // 1. نظام حماية ملكية الحصة
         if (!myCourses.includes(courseId)) {
             securityOverlay.style.display = 'flex';
             document.getElementById('securityMessage').innerHTML = `يجب شراء هذه الحصة أولاً.<br><br><span style="color:#f59e0b; font-size:12px;">كود تصحيح: الكورس [${courseId}] غير موجود في حسابك.</span>`;
@@ -72,7 +73,7 @@ async function verifyAccessAndLoadCourse() {
                 document.getElementById('courseDescription').textContent = courseData.description;
             }
 
-            // التحقق من الامتحان
+            // 🛑 2. نظام حماية الامتحان الإجباري
             if (courseData.requiresExam === true && !completedExams.includes(courseId)) {
                 document.getElementById('examLockOverlay').style.display = 'flex';
                 document.getElementById('videoContainer').style.display = 'none';
@@ -85,16 +86,17 @@ async function verifyAccessAndLoadCourse() {
                     alert("نجحت! سيتم فتح الفيديو.");
                     location.reload(); 
                 };
-                return; 
+                return; // بنوقف تحميل الفيديو هنا عشان لازم يمتحن الأول
             }
 
-            // 🎬 سحر مشغل ڤيميو (Vimeo Native API)
+            // 🎬 3. دمج ڤيميو داخل المشغل الأنيق (Plyr)
             const videoUrl = courseData.videoUrl || "";
             const vimeoID = extractVimeoID(videoUrl);
             const videoContainer = document.getElementById('videoContainer');
+            // 👇 السطر ده كان ناقص في كودك وهو اللي بيجيب العلامة المائية
+            const watermark = document.getElementById('studentWatermark'); 
 
-           if (vimeoID) {
-                // الطريقة الأصح والأكثر استقراراً لدمج ڤيميو مع Plyr
+            if (vimeoID) {
                 videoContainer.innerHTML = `
                     <div class="plyr__video-embed" id="player">
                         <iframe
@@ -105,11 +107,13 @@ async function verifyAccessAndLoadCourse() {
                         </iframe>
                     </div>`;
                 
+                // تشغيل Plyr وفرض السيطرة على الفيديو
                 const player = new Plyr('#player', {
                     speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
                     i18n: { speed: 'السرعة', normal: 'عادي' }
                 });
 
+                // زرع العلامة المائية عشان تفضل ظاهرة دايماً حتى لو كبر الشاشة
                 player.on('ready', () => {
                     const plyrContainer = document.querySelector('.plyr');
                     if (plyrContainer && watermark) {
@@ -119,3 +123,14 @@ async function verifyAccessAndLoadCourse() {
             } else {
                 videoContainer.innerHTML = `<p style="color:#ef4444; padding:20px; text-align:center;">رابط الفيديو غير متوفر أو غير صحيح.</p>`;
             }
+
+        } else {
+            alert("الحصة غير موجودة.");
+            window.location.replace("student-dashboard.html");
+        }
+
+    } catch (error) {
+        console.error("خطأ:", error);
+        alert("حدث خطأ في تحميل بيانات الحصة.");
+    }
+}
