@@ -67,7 +67,7 @@ registerForm.addEventListener('submit', async (e) => {
         const docRef = await addDoc(collection(db, "users"), studentData);
         console.log("تم التسجيل برقم ID: ", docRef.id);
 
-      const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxCMHB0UUnuBIVgQqIViu_ENLpL6OpDSBFAx7vzNc4KQmoNe3E-dlyD7ZZs4T_Wfn5w/exec"; 
+      const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzexynePg71_RsL1F2-d80Mev2JM78UsMT1Y2ZNr684Sp3B1bE67JfwI_I2d34-NwFm/exec"; 
         
         fetch(WEBHOOK_URL, {
             method: 'POST',
