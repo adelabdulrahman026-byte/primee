@@ -6,95 +6,89 @@
     <title>مشاهدة الحصة - Primee Academy</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- مكتبة Plyr لمشغل الفيديو الاحترافي -->
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="watch-page-body" oncontextmenu="return false;">
 
-    <!-- شاشة الحماية من الدخول بدون شراء -->
+    <!-- شاشات الحماية -->
     <div id="securityOverlay" class="security-overlay">
         <div class="security-box">
             <i class="fas fa-lock"></i>
             <h3>غير مصرح لك بالدخول</h3>
-            <p>يجب شراء هذه الحصة أولاً من لوحة التحكم لتتمكن من مشاهدتها.</p>
+            <p id="securityMessage">يجب شراء هذه الحصة أولاً.</p>
             <button onclick="window.location.href='student-dashboard.html'">العودة للوحة التحكم</button>
         </div>
     </div>
 
     <!-- الشريط العلوي -->
     <nav class="watch-nav">
-        <a href="student-dashboard.html" class="btn-back"><i class="fas fa-arrow-right"></i> رجوع للوحة التحكم</a>
-        <h2 id="courseTitleHeader">جاري تحميل الحصة...</h2>
+        <div class="nav-right">
+            <a href="student-dashboard.html" class="btn-back"><i class="fas fa-arrow-right"></i> لوحة التحكم</a>
+            <span class="divider">|</span>
+            <h2 id="courseTitleHeader">جاري التحميل...</h2>
+        </div>
         <div class="nav-brand">Primee<span>.</span></div>
     </nav>
 
-    <!-- محتوى الحصة -->
-    <div class="watch-container">
-        <div class="video-section">
+    <!-- التخطيط الجديد (شاشة مقسومة) -->
+    <div class="masterclass-layout">
+        
+        <!-- العمود الأيمن (الفيديو والوصف) -->
+        <div class="main-video-section">
             
-            <!-- مشغل الفيديو -->
-            <div class="video-wrapper">
-                
-                <!-- العلامة المائية برقم الطالب -->
+            <div class="video-wrapper vimeo-wrapper" id="vimeoWrapper">
                 <div id="studentWatermark" class="watermark-phone"></div>
-
-                <!-- شاشة قفل الامتحان (بتظهر لو عليه امتحان مخلصوش) -->
+                
                 <div id="examLockOverlay" class="exam-lock-overlay" style="display: none;">
                     <i class="fas fa-file-signature"></i>
-                    <h3>امتحان قبل الحصة 📝</h3>
-                    <p>لا يمكنك مشاهدة الفيديو قبل اجتياز الامتحان الخاص بهذه الحصة.</p>
+                    <h3>امتحان إجباري 📝</h3>
+                    <p>يجب اجتياز الامتحان لفتح المشغل.</p>
                     <button id="startExamBtn" class="btn-exam">بدء الامتحان الآن</button>
                 </div>
 
-                <!-- حاوية الفيديو اللي هيتركب فيها Plyr -->
                 <div id="videoContainer" class="video-placeholder">
-                    <i class="fas fa-spinner fa-spin"></i> جاري تحميل الفيديو...
+                    <i class="fas fa-spinner fa-spin"></i> جاري الاتصال بخوادم ڤيميو...
                 </div>
             </div>
-            
-            <!-- تفاصيل الحصة -->
-            <div class="course-info">
-                <h1 id="courseTitle">...</h1>
-                <p id="courseInstructor" class="instructor"><i class="fas fa-chalkboard-teacher"></i> ...</p>
-                
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('description')">وصف الحصة</button>
-                    <button class="tab-btn" onclick="switchTab('materials')">المذكرات (PDF)</button>
-                </div>
-                
-                <div id="descriptionTab" class="tab-content active">
-                    <p id="courseDescription">لا يوجد وصف متاح لهذه الحصة حالياً.</p>
-                </div>
-                
-                <div id="materialsTab" class="tab-content" style="display:none;">
-                    <ul class="materials-list" id="materialsList">
-                        <li>
-                            <span><i class="fas fa-file-pdf" style="color: #ef4444;"></i> مذكرة الشرح</span>
-                            <a href="#" target="_blank">تحميل</a>
-                        </li>
-                    </ul>
+
+            <div class="course-header-info">
+                <h1 id="courseTitle">عنوان الحصة</h1>
+                <div class="desc-box">
+                    <h3><i class="fas fa-info-circle"></i> عن هذه الحصة:</h3>
+                    <p id="courseDescription">لا يوجد وصف متاح.</p>
                 </div>
             </div>
         </div>
+
+        <!-- العمود الأيسر (الملحقات والمدرس) -->
+        <div class="sidebar-section">
+            <div class="instructor-card">
+                <div class="inst-avatar"><i class="fas fa-chalkboard-teacher"></i></div>
+                <div>
+                    <small>أستاذ المادة</small>
+                    <h4 id="courseInstructor">...</h4>
+                </div>
+            </div>
+
+            <div class="materials-card">
+                <h3><i class="fas fa-folder-open"></i> ملحقات الحصة</h3>
+                <ul class="new-materials-list" id="materialsList">
+                    <li>
+                        <div class="file-info">
+                            <i class="fas fa-file-pdf pdf-icon"></i>
+                            <span>مذكرة الشرح (PDF)</span>
+                        </div>
+                        <a href="#" class="btn-download"><i class="fas fa-download"></i> تحميل</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
     </div>
 
-    <!-- استدعاء مكتبة Plyr -->
-    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
-    
-    <!-- ملف الجافاسكريبت بتاعك -->
     <script type="module" src="watch-script.js"></script>
 
     <script>
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
-            event.target.classList.add('active');
-            document.getElementById(tabId + 'Tab').style.display = 'block';
-        }
-
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
                 e.preventDefault();
