@@ -121,3 +121,39 @@ loginForm.addEventListener('submit', async (e) => {
         submitBtn.disabled = false;
     }
 });
+// ---------------------------------------------------------
+// أكواد تفاعل الباسوورد والـ Lottie (انسخها في آخر الملف)
+// ---------------------------------------------------------
+
+const togglePassword = document.getElementById('togglePassword');
+const passwordInput = document.getElementById('loginPassword');
+const loginLottie = document.getElementById('loginLottie');
+
+// 1. كود إظهار وإخفاء الباسوورد لما تدوس على العين
+if (togglePassword && passwordInput) {
+    togglePassword.addEventListener('click', () => {
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            togglePassword.textContent = '🙈'; // شكل العين مقفولة
+        } else {
+            passwordInput.type = 'password';
+            togglePassword.textContent = '👁️'; // شكل العين مفتوحة
+        }
+    });
+
+    // 2. كود تفاعل الـ Lottie (يغمي عينه لما تضغط على خانة الباسوورد)
+    passwordInput.addEventListener('focus', () => {
+        // بنغير الرابط لملف أنيميشن قرد بيغمي عينه
+        if (loginLottie) {
+            loginLottie.load('https://assets9.lottiefiles.com/packages/lf20_bwm1z9sl.json');
+        }
+    });
+
+    // 3. لما تخرج من خانة الباسوورد (يرجع للأنيميشن الطبيعي)
+    passwordInput.addEventListener('blur', () => {
+        // بنرجع الرابط لملف الأنيميشن الأصلي
+        if (loginLottie) {
+            loginLottie.load('https://assets3.lottiefiles.com/packages/lf20_jcikmacf.json');
+        }
+    });
+}
