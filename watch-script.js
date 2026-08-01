@@ -116,28 +116,38 @@ async function verifyAccessAndLoadCourse() {
             } else {
                 videoContainer.innerHTML = "لا يوجد رابط فيديو مسجل لهذه الحصة.";
             }
-
+// تفعيل Plyr والإعدادات الصارمة لمنع اليوتيوب من سرقة الطالب
             if (isPlyr) {
                 const player = new Plyr('#player', {
                     speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-                    i18n: { speed: 'السرعة', normal: 'عادي' }
+                    i18n: { speed: 'السرعة', normal: 'عادي' },
+                    youtube: { 
+                        noCookie: true, 
+                        rel: 0, 
+                        showinfo: 0, 
+                        modestbranding: 1,
+                        iv_load_policy: 3
+                    }
                 });
 
+                // بعد ما المشغل يجهز، هنزرع العلامة المائية والدرع الشفاف
                 player.on('ready', () => {
                     const plyrContainer = document.querySelector('.plyr');
-                    if (plyrContainer && watermark) {
-                        plyrContainer.appendChild(watermark);
+                    if (plyrContainer) {
+                        // 1. إضافة العلامة المائية
+                        if (watermark) {
+                            plyrContainer.appendChild(watermark);
+                        }
+                        
+                        // 2. السحر: درع شفاف يغطي الـ 80 بيكسل اللي فوق عشان الطالب ميقدرش يدوس على عنوان اليوتيوب!
+                        const ytShield = document.createElement('div');
+                        ytShield.style.position = 'absolute';
+                        ytShield.style.top = '0';
+                        ytShield.style.left = '0';
+                        ytShield.style.width = '100%';
+                        ytShield.style.height = '80px';
+                        ytShield.style.zIndex = '50'; 
+                        plyrContainer.appendChild(ytShield);
                     }
                 });
             }
-
-        } else {
-            alert("هذه الحصة لم تعد موجودة.");
-            window.location.replace("student-dashboard.html");
-        }
-
-    } catch (error) {
-        console.error("خطأ:", error);
-        alert("حدث خطأ في تحميل بيانات الحصة.");
-    }
-}
