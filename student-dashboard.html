@@ -30,14 +30,14 @@
             </div>
         </aside>
 
-        <!-- المحتوى الرئيسي (Main Content) -->
-        <main class="main-content">
+      <!-- --- المحتوى الرئيسي --- -->
+        <div class="main-content">
             
-            <!-- الشريط العلوي (Top Navbar) -->
-            <header class="top-navbar">
+            <!-- الشريط العلوي -->
+            <div class="top-navbar">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="ابحث عن حصة أو مادة...">
+                    <input type="text" placeholder="ابحث في موادك...">
                 </div>
                 <div class="user-profile">
                     <div class="user-info">
@@ -48,56 +48,77 @@
                         <i class="fas fa-user-graduate"></i>
                     </div>
                 </div>
-            </header>
+            </div>
 
-            <!-- البانر الترحيبي وكارت المحفظة -->
-           <!-- البانر الترحيبي وكارت المحفظة -->
+            <!-- البانر والمحفظة -->
             <div class="dashboard-hero">
-                
-                <!-- البانر الترحيبي -->
                 <div class="welcome-banner">
                     <div class="banner-text">
-                        <h1 id="welcomeMessage">أهلاً بك يا بطل! 🚀</h1>
-                        <p>استعد لتجربة تعليمية مختلفة، نحن هنا لمساعدتك على التفوق.</p>
+                        <h1 id="welcomeMessage">أهلاً بك! 🚀</h1>
+                        <p>هنا مساحتك الشخصية، تابع موادك، درجاتك، وتفوقك.</p>
                     </div>
                 </div>
 
-                <!-- كارت المحفظة -->
                 <div class="wallet-widget">
                     <div class="widget-header">
-                        <i class="fas fa-wallet wallet-icon"></i>
-                        <span>رصيد المحفظة</span>
+                        <i class="fas fa-wallet wallet-icon"></i> رصيد المحفظة
                     </div>
                     <h2 class="wallet-amount"><span id="walletBalance">0</span> ج.م</h2>
-                    <button class="btn-charge">شحن الرصيد</button>
+                    <button class="btn-charge">شحن الرصيد +</button>
                 </div>
-                
             </div>
 
-<!-- قسم الكورسات -->
+            <!-- الإحصائيات السريعة (جديد) -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-book-reader"></i></div>
+                    <div class="stat-info">
+                        <h3 id="statCoursesCount">0</h3>
+                        <p>موادي الدراسية</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #10b981; background: #d1fae5;"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-info">
+                        <h3 id="statExamsCount">0</h3>
+                        <p>امتحانات مكتملة</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="color: #f59e0b; background: #fef3c7;"><i class="fas fa-star"></i></div>
+                    <div class="stat-info">
+                        <h3 id="statAvgScore">100%</h3>
+                        <p>التقييم العام</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الكورسات المملوكة فقط (موادي) -->
             <div class="section-title">
-                <h3>أحدث المواد 📚</h3>
-                <a href="#">عرض الكل</a>
+                <h3><i class="fas fa-play-circle" style="color: var(--primary-color);"></i> موادي الدراسية</h3>
             </div>
-            
-            <!-- الديف ده فاضي ومستني الداتا تيجي من السكريبت -->
-            <div class="courses-grid" id="coursesGrid">
-                
+            <div class="courses-grid" id="myCoursesGrid">
+                <!-- سيتم جلب الكورسات اللي الطالب اشتراها فقط هنا -->
             </div>
 
-        </main>
-    </div>
-    <!-- نافذة الشراء الأنيقة (مخفية أوتوماتيك) -->
-    <div id="customModal" class="custom-modal-overlay">
-        <div class="custom-modal-content">
-            <div id="customModalIcon" class="modal-icon"></div>
-            <h3 id="customModalTitle">تأكيد الشراء</h3>
-            <p id="customModalMessage">تفاصيل الرسالة هنا</p>
-            <div class="modal-actions" id="customModalActions">
-                <!-- الأزرار هتتضاف من الجافاسكريبت -->
+            <!-- تقرير الدرجات (جديد) -->
+            <div class="section-title" style="margin-top: 40px;">
+                <h3><i class="fas fa-clipboard-list" style="color: var(--primary-color);"></i> تقرير الدرجات</h3>
             </div>
+            <div class="grades-container">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>اسم الحصة / الامتحان</th>
+                            <th>التاريخ</th>
+                            <th>الدرجة</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gradesTableBody">
+                        <!-- سيتم جلب الدرجات هنا -->
+                    </tbody>
+                </table>
+            </div>
+
         </div>
-    </div>
-<script type="module" src="dashboard-script.js"></script>
-</body>
-</html>
