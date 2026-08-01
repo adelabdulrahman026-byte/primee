@@ -5,74 +5,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة الطالب - Primee Academy</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- مكتبة الأيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </head>
-<body style="background-color: #f4f7f6;">
+<body class="dashboard-body">
 
-    <!-- شريط التنقل العلوي (Navbar) -->
-    <nav class="dashboard-nav">
-        <div class="nav-logo">
-            <!-- تقدر تحط اللوجو بتاعك هنا -->
-            <h2 style="color: var(--primary-color); font-weight: 800; margin: 0;">Primee Academy</h2>
-        </div>
-        <div class="nav-user">
-            <span id="studentNameDisplay" style="font-weight: 600; margin-left: 15px;">جاري التحميل...</span>
-            <button id="logoutBtn" class="btn-logout">تسجيل الخروج 🚪</button>
-        </div>
-    </nav>
-
-    <!-- المحتوى الأساسي -->
-    <div class="dashboard-container">
+    <div class="dashboard-layout">
         
-        <!-- قسم الترحيب والمحفظة -->
-        <header class="welcome-header">
-            <div class="welcome-text">
-                <h1 id="welcomeMessage">أهلاً بك يا بطل! 🚀</h1>
-                <p>جاهز تبدأ رحلتك التعليمية النهارده؟</p>
+        <!-- القائمة الجانبية (Sidebar) -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <h2 style="color: var(--primary-color);">Primee<span>.</span></h2>
             </div>
-            
-            <div class="wallet-card">
-                <div class="wallet-info">
-                    <p style="margin: 0; font-size: 14px; color: #e0e0e0;">رصيد المحفظة</p>
-                    <h2 style="margin: 5px 0 0; color: #fff;"><span id="walletBalance">0</span> جنيه</h2>
-                </div>
-                <div class="wallet-icon">
-                    <lottie-player 
-                        src="https://lottie.host/801aeb0e-0d86-4e5a-8b9a-4c28f5262799/p3XFz5Kj2C.json" 
-                        background="transparent" 
-                        speed="1" 
-                        style="width: 50px; height: 50px;" 
-                        loop autoplay>
-                    </lottie-player>
-                </div>
+            <ul class="sidebar-nav">
+                <li class="active"><a href="#"><i class="fas fa-home"></i> الرئيسية</a></li>
+                <li><a href="#"><i class="fas fa-book-open"></i> كورساتي</a></li>
+                <li><a href="#"><i class="fas fa-wallet"></i> المحفظة</a></li>
+                <li><a href="#"><i class="fas fa-chart-line"></i> تقاريري</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn-logout"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
             </div>
-        </header>
+        </aside>
 
-        <!-- قسم الكورسات / المواد -->
-        <section class="courses-section">
-            <div class="section-header">
-                <h3>حصصي وموادي 📚</h3>
+        <!-- المحتوى الرئيسي (Main Content) -->
+        <main class="main-content">
+            
+            <!-- الشريط العلوي (Top Navbar) -->
+            <header class="top-navbar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="ابحث عن حصة أو مادة...">
+                </div>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span id="studentNameDisplay">جاري التحميل...</span>
+                        <small>طالب</small>
+                    </div>
+                    <div class="user-avatar">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- البانر الترحيبي وكارت المحفظة -->
+            <div class="dashboard-hero">
+                
+                <!-- البانر الترحيبي -->
+                <div class="welcome-banner">
+                    <div class="banner-text">
+                        <h1 id="welcomeMessage">أهلاً بك يا بطل! 🚀</h1>
+                        <p>استعد لتجربة تعليمية مختلفة، نحن هنا لمساعدتك على التفوق.</p>
+                    </div>
+                    <div class="banner-lottie">
+                        <!-- Lottie متحرك لطالب يذاكر -->
+<script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.4/dist/dotlottie-wc.js" type="module"></script>
+<dotlottie-wc src="https://lottie.host/f65ef864-abb2-4e58-a09d-a6bd2b8e2578/8TGszI7uRU.lottie" style="width: 300px;height: 300px" autoplay loop></dotlottie-wc>
+                    </div>
+                </div>
+
+                <!-- كارت المحفظة -->
+                <div class="wallet-widget">
+                    <div class="widget-header">
+                        <i class="fas fa-wallet wallet-icon"></i>
+                        <span>رصيد المحفظة</span>
+                    </div>
+                    <h2 class="wallet-amount"><span id="walletBalance">0</span> ج.م</h2>
+                    <button class="btn-charge">شحن الرصيد</button>
+                </div>
+            </div>
+
+            <!-- قسم الكورسات -->
+            <div class="section-title">
+                <h3>أحدث المواد 📚</h3>
+                <a href="#">عرض الكل</a>
             </div>
             
-            <div class="courses-grid" id="coursesGrid">
-                <!-- كارت كورس تجريبي (هيتبرمج بعدين يظهر من الداتا بيز) -->
-                <div class="course-card">
-                    <div class="course-image" style="background: linear-gradient(135deg, var(--primary-color), #2d3748);">
-                        <!-- مكان لصورة الكورس -->
+            <div class="courses-grid">
+                <!-- كارت كورس -->
+                <div class="modern-course-card">
+                    <div class="card-img">
+                        <span class="badge">جديد</span>
                     </div>
-                    <div class="course-details">
+                    <div class="card-body">
                         <h4>اللغة العربية - الوحدة الأولى</h4>
-                        <p>شرح تفصيلي لقواعد النحو والبلاغة</p>
-                        <button class="btn-primary" style="width: 100%; margin-top: 10px;">دخول الحصة</button>
+                        <p class="instructor"><i class="fas fa-chalkboard-teacher"></i> أ. فلان الفلاني</p>
+                        <div class="card-footer">
+                            <button class="btn-enter-course">دخول الحصة</button>
+                        </div>
                     </div>
                 </div>
+                <!-- تقدر تكرر الكارت ده عشان تشوف الشكل -->
             </div>
-        </section>
 
+        </main>
     </div>
 
-    <!-- كود الجافاسكريبت الخاص بالداشبورد -->
-    <script type="module" src="dashboard-script.js"></script>
 </body>
 </html>
