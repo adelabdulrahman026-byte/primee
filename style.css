@@ -876,3 +876,66 @@ input:focus, select:focus, textarea:focus {
     border-radius: 16px;
     height: 100%;
 }
+/* ==================== تعديلات لوحة التحكم للموبايل والشاشات الصغيرة ==================== */
+@media (max-width: 900px) {
+    /* تصغير السايدبار ليصبح أيقونات فقط */
+    .sidebar {
+        width: 70px !important;
+    }
+    
+    .sidebar-brand {
+        padding: 20px 5px;
+        font-size: 12px;
+    }
+
+    /* إخفاء نصوص القائمة الإضافية وترك الأيقونات فقط */
+    .sidebar-nav a {
+        font-size: 0 !important; /* بيخفي الكلام ويترك الأيقونة */
+        justify-content: center !important;
+        padding: 15px 0 !important;
+    }
+
+    .sidebar-nav a i {
+        margin-left: 0 !important;
+        font-size: 20px !important;
+    }
+
+    /* زرار الخروج يتحول لأيقونة دائرية شيك */
+    .btn-logout {
+        font-size: 0 !important;
+        padding: 12px 0 !important;
+        justify-content: center !important;
+    }
+    
+    .btn-logout i {
+        margin: 0 !important;
+        font-size: 18px !important;
+    }
+
+    /* توسيع المحتوى الرئيسي ليملى باقي مساحة الموبايل */
+    .main-content {
+        margin-right: 70px !important;
+        width: calc(100% - 70px) !important;
+        padding: 15px !important;
+    }
+
+    /* الشريط العلوي والبحث */
+    .top-navbar {
+        padding: 10px 15px;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .search-box {
+        width: 100% !important;
+    }
+
+    /* جعل الكروت والبانر تحت بعضها بشكل متناسق */
+    .dashboard-hero {
+        flex-direction: column !important;
+    }
+    
+    .welcome-banner, .wallet-widget {
+        width: 100% !important;
+    }
+}
