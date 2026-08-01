@@ -59,12 +59,16 @@ async function fetchStudentData(phone) {
 }
 
 // 4. برمجة زرار تسجيل الخروج
+// 4. برمجة زرار تسجيل الخروج
 const logoutBtn = document.getElementById('logoutBtn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
+        // بنمسح بيانات الجلسة بس
         localStorage.removeItem('studentPhone');
-        localStorage.removeItem('primeeDeviceToken');
         localStorage.removeItem('loggedInUserId');
+        
+        // ❌ إياك تمسح localStorage.removeItem('primeeDeviceToken'); عشان الجهاز يفضل متبصم!
+        
         window.location.replace("login.html");
     });
 }
