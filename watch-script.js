@@ -18,7 +18,6 @@ const courseId = urlParams.get('id') ? urlParams.get('id').trim() : null;
 
 const loggedInPhone = localStorage.getItem('studentPhone');
 const securityOverlay = document.getElementById('securityOverlay');
-
 let currentStudentId = null;
 
 if (!loggedInPhone || !courseId) {
@@ -26,6 +25,13 @@ if (!loggedInPhone || !courseId) {
 } else {
     document.getElementById('studentWatermark').textContent = loggedInPhone;
     verifyAccessAndLoadCourse();
+}
+
+// دالة استخراج الـ ID بتاع فيديو ڤيميو من أي رابط
+function extractVimeoID(url) {
+    const regex = /(?:www\.|player\.)?vimeo.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)(?:[a-zA-Z0-9_\-]+)?/i;
+    const match = url.match(regex);
+    return match ? match[1] : null;
 }
 
 async function verifyAccessAndLoadCourse() {
@@ -44,17 +50,9 @@ async function verifyAccessAndLoadCourse() {
         const myCourses = studentData.myCourses || [];
         const completedExams = studentData.completedExams || []; 
 
-        // التحقق من امتلاك الكورس مع عرض كود التصحيح لو حصلت مشكلة
         if (!myCourses.includes(courseId)) {
             securityOverlay.style.display = 'flex';
-            
-            document.querySelector('.security-box p').innerHTML = 
-                `يجب شراء هذه الحصة أولاً.<br><br>
-                <span style="color:#f59e0b; font-size:14px; display:block; margin-top:15px; direction:ltr;">
-                <strong>Debug Info:</strong><br>
-                Requested Course: [${courseId}]<br>
-                Your Courses: [${myCourses.join(", ")}]
-                </span>`;
+            document.getElementById('securityMessage').innerHTML = `يجب شراء هذه الحصة أولاً.<br><br><span style="color:#f59e0b; font-size:12px;">كود تصحيح: الكورس [${courseId}] غير موجود في حسابك.</span>`;
             return; 
         }
 
@@ -68,92 +66,43 @@ async function verifyAccessAndLoadCourse() {
             
             document.getElementById('courseTitleHeader').textContent = courseData.title;
             document.getElementById('courseTitle').textContent = courseData.title;
-            document.getElementById('courseInstructor').innerHTML = `<i class="fas fa-chalkboard-teacher"></i> ${courseData.instructor}`;
+            document.getElementById('courseInstructor').textContent = courseData.instructor || "أستاذ المادة";
             
             if (courseData.description) {
                 document.getElementById('courseDescription').textContent = courseData.description;
             }
 
-            // التحقق من الامتحان الإجباري
+            // التحقق من الامتحان
             if (courseData.requiresExam === true && !completedExams.includes(courseId)) {
                 document.getElementById('examLockOverlay').style.display = 'flex';
                 document.getElementById('videoContainer').style.display = 'none';
                 
                 document.getElementById('startExamBtn').onclick = async () => {
-                    alert("سيتم تحويلك لصفحة الامتحان... (تخيل إنك حليته ونجحت! 🥳)");
-                    
+                    alert("جارِ التحويل للامتحان...");
                     await updateDoc(doc(db, "users", currentStudentId), {
                         completedExams: arrayUnion(courseId)
                     });
-                    
-                    alert("تم اجتياز الامتحان بنجاح! سيتم فتح الفيديو الآن.");
+                    alert("نجحت! سيتم فتح الفيديو.");
                     location.reload(); 
                 };
                 return; 
             }
 
+            // 🎬 سحر مشغل ڤيميو (Vimeo Native API)
             const videoUrl = courseData.videoUrl || "";
+            const vimeoID = extractVimeoID(videoUrl);
             const videoContainer = document.getElementById('videoContainer');
-            const watermark = document.getElementById('studentWatermark');
 
-            let isPlyr = false;
-
-            // 🧠 التعديل الذكي: أي رابط فيديو هيشتغل جوه البلاير الشيك من غير مشاكل
-            if (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) {
-                videoContainer.innerHTML = `<div id="player" data-plyr-provider="youtube" data-plyr-embed-id="${videoUrl}"></div>`;
-                isPlyr = true;
-            } else if (videoUrl.includes("vimeo.com")) {
-                videoContainer.innerHTML = `<div id="player" data-plyr-provider="vimeo" data-plyr-embed-id="${videoUrl}"></div>`;
-                isPlyr = true;
-            } else if (videoUrl !== "") {
-                // أي رابط مباشر أو رابط مخزن هيشتغل باحترافية جوه Plyr
-                videoContainer.innerHTML = `
-                    <video id="player" playsinline controls>
-                        <source src="${videoUrl}" type="video/mp4" />
-                    </video>`;
-                isPlyr = true;
+            if (vimeoID) {
+                // الكود السري لڤيميو: بيخفي العنوان، وبيخلي اللون بنفسجي زي المنصة
+                const vimeoEmbedUrl = `https://player.vimeo.com/video/${vimeoID}?color=5b21b6&title=0&byline=0&portrait=0&badge=0&dnt=1`;
+                videoContainer.innerHTML = `<iframe src="${vimeoEmbedUrl}" allowfullscreen allow="autoplay; fullscreen" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none; z-index:10;"></iframe>`;
             } else {
-                videoContainer.innerHTML = "لا يوجد رابط فيديو مسجل لهذه الحصة.";
-            }
-
-            // تفعيل Plyr والإعدادات الصارمة لمنع اليوتيوب والدعامات
-            if (isPlyr) {
-                const player = new Plyr('#player', {
-                    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-                    i18n: { speed: 'السرعة', normal: 'عادي' },
-                    youtube: { 
-                        noCookie: true, 
-                        rel: 0, 
-                        showinfo: 0, 
-                        modestbranding: 1,
-                        iv_load_policy: 3
-                    }
-                });
-
-                // بعد ما المشغل يجهز، هنزرع العلامة المائية والدرع الشفاف لليوتيوب
-                player.on('ready', () => {
-                    const plyrContainer = document.querySelector('.plyr');
-                    if (plyrContainer) {
-                        // 1. إضافة العلامة المائية جوا البلاير عشان تظهر في الشاشة الكاملة
-                        if (watermark) {
-                            plyrContainer.appendChild(watermark);
-                        }
-                        
-                        // 2. الدرع الشفاف لمنع النقر على عنوان اليوتيوب
-                        const ytShield = document.createElement('div');
-                        ytShield.style.position = 'absolute';
-                        ytShield.style.top = '0';
-                        ytShield.style.left = '0';
-                        ytShield.style.width = '100%';
-                        ytShield.style.height = '80px';
-                        ytShield.style.zIndex = '50'; 
-                        plyrContainer.appendChild(ytShield);
-                    }
-                });
+                videoContainer.innerHTML = `<p style="color:#ef4444; padding:20px; text-align:center;">عذراً، الرابط المدخل ليس رابط Vimeo صحيح.</p>`;
             }
 
         } else {
-            alert("هذه الحصة لم تعد موجودة.");
+            alert("الحصة غير موجودة.");
             window.location.replace("student-dashboard.html");
         }
 
