@@ -6,11 +6,14 @@
     <title>مشاهدة الحصة - Primee Academy</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- مكتبة Plyr للمشغل الاحترافي الأنيق -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="watch-page-body" oncontextmenu="return false;">
 
-    <!-- شاشات الحماية -->
     <div id="securityOverlay" class="security-overlay">
         <div class="security-box">
             <i class="fas fa-lock"></i>
@@ -20,7 +23,6 @@
         </div>
     </div>
 
-    <!-- الشريط العلوي -->
     <nav class="watch-nav">
         <div class="nav-right">
             <a href="student-dashboard.html" class="btn-back"><i class="fas fa-arrow-right"></i> لوحة التحكم</a>
@@ -30,24 +32,26 @@
         <div class="nav-brand">Primee<span>.</span></div>
     </nav>
 
-    <!-- التخطيط الجديد (شاشة مقسومة) -->
     <div class="masterclass-layout">
         
-        <!-- العمود الأيمن (الفيديو والوصف) -->
+        <!-- العمود الأيمن (الفيديو) -->
         <div class="main-video-section">
             
-            <div class="video-wrapper vimeo-wrapper" id="vimeoWrapper">
+            <div class="video-wrapper" id="vimeoWrapper">
+                <!-- العلامة المائية -->
                 <div id="studentWatermark" class="watermark-phone"></div>
                 
+                <!-- شاشة قفل الامتحان الصارمة -->
                 <div id="examLockOverlay" class="exam-lock-overlay" style="display: none;">
                     <i class="fas fa-file-signature"></i>
-                    <h3>امتحان إجباري 📝</h3>
-                    <p>يجب اجتياز الامتحان لفتح المشغل.</p>
+                    <h3>امتحان قبل الحصة 📝</h3>
+                    <p>لا يمكنك مشاهدة الفيديو قبل اجتياز الامتحان الخاص بهذه الحصة.</p>
                     <button id="startExamBtn" class="btn-exam">بدء الامتحان الآن</button>
                 </div>
 
+                <!-- مكان المشغل -->
                 <div id="videoContainer" class="video-placeholder">
-                    <i class="fas fa-spinner fa-spin"></i> جاري الاتصال بخوادم ڤيميو...
+                    <i class="fas fa-spinner fa-spin"></i> جاري تجهيز المشغل...
                 </div>
             </div>
 
@@ -60,7 +64,7 @@
             </div>
         </div>
 
-        <!-- العمود الأيسر (الملحقات والمدرس) -->
+        <!-- العمود الأيسر (السايدبار) -->
         <div class="sidebar-section">
             <div class="instructor-card">
                 <div class="inst-avatar"><i class="fas fa-chalkboard-teacher"></i></div>
@@ -83,9 +87,10 @@
                 </ul>
             </div>
         </div>
-
     </div>
 
+    <!-- استدعاء سكريبت Plyr -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
     <script type="module" src="watch-script.js"></script>
 
     <script>
