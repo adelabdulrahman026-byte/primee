@@ -1,14 +1,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- حط كود الـ firebaseConfig بتاعك هنا ---
+// --- كود الـ firebaseConfig ---
 const firebaseConfig = {
-  apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
-  authDomain: "academy-444b6.firebaseapp.com",
-  projectId: "academy-444b6",
-  storageBucket: "academy-444b6.firebasestorage.app",
-  messagingSenderId: "1079254330731",
-  appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e"
+    apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
+    authDomain: "academy-444b6.firebaseapp.com",
+    projectId: "academy-444b6",
+    storageBucket: "academy-444b6.firebasestorage.app",
+    messagingSenderId: "1079254330731",
+    appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e"
 };
 // ------------------------------------------
 
@@ -97,17 +97,27 @@ loginForm.addEventListener('submit', async (e) => {
             
             // حفظ بيانات الجلسة عشان نستخدمها في باقي الموقع
             localStorage.setItem('loggedInUserId', userId);
+            
+            // 👇 التعديل: حفظ رقم التليفون عشان لوحة الطالب تتعرف عليه
+            localStorage.setItem('studentPhone', phone); 
+            
             showAlert("نجاح", "تم تسجيل الدخول وربط الحساب بهذا الجهاز بنجاح! 🚀");
             
-            // توجيه الطالب للداش بورد (هنصممها بعدين)
-            // setTimeout(() => { window.location.href = "student-dashboard.html"; }, 2000);
+            // 👇 التعديل: التوجيه للداش بورد بعد ثانيتين
+            setTimeout(() => { window.location.href = "student-dashboard.html"; }, 2000);
 
         } else {
             // مش أول مرة: نقارن البصمات
             if (currentDeviceToken === userData.deviceId) {
                 localStorage.setItem('loggedInUserId', userId);
+                
+                // 👇 التعديل: حفظ رقم التليفون عشان لوحة الطالب تتعرف عليه
+                localStorage.setItem('studentPhone', phone);
+                
                 showAlert("نجاح", "أهلاً بك مرة أخرى في Primee Academy!");
-                // setTimeout(() => { window.location.href = "student-dashboard.html"; }, 2000);
+                
+                // 👇 التعديل: التوجيه للداش بورد بعد ثانيتين
+                setTimeout(() => { window.location.href = "student-dashboard.html"; }, 2000);
             } else {
                 showAlert("تم رفض الدخول ⛔", "هذا الحساب مرتبط بجهاز آخر! لا يمكنك فتحه من هنا. تواصل مع الدعم لإعادة ضبط جهازك.");
             }
@@ -121,8 +131,9 @@ loginForm.addEventListener('submit', async (e) => {
         submitBtn.disabled = false;
     }
 });
+
 // ---------------------------------------------------------
-// أكواد تفاعل الباسوورد والـ Lottie (انسخها في آخر الملف)
+// أكواد تفاعل الباسوورد والـ Lottie
 // ---------------------------------------------------------
 
 const togglePassword = document.getElementById('togglePassword');
@@ -143,7 +154,6 @@ if (togglePassword && passwordInput) {
 
     // 2. كود تفاعل الـ Lottie (يغمي عينه لما تضغط على خانة الباسوورد)
     passwordInput.addEventListener('focus', () => {
-        // بنغير الرابط لملف أنيميشن قرد بيغمي عينه
         if (loginLottie) {
             loginLottie.load('https://lottie.host/6bc24f6a-10be-40e0-b7e2-7b0fc44e2512/zP2Kc77nro.lottie.json');
         }
@@ -151,7 +161,6 @@ if (togglePassword && passwordInput) {
 
     // 3. لما تخرج من خانة الباسوورد (يرجع للأنيميشن الطبيعي)
     passwordInput.addEventListener('blur', () => {
-        // بنرجع الرابط لملف الأنيميشن الأصلي
         if (loginLottie) {
             loginLottie.load('https://assets3.lottiefiles.com/packages/lf20_jcikmacf.json');
         }
