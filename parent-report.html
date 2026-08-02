@@ -121,6 +121,7 @@
 
     <!-- سكربت بسيط لاستخراج رقم الموبايل من الرابط وعرضه -->
    <!-- سكربت فايربيز لربط تقرير ولي الأمر بقاعدة البيانات -->
+  <!-- سكربت فايربيز لربط تقرير ولي الأمر بقاعدة البيانات -->
     <script type="module">
         // 1. استدعاء مكتبات فايربيز (الإصدار الأخير)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
@@ -150,22 +151,24 @@
                 document.getElementById('displayStudentName').innerText = "جاري البحث في السجلات... ⏳";
                 
                 try {
-                    // بنسأل فايربيز: هاتلي الطالب اللي جوه قسم students ورقم ولي أمره يساوي الرقم اللي كتبناه
-                    const q = query(collection(db, "students"), where("parentPhone", "==", phoneStr));
+                    // التعديل هنا: بنبحث في كولكشن (users) عن حقل (phone)
+                    const q = query(collection(db, "users"), where("phone", "==", phoneStr));
                     const querySnapshot = await getDocs(q);
                     
                     if (!querySnapshot.empty) {
-                        // لو لقينا بيانات مطابقة، بنعرضها
+                        // لو لقينا الطالب
                         querySnapshot.forEach((doc) => {
                             const studentData = doc.data();
                             document.getElementById('displayStudentName').innerText = studentData.name;
                             
-                            // هنا هنبقى نضيف أكواد سحب الدرجات والحضور لما نسجلها في الداتابيز
+                            // تعديل النص المعروض في HTML ليكون "رقم الطالب"
+                            const phoneLabel = document.getElementById('displayPhone').parentElement;
+                            phoneLabel.innerHTML = `<i class="fa-solid fa-phone"></i> رقم الطالب: <span id="displayPhone" dir="ltr">${phoneStr}</span>`;
                         });
                     } else {
-                        // لو الرقم مش موجود في الداتابيز
-                        alert("عفواً، لا يوجد طالب مسجل برقم ولي الأمر هذا في النظام.");
-                        window.location.href = 'index.html'; // نرجعه للصفحة الرئيسية تلقائياً
+                        // لو الرقم مش متسجل
+                        alert("عفواً، لا يوجد طالب مسجل بهذا الرقم في النظام.");
+                        window.location.href = 'index.html'; // نرجعه للصفحة الرئيسية
                     }
                 } catch (error) {
                     console.error("خطأ في الاتصال:", error);
