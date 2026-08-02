@@ -126,3 +126,29 @@ filterLinks.forEach(link => {
         closeDrawer(); // يقفل القائمة بعد ما يختار
     });
 });
+// === نظام الدارك مود (Dark Mode) ===
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const bodyElement = document.body;
+const icon = themeToggleBtn ? themeToggleBtn.querySelector('i') : null;
+
+// التحقق من الاختيار المحفوظ مسبقاً
+if (localStorage.getItem('theme') === 'dark') {
+    bodyElement.setAttribute('data-theme', 'dark');
+    if(icon) { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+}
+
+if(themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+        if (bodyElement.getAttribute('data-theme') === 'dark') {
+            bodyElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            icon.classList.remove('fa-sun');
+            icon.classList.add('fa-moon');
+        } else {
+            bodyElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        }
+    });
+}
