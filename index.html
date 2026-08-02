@@ -6,7 +6,11 @@
     <title>Primee Academy - المنصة التعليمية الأولى</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=3">
+    
+    <!-- مكتبة السلايدر CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    
+    <link rel="stylesheet" href="style.css?v=4">
 
     <!-- كود إشعارات OneSignal -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -111,53 +115,84 @@
         </div>
     </header>
 
-    <!-- قسم المدرسين (التصميم الجديد الأنيق) -->
+    <!-- قسم المدرسين (بنظام السلايدر التلقائي) -->
     <section id="teachersSection" class="teachers-section">
         <div class="section-header">
             <h2>نخبة المعلمين</h2>
             <a href="#" class="view-all">عرض جميع المدرسين <i class="fas fa-arrow-left"></i></a>
         </div>
         
-        <div class="modern-teachers-grid" id="teachersGrid">
-            <!-- كارت مدرس 1 -->
-            <div class="modern-teacher-card">
-                <div class="card-image-wrapper">
-                    <!-- لو معاك صورة حقيقية استبدل الرابط هنا -->
-                    <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Teacher" style="object-fit: contain; padding: 20px;">
-                    <div class="card-overlay"></div>
-                    <div class="teacher-subject-badge"><i class="fas fa-laptop-code"></i> برمجيات وعلوم</div>
-                </div>
-                <div class="card-info-wrapper">
-                    <h3>أ. عبدالرحمن عادل (بودا)</h3>
-                    <div class="stages-badges" style="margin-bottom: 10px;">
-                        <span class="stage-badge">المرحلة الإعدادية</span>
-                        <span class="stage-badge">المرحلة الثانوية</span>
+        <!-- حاوية السلايدر الرئيسية -->
+        <div class="swiper teachers-slider">
+            <div class="swiper-wrapper" id="teachersGrid">
+                
+                <!-- كارت مدرس 1 -->
+                <div class="swiper-slide">
+                    <div class="modern-teacher-card">
+                        <div class="card-image-wrapper">
+                            <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Teacher" style="object-fit: contain; padding: 20px;">
+                            <div class="card-overlay"></div>
+                            <div class="teacher-subject-badge"><i class="fas fa-laptop-code"></i> برمجيات وعلوم</div>
+                        </div>
+                        <div class="card-info-wrapper">
+                            <h3>أ. عبدالرحمن عادل (بودا)</h3>
+                            <div class="stages-badges" style="margin-bottom: 10px;">
+                                <span class="stage-badge">المرحلة الإعدادية</span>
+                                <span class="stage-badge">المرحلة الثانوية</span>
+                            </div>
+                            <p class="teacher-desc">خبير تدريس المواد العلمية والبرمجيات بخبرة تزيد عن 5 سنوات بأسلوب يواكب التطور التكنولوجي.</p>
+                            <div class="card-actions">
+                                <button class="btn-modern-view">تصفح حصص المدرس <i class="fas fa-arrow-left"></i></button>
+                            </div>
+                        </div>
                     </div>
-                    <p class="teacher-desc">خبير تدريس المواد العلمية والبرمجيات بخبرة تزيد عن 5 سنوات بأسلوب يواكب التطور التكنولوجي.</p>
-                    <div class="card-actions">
-                        <button class="btn-modern-view">تصفح حصص المدرس <i class="fas fa-arrow-left"></i></button>
+                </div>
+                
+                <!-- كارت مدرس 2 -->
+                <div class="swiper-slide">
+                    <div class="modern-teacher-card">
+                        <div class="card-image-wrapper">
+                            <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Teacher" style="object-fit: contain; padding: 20px;">
+                            <div class="card-overlay"></div>
+                            <div class="teacher-subject-badge"><i class="fas fa-language"></i> لغات</div>
+                        </div>
+                        <div class="card-info-wrapper">
+                            <h3>أ. حمدان علي</h3>
+                            <div class="stages-badges" style="margin-bottom: 10px;">
+                                <span class="stage-badge">المرحلة الابتدائية</span>
+                            </div>
+                            <p class="teacher-desc">متخصص في تأسيس اللغات للأطفال بأساليب تفاعلية حديثة تضمن فهم واستيعاب الطالب.</p>
+                            <div class="card-actions">
+                                <button class="btn-modern-view">تصفح حصص المدرس <i class="fas fa-arrow-left"></i></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- كارت مدرس 3 (عشان السلايدر يلف بشكل كامل) -->
+                <div class="swiper-slide">
+                    <div class="modern-teacher-card">
+                        <div class="card-image-wrapper">
+                            <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Teacher" style="object-fit: contain; padding: 20px;">
+                            <div class="card-overlay"></div>
+                            <div class="teacher-subject-badge"><i class="fas fa-calculator"></i> رياضيات</div>
+                        </div>
+                        <div class="card-info-wrapper">
+                            <h3>أ. أحمد محمود</h3>
+                            <div class="stages-badges" style="margin-bottom: 10px;">
+                                <span class="stage-badge">المرحلة الثانوية</span>
+                            </div>
+                            <p class="teacher-desc">أقوى تأسيس ومراجعات في الرياضيات بأسلوب مبسط وعصري يضمن لك التفوق.</p>
+                            <div class="card-actions">
+                                <button class="btn-modern-view">تصفح حصص المدرس <i class="fas fa-arrow-left"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-            
-            <!-- كارت مدرس 2 -->
-            <div class="modern-teacher-card">
-                <div class="card-image-wrapper">
-                    <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Teacher" style="object-fit: contain; padding: 20px;">
-                    <div class="card-overlay"></div>
-                    <div class="teacher-subject-badge"><i class="fas fa-language"></i> لغات</div>
-                </div>
-                <div class="card-info-wrapper">
-                    <h3>أ. حمدان علي</h3>
-                    <div class="stages-badges" style="margin-bottom: 10px;">
-                        <span class="stage-badge">المرحلة الابتدائية</span>
-                    </div>
-                    <p class="teacher-desc">متخصص في تأسيس اللغات للأطفال بأساليب تفاعلية حديثة تضمن فهم واستيعاب الطالب.</p>
-                    <div class="card-actions">
-                        <button class="btn-modern-view">تصفح حصص المدرس <i class="fas fa-arrow-left"></i></button>
-                    </div>
-                </div>
-            </div>
+            <!-- النقط السفلية للسلايدر -->
+            <div class="swiper-pagination"></div>
         </div>
     </section>
 
@@ -241,6 +276,9 @@
     <a href="https://wa.me/201093139047" class="floating-whatsapp" target="_blank">
         <i class="fab fa-whatsapp"></i>
     </a>
+
+    <!-- مكتبة Swiper JS الخاصة بالسلايدر -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
     <script type="module" src="index-script.js"></script>
 </body>
