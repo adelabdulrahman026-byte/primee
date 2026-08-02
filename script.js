@@ -4,7 +4,7 @@ import { getFirestore, collection, addDoc } from "https://www.gstatic.com/fireba
 
 // --- كود الـ firebaseConfig الخاص بمشروعك ---
 const firebaseConfig = {
-    apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
+    apiKey: "AIzaSyAI4YyzFKOYRyنةؤخهةاخةلانماceGI1h-sMOt84AFS7L1Do",
     authDomain: "academy-444b6.firebaseapp.com",
     projectId: "academy-444b6",
     storageBucket: "academy-444b6.firebasestorage.app",
