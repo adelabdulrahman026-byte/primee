@@ -307,3 +307,19 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     .logged-in-badge { padding: 5px; }
     .badge-info { display: none; }
 }
+/* ==================== إضافات سلايدر المدرسين (Swiper) ==================== */
+.teachers-slider {
+    width: 100%;
+    padding-bottom: 50px !important; /* عشان نقط السلايدر متبقاش لازقة في الكروت */
+    overflow: hidden;
+}
+.swiper-slide {
+    height: auto; /* بيخلي كل الكروت نفس الطول بالظبط حتى لو الكلام كتير */
+}
+.modern-teacher-card {
+    height: 100%; /* بيمد الكارت لآخر مساحة السلايد */
+}
+/* لون النقط بتاعة السلايدر عشان تليق مع الموقع */
+.swiper-pagination-bullet-active {
+    background-color: var(--primary-color) !important;
+}
