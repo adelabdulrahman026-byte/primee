@@ -547,7 +547,12 @@ input:focus, select:focus, textarea:focus {
     .stats-grid { grid-template-columns: 1fr; gap: 15px; }
 }
 /* ==================== الصفحة الرئيسية (Index Page) ==================== */
-.index-body { background-color: #fafafa; }
+.index-body { 
+    background-color: #fafafa; 
+    display: block; /* فك الضغطة بتاعة البودي العام */
+    padding: 0; /* مسح المسافات اللي كانت مبوظة الشاشة */
+    min-height: auto; 
+}
 
 /* الشريط العلوي للرئيسية */
 .main-navbar {
