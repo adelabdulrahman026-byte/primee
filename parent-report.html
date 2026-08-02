@@ -120,19 +120,59 @@
     </div>
 
     <!-- سكربت بسيط لاستخراج رقم الموبايل من الرابط وعرضه -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // سحب رقم الهاتف من رابط الصفحة (URL)
+   <!-- سكربت فايربيز لربط تقرير ولي الأمر بقاعدة البيانات -->
+    <script type="module">
+        // 1. استدعاء مكتبات فايربيز (الإصدار الأخير)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+        // 2. كود الربط الخاص بأكاديمية Primee
+        const firebaseConfig = {
+            apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
+            authDomain: "academy-444b6.firebaseapp.com",
+            projectId: "academy-444b6",
+            storageBucket: "academy-444b6.firebasestorage.app",
+            messagingSenderId: "1079254330731",
+            appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e"
+        };
+
+        // 3. تشغيل فايربيز وقاعدة البيانات (Firestore)
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 4. دالة البحث أول ما الصفحة تحمل
+        document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const phoneStr = urlParams.get('phone');
             
             if (phoneStr) {
                 document.getElementById('displayPhone').innerText = phoneStr;
-                // هنا مستقبلاً هنستخدم الرقم ده عشان نكلم الداتابيز ونجيب درجات الطالب الحقيقية
-                // حالياً هنحط اسم افتراضي كمثال
-                document.getElementById('displayStudentName').innerText = "أحمد محمد محمود";
+                document.getElementById('displayStudentName').innerText = "جاري البحث في السجلات... ⏳";
+                
+                try {
+                    // بنسأل فايربيز: هاتلي الطالب اللي جوه قسم students ورقم ولي أمره يساوي الرقم اللي كتبناه
+                    const q = query(collection(db, "students"), where("parentPhone", "==", phoneStr));
+                    const querySnapshot = await getDocs(q);
+                    
+                    if (!querySnapshot.empty) {
+                        // لو لقينا بيانات مطابقة، بنعرضها
+                        querySnapshot.forEach((doc) => {
+                            const studentData = doc.data();
+                            document.getElementById('displayStudentName').innerText = studentData.name;
+                            
+                            // هنا هنبقى نضيف أكواد سحب الدرجات والحضور لما نسجلها في الداتابيز
+                        });
+                    } else {
+                        // لو الرقم مش موجود في الداتابيز
+                        alert("عفواً، لا يوجد طالب مسجل برقم ولي الأمر هذا في النظام.");
+                        window.location.href = 'index.html'; // نرجعه للصفحة الرئيسية تلقائياً
+                    }
+                } catch (error) {
+                    console.error("خطأ في الاتصال:", error);
+                    document.getElementById('displayStudentName').innerText = "حدث خطأ أثناء جلب البيانات!";
+                }
             } else {
-                document.getElementById('displayPhone').innerText = "غير معروف";
+                document.getElementById('displayPhone').innerText = "غير متوفر";
                 document.getElementById('displayStudentName').innerText = "لم يتم تحديد طالب";
             }
         });
