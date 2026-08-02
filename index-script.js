@@ -74,10 +74,8 @@ if(btnParentLogin) {
     btnParentLogin.addEventListener('click', () => {
         const phone = document.getElementById('parentStudentPhone').value;
         if(phone.length >= 11) {
-            // مؤقتاً هنحوله للداش بورد عشان يشوف حساب ابنه (في المستقبل ممكن تتعمل لوحة خاصة بولي الأمر)
-            alert("جاري تحويلك لبيانات الطالب للمتابعة...");
-            localStorage.setItem('studentPhone', phone);
-            window.location.href = "student-dashboard.html";
+            // هنبعت رقم الطالب في الرابط لصفحة التقرير
+            window.location.href = `parent-report.html?phone=${phone}`;
         } else {
             alert("رجاءً إدخال رقم هاتف صحيح للطالب.");
         }
