@@ -106,3 +106,23 @@ document.getElementById('closeNotifications').addEventListener('click', () => {
     document.getElementById('notificationModal').classList.remove('active');
     localStorage.setItem('seenNotificationPrompt', 'true');
 });
+// فلترة المدرسين من القائمة الجانبية
+const filterLinks = document.querySelectorAll('.drawer-links a');
+const teacherCards = document.querySelectorAll('.teacher-card');
+
+filterLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault(); // منع تحديث الصفحة
+        const selectedText = e.target.innerText.trim(); // اسم المرحلة اللي داس عليها
+        
+        teacherCards.forEach(card => {
+            const cardStages = card.querySelector('.stages-badges').innerText;
+            if(cardStages.includes(selectedText) || selectedText.includes("عامة")) {
+                card.style.display = "block";
+            } else {
+                card.style.display = "none";
+            }
+        });
+        closeDrawer(); // يقفل القائمة بعد ما يختار
+    });
+});
