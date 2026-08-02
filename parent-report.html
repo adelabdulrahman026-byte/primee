@@ -108,7 +108,7 @@
                 document.getElementById('displayStudentName').innerText = "جاري البحث في السجلات... ⏳";
                 
                 try {
-                    const q = query(collection(db, "users"), where("phone", "==", phoneStr));
+                    const q = query(collection(db, "users"), where("studentPhone", "==", phoneStr));
                     const querySnapshot = await getDocs(q);
                     
                     if (!querySnapshot.empty) {
