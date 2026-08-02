@@ -200,3 +200,38 @@ if (btnCloseNotif && notifModal) {
         localStorage.setItem('seenNotificationPrompt', 'true');
     });
 }
+// ==========================================
+// 7. تشغيل سلايدر المدرسين (Swiper.js)
+// ==========================================
+window.addEventListener('load', () => {
+    if (typeof Swiper !== 'undefined') {
+        const teacherSwiper = new Swiper('.teachers-slider', {
+            loop: true, // يلف ويرجع للأول تاني لوحده
+            grabCursor: true, // شكل الماوس يبقى إيد بتمسك
+            autoplay: {
+                delay: 2500, // بيقلب الكارت كل ثانيتين ونص
+                disableOnInteraction: false, // يكمل تقليب حتى لو المستخدم لمسه
+                pauseOnMouseEnter: true, // يقف لو المستخدم وقف عليه بالماوس عشان يقرأ
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            // بيحدد يعرض كام كارت حسب حجم الشاشة
+            breakpoints: {
+                0: {
+                    slidesPerView: 1,
+                    spaceBetween: 20,
+                },
+                768: {
+                    slidesPerView: 2,
+                    spaceBetween: 30,
+                },
+                1024: {
+                    slidesPerView: 3,
+                    spaceBetween: 30,
+                },
+            }
+        });
+    }
+});
