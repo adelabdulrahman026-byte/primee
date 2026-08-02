@@ -6,7 +6,7 @@
     <title>Primee Academy - المنصة التعليمية الأولى</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-   <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=3">
 
     <!-- كود إشعارات OneSignal -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -67,7 +67,13 @@
     <nav class="main-navbar">
         <div class="nav-right-side">
             <div class="nav-brand">Primee<span>.</span></div>
-            <button id="openDrawer" class="btn-hamburger"><i class="fas fa-bars"></i> الصفوف</button>
+            <!-- أيقونة القائمة الجانبية وتحديث شكلها -->
+            <button id="openDrawer" class="btn-hamburger"><i class="fas fa-bars-staggered"></i> الصفوف</button>
+            
+            <!-- زرار الدارك مود الجديد -->
+            <button class="theme-toggle" id="themeToggleBtn" title="تغيير المظهر" style="margin-right: 15px;">
+                <i class="fas fa-moon"></i>
+            </button>
         </div>
         
         <ul class="nav-links">
@@ -96,53 +102,100 @@
             </div>
         </div>
         <div class="hero-image">
-            <!-- يمكنك وضع صورة الـ P الخاصة بك هنا -->
-            <div class="placeholder-3d-logo">
-                <h1>P</h1>
+            <!-- اللوجو المتحرك الجديد -->
+            <div class="animated-logo-container">
+                <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" class="main-animated-logo">
                 <div class="floating-badge badge-1"><i class="fas fa-graduation-cap"></i> محتوى مميز</div>
                 <div class="floating-badge badge-2"><i class="fas fa-users"></i> مجتمع تفاعلي</div>
             </div>
         </div>
     </header>
 
-    <!-- قسم المدرسين (بديل الدورات المميزة) -->
+    <!-- قسم المدرسين (التصميم الجديد الأنيق) -->
     <section id="teachersSection" class="teachers-section">
         <div class="section-header">
             <h2>نخبة المعلمين</h2>
             <a href="#" class="view-all">عرض جميع المدرسين <i class="fas fa-arrow-left"></i></a>
         </div>
         
-        <div class="teachers-grid" id="teachersGrid">
-            <!-- كارت مدرس تجريبي (سيتم جلبه من الداتا بيز مستقبلاً) -->
-            <div class="teacher-card">
-                <div class="teacher-cover">
-                    <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Teacher Cover">
-                    <div class="teacher-avatar"><i class="fas fa-user-tie"></i></div>
+        <div class="modern-teachers-grid" id="teachersGrid">
+            <!-- كارت مدرس 1 -->
+            <div class="modern-teacher-card">
+                <div class="card-image-wrapper">
+                    <!-- لو معاك صورة حقيقية استبدل الرابط هنا -->
+                    <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Teacher" style="object-fit: contain; padding: 20px;">
+                    <div class="card-overlay"></div>
+                    <div class="teacher-subject-badge"><i class="fas fa-laptop-code"></i> برمجيات وعلوم</div>
                 </div>
-                <div class="teacher-info">
-                    <h3>أ. عبدالرحمن عادل </h3>
-                    <div class="stages-badges">
+                <div class="card-info-wrapper">
+                    <h3>أ. عبدالرحمن عادل (بودا)</h3>
+                    <div class="stages-badges" style="margin-bottom: 10px;">
                         <span class="stage-badge">المرحلة الإعدادية</span>
                         <span class="stage-badge">المرحلة الثانوية</span>
                     </div>
-                    <p class="teacher-bio">خبير تدريس المواد العلمية والبرمجيات بخبرة تزيد عن 5 سنوات.</p>
-                    <button class="btn-view-teacher">تصفح حصص المدرس</button>
+                    <p class="teacher-desc">خبير تدريس المواد العلمية والبرمجيات بخبرة تزيد عن 5 سنوات بأسلوب يواكب التطور التكنولوجي.</p>
+                    <div class="card-actions">
+                        <button class="btn-modern-view">تصفح حصص المدرس <i class="fas fa-arrow-left"></i></button>
+                    </div>
                 </div>
             </div>
             
-            <div class="teacher-card">
-                <div class="teacher-cover">
-                    <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Teacher Cover">
-                    <div class="teacher-avatar"><i class="fas fa-chalkboard-teacher"></i></div>
+            <!-- كارت مدرس 2 -->
+            <div class="modern-teacher-card">
+                <div class="card-image-wrapper">
+                    <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Teacher" style="object-fit: contain; padding: 20px;">
+                    <div class="card-overlay"></div>
+                    <div class="teacher-subject-badge"><i class="fas fa-language"></i> لغات</div>
                 </div>
-                <div class="teacher-info">
+                <div class="card-info-wrapper">
                     <h3>أ. حمدان علي</h3>
-                    <div class="stages-badges">
+                    <div class="stages-badges" style="margin-bottom: 10px;">
                         <span class="stage-badge">المرحلة الابتدائية</span>
                     </div>
-                    <p class="teacher-bio">متخصص في تأسيس اللغات  بأساليب تفاعلية حديثة.</p>
-                    <button class="btn-view-teacher">تصفح حصص المدرس</button>
+                    <p class="teacher-desc">متخصص في تأسيس اللغات للأطفال بأساليب تفاعلية حديثة تضمن فهم واستيعاب الطالب.</p>
+                    <div class="card-actions">
+                        <button class="btn-modern-view">تصفح حصص المدرس <i class="fas fa-arrow-left"></i></button>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- قسم الباقات الشاملة (الجديد) -->
+    <section class="packages-section" style="max-width: 1200px; margin: 80px auto; padding: 0 20px;">
+        <div class="section-header">
+            <div>
+                <h2>الباقات الشاملة <span style="color: #f59e0b;"><i class="fas fa-crown"></i></span></h2>
+                <p style="color: var(--text-muted); font-weight: 600; margin-top: 10px;">وفر فلوسك واشترك في باقات مجمعة لأقوى المدرسين</p>
+            </div>
+        </div>
+        
+        <div class="packages-grid">
+            <!-- كارت الباقة -->
+            <div class="package-card">
+                <div class="package-header">
+                    <span class="package-badge">الأكثر مبيعاً</span>
+                    <h3>باقة التميز - المرحلة الإعدادية</h3>
+                </div>
+                <div class="package-teachers">
+                    <!-- صور المدرسين المتداخلة -->
+                    <div class="avatar-group">
+                        <img src="https://via.placeholder.com/50/5b21b6/ffffff?text=Boda" alt="T1">
+                        <img src="https://via.placeholder.com/50/3b82f6/ffffff?text=Ali" alt="T2">
+                        <img src="https://via.placeholder.com/50/10b981/ffffff?text=T3" alt="T3">
+                    </div>
+                    <span class="teachers-count">+3 مدرسين</span>
+                </div>
+                <ul class="package-features">
+                    <li><i class="fas fa-check-circle"></i> علوم، رياضيات، ولغات</li>
+                    <li><i class="fas fa-check-circle"></i> متابعة دورية مع ولي الأمر</li>
+                    <li><i class="fas fa-check-circle"></i> خصم 20% على الاشتراك الشهري</li>
+                </ul>
+                <div class="package-price">
+                    <span class="old-price">500 ج.م</span>
+                    <span class="new-price">400 ج.م</span>
+                </div>
+                <button class="btn-package-subscribe">اشترك الآن</button>
             </div>
         </div>
     </section>
@@ -156,11 +209,33 @@
         </div>
     </section>
 
-    <!-- الفوتر وحقوق الملكية -->
-    <footer class="main-footer">
-        <p>جميع الحقوق محفوظة &copy; 2026 Primee Academy.</p>
-        <p class="dev-credit">Developed with ❤️ by <a href="https://wa.me/201093139047" target="_blank">abdulrahman adel</a></p>
-    </footer>
+    <!-- الفوتر الحديث -->
+    <div class="modern-footer-container">
+        <div class="footer-card">
+            <div class="footer-logo">
+                <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee">
+                <h3>Primee Academy</h3>
+            </div>
+            <p class="footer-desc">المنصة التعليمية الأقوى التي تجمع لك أفضل المعلمين في كافة المراحل التعليمية لتجربة تفاعلية مميزة.</p>
+            
+            <div class="footer-contact-info">
+                <div class="contact-item"><i class="fas fa-location-dot"></i> الإسكندرية، مصر</div>
+                <div class="contact-item"><i class="fas fa-phone"></i> +20 109 313 9047</div>
+                <div class="contact-item"><i class="fas fa-envelope"></i> support@primeeacademy.com</div>
+            </div>
+
+            <div class="social-links">
+                <a href="#" class="social-btn facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://wa.me/201093139047" class="social-btn whatsapp" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                <a href="#" class="social-btn youtube"><i class="fab fa-youtube"></i></a>
+                <a href="#" class="social-btn instagram"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>جميع الحقوق محفوظة &copy; 2026 Primee Academy.</p>
+            <p class="dev-credit">Developed with <i class="fas fa-heart" style="color: #ef4444;"></i> by <a href="https://wa.me/201093139047" target="_blank">Abdulrahman Adel</a></p>
+        </div>
+    </div>
 
     <!-- أيقونة الواتساب الطائرة -->
     <a href="https://wa.me/201093139047" class="floating-whatsapp" target="_blank">
