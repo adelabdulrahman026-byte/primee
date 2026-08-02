@@ -152,7 +152,7 @@
                 
                 try {
                     // التعديل هنا: بنبحث في كولكشن (users) عن حقل (phone)
-                    const q = query(collection(db, "users"), where("phone", "==", phoneStr));
+                    const q = query(collection(db, "users"), where("studentPhone", "==", phoneStr));
                     const querySnapshot = await getDocs(q);
                     
                     if (!querySnapshot.empty) {
