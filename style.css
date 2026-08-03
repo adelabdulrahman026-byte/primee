@@ -2,6 +2,7 @@
    1. المتغيرات والألوان (Variables)
 ========================================================================== */
 :root {
+    /* ألوان الوضع النهاري */
     --bg-body: #f4f7f6;
     --bg-card: #ffffff;
     --text-main: #1e293b;
@@ -15,6 +16,7 @@
 }
 
 [data-theme="dark"] {
+    /* ألوان الوضع الليلي */
     --bg-body: #0f172a;
     --bg-card: #1e293b;
     --text-main: #f8fafc;
@@ -26,16 +28,32 @@
 /* ==========================================================================
    2. الإعدادات العامة وإصلاح تخطيط الصفحات (Global Fixes)
 ========================================================================== */
-* { box-sizing: border-box; font-family: 'Cairo', sans-serif; transition: all 0.3s ease; }
+* {
+    box-sizing: border-box;
+    font-family: 'Cairo', sans-serif;
+    transition: all 0.3s ease;
+}
 
-body { background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0; display: block; }
+/* الوضع الافتراضي السليم لكل الصفحات (بيصلح الداش بورد والفيديو) */
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+    display: block; 
+    min-height: 100vh;
+}
 
+/* تنسيق خاص بصفحات الدخول والتسجيل فقط (عشان يبقوا في نص الشاشة) */
 body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-report-body) {
-    display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
 }
 
 /* ==========================================================================
-   3. الشريط العلوي والقائمة الجانبية الرئيسية (Navbar & Sidebar)
+   3. الشريط العلوي (Navbar) وزراير الدخول
 ========================================================================== */
 .main-navbar {
     display: flex; justify-content: space-between; align-items: center;
@@ -51,7 +69,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .nav-links a:hover, .nav-links a.active { color: var(--primary-color); }
 .nav-left-side { display: flex; align-items: center; gap: 15px; }
 
-/* إصلاح شكل زرار تسجيل الدخول */
+/* زرار الدخول اللي إنت متعود عليه */
 .btn-nav-login { 
     text-decoration: none; color: var(--primary-color); border: 2px solid var(--primary-color); 
     padding: 8px 20px; border-radius: 12px; font-weight: 800; transition: 0.3s; background: transparent;
@@ -61,25 +79,20 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .btn-nav-signup { text-decoration: none; background: var(--primary-color); color: #fff; padding: 10px 25px; border-radius: 12px; font-weight: 800; transition: 0.3s; border: 2px solid var(--primary-color);}
 .btn-nav-signup:hover { background: var(--primary-hover); transform: translateY(-2px); border-color: var(--primary-hover);}
 
-.theme-toggle { background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 50%; width: 45px; height: 45px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; color: var(--text-main); margin-right: 15px; }
+/* زرار الدارك مود */
+.theme-toggle {
+    background: var(--input-bg); border: 1px solid var(--input-border);
+    border-radius: 50%; width: 45px; height: 45px; font-size: 20px;
+    cursor: pointer; display: flex; justify-content: center; align-items: center;
+    color: var(--text-main); margin-right: 15px;
+}
 .theme-toggle:hover { transform: rotate(15deg); }
 
-.side-drawer {
-    position: fixed; top: 0; right: -300px; width: 280px; height: 100vh;
-    background: var(--bg-card) !important; border-left: 1px solid var(--input-border);
-    box-shadow: -5px 0 25px rgba(0,0,0,0.1); z-index: 1001; transition: 0.4s cubic-bezier(0.77, 0, 0.175, 1) !important;
-    display: flex; flex-direction: column; overflow: hidden;
+/* بيانات الطالب مسجل الدخول في الهيدر */
+.logged-in-badge {
+    display: flex; align-items: center; gap: 12px; background: var(--input-bg);
+    padding: 6px 15px; border-radius: 30px; border: 1px solid var(--input-border); cursor: pointer; transition: 0.3s;
 }
-.side-drawer.open { right: 0; }
-.drawer-header { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 25px; border-bottom: 1px solid var(--input-border); }
-.btn-close-drawer { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
-.drawer-links { flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; list-style: none; padding: 20px; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-.drawer-links a { display: flex; align-items: center; gap: 15px; text-decoration: none; color: var(--text-main); font-weight: 700; padding: 12px; border-radius: 10px; transition: 0.3s; background: var(--input-bg); }
-.drawer-links a:hover { background: rgba(var(--primary-color-rgb), 0.1); color: var(--primary-color); }
-.drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; display: none; backdrop-filter: blur(3px); }
-.drawer-overlay.active { display: block; }
-
-.logged-in-badge { display: flex; align-items: center; gap: 12px; background: var(--input-bg); padding: 6px 15px; border-radius: 30px; border: 1px solid var(--input-border); cursor: pointer; transition: 0.3s; }
 .logged-in-badge:hover { border-color: var(--primary-color); box-shadow: 0 4px 10px rgba(91,33,182,0.1); }
 .badge-avatar { width: 35px; height: 35px; background: var(--primary-color); color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
 .badge-info { display: flex; flex-direction: column; }
@@ -87,7 +100,33 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .badge-info .s-wallet { font-weight: 800; color: #10b981; font-size: 12px; }
 
 /* ==========================================================================
-   4. الرئيسية (Hero Section)
+   4. القائمة الجانبية (للرئيسية) وحل مشكلة السكرول
+========================================================================== */
+.side-drawer {
+    position: fixed; top: 0; right: -300px; width: 280px; height: 100vh;
+    background: var(--bg-card) !important; 
+    border-left: 1px solid var(--input-border);
+    box-shadow: -5px 0 25px rgba(0,0,0,0.1); z-index: 1001;
+    transition: 0.4s cubic-bezier(0.77, 0, 0.175, 1) !important;
+    display: flex; flex-direction: column; 
+    overflow: hidden; /* يمنع الصفحة إنها تتسحب */
+}
+.side-drawer.open { right: 0; }
+.drawer-header { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 25px; border-bottom: 1px solid var(--input-border); }
+.btn-close-drawer { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
+
+/* ده اللي بيعمل السكرول جوه القائمة بس */
+.drawer-links { 
+    flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; 
+    list-style: none; padding: 20px; margin: 0; display: flex; flex-direction: column; gap: 10px; 
+}
+.drawer-links a { display: flex; align-items: center; gap: 15px; text-decoration: none; color: var(--text-main); font-weight: 700; padding: 12px; border-radius: 10px; transition: 0.3s; background: var(--input-bg); }
+.drawer-links a:hover { background: rgba(var(--primary-color-rgb), 0.1); color: var(--primary-color); }
+.drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; display: none; backdrop-filter: blur(3px); }
+.drawer-overlay.active { display: block; }
+
+/* ==========================================================================
+   5. الصفحة الرئيسية (Hero & Teachers & Packages)
 ========================================================================== */
 .hero-section { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 50px auto; padding: 0 20px; gap: 40px; }
 .hero-content { flex: 1; }
@@ -110,9 +149,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .badge-1 { top: 20px; right: -30px; animation-delay: 0s; }
 .badge-2 { bottom: 30px; left: -40px; animation-delay: 1s; }
 
-/* ==========================================================================
-   5. المعلمين والباقات والنصائح (Teachers & Packages & Tips)
-========================================================================== */
+/* المدرسين (السلايدر) */
 .teachers-section { max-width: 1200px; margin: 80px auto; padding: 0 20px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 .section-header h2 { font-size: 32px; font-weight: 900; color: var(--text-main); margin: 0; }
@@ -126,17 +163,18 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .modern-teacher-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(91, 33, 182, 0.1); border-color: var(--primary-color); }
 .card-image-wrapper { position: relative; height: 220px; overflow: hidden; background: var(--input-bg); display: flex; justify-content: center; align-items: center; }
 .card-image-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s ease; }
-.card-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; background: linear-gradient(to top, var(--bg-card), transparent); }
+.card-overlay { position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); }
 .teacher-subject-badge { position: absolute; top: 15px; right: 15px; background: rgba(255, 255, 255, 0.95); color: var(--primary-color); padding: 8px 15px; border-radius: 20px; font-weight: 800; font-size: 13px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 5; }
 [data-theme="dark"] .teacher-subject-badge { background: rgba(15, 23, 42, 0.95); }
 .card-info-wrapper { padding: 0 25px 25px 25px; position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; }
 .card-info-wrapper h3 { margin: 0 0 10px 0; font-size: 22px; color: var(--text-main); font-weight: 900;}
 .stages-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
 .stage-badge { background: var(--input-bg); color: var(--text-muted); padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; border: 1px solid var(--input-border); }
-.teacher-desc { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 25px; flex: 1; }
+.teacher-desc { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 25px; flex: 1; font-weight: 600;}
 .btn-modern-view { width: 100%; background: var(--input-bg); color: var(--primary-color); border: 1px solid var(--input-border); padding: 12px; border-radius: 12px; font-weight: 800; font-family: 'Cairo'; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: auto; }
 .btn-modern-view:hover { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
 
+/* فلاتر الباقات والكروت */
 .packages-filters-container { display: flex; justify-content: center; gap: 15px; margin: 40px auto; flex-wrap: wrap; max-width: 800px; padding: 0 20px; }
 .modern-filter-btn { background: var(--bg-card); border: 2px solid var(--input-border); color: var(--text-muted); padding: 12px 25px; border-radius: 15px; font-size: 16px; font-weight: 800; font-family: 'Cairo', sans-serif; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
 .modern-filter-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: translateY(-3px); }
@@ -161,35 +199,51 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .btn-package-subscribe { width: 100%; background: #f59e0b; color: #fff; border: none; padding: 15px; border-radius: 14px; font-weight: 800; font-family: 'Cairo'; cursor: pointer; transition: 0.3s; font-size: 16px; }
 .btn-package-subscribe:hover { background: #d97706; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.2); }
 
-/* قسم النصائح */
+/* ==========================================================================
+   6. قسم النصائح (الألوان الباستيل والزجزاج)
+========================================================================== */
 .creative-tips-section { max-width: 900px; margin: 80px auto; padding: 0 20px; }
 .creative-tips-container { display: flex; flex-direction: column; gap: 30px; }
-.creative-tip-card { display: flex; align-items: center; justify-content: space-between; padding: 30px 40px; border-radius: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: 0.3s; }
+.creative-tip-card { 
+    display: flex; align-items: center; justify-content: space-between; 
+    padding: 30px 40px; border-radius: 24px; position: relative; 
+    overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: 0.3s; 
+}
 .creative-tip-card:hover { transform: translateY(-5px); }
+
+/* الكلاس اللي بيعكس الكارت يمين وشمال */
 .creative-tip-card.reverse { flex-direction: row-reverse; }
+
 .creative-tip-content { flex: 1; z-index: 2; padding: 0 20px;}
-.creative-tip-number { position: absolute; top: -20px; left: -10px; font-size: 140px; font-weight: 900; color: #000; opacity: 0.05; line-height: 1; font-family: sans-serif; }
+.creative-tip-number { 
+    position: absolute; top: -20px; left: -10px; font-size: 140px; 
+    font-weight: 900; color: #000; opacity: 0.05; line-height: 1; font-family: sans-serif; 
+}
 .creative-tip-card.reverse .creative-tip-number { left: auto; right: -10px; }
+
 .creative-tip-content h3 { font-size: 24px; color: #1e293b; margin: 0 0 10px 0; font-weight: 900; }
 .creative-tip-content p { font-size: 16px; color: #334155; margin: 0; line-height: 1.6; font-weight: 600;}
 .creative-tip-image { width: 140px; z-index: 2; }
 .creative-tip-image img { width: 100%; height: auto; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
 
+/* الألوان الباستيل للكروت */
 .creative-tip-card.style-1 { background-color: #d1fae5; border: 1px solid #a7f3d0; }
 .creative-tip-card.style-2 { background-color: #cffafe; border: 1px solid #bae6fd; }
 .creative-tip-card.style-3 { background-color: #e0e7ff; border: 1px solid #c7d2fe; }
 .creative-tip-card.style-4 { background-color: #fef3c7; border: 1px solid #fde68a; }
 
+/* تظبيط ألوان كروت النصايح في الدارك مود عشان تبان */
 [data-theme="dark"] .creative-tip-card.style-1 { background-color: rgba(16, 185, 129, 0.1) !important; border-color: rgba(16, 185, 129, 0.2) !important; }
 [data-theme="dark"] .creative-tip-card.style-2 { background-color: rgba(14, 165, 233, 0.1) !important; border-color: rgba(14, 165, 233, 0.2) !important; }
 [data-theme="dark"] .creative-tip-card.style-3 { background-color: rgba(99, 102, 241, 0.1) !important; border-color: rgba(99, 102, 241, 0.2) !important; }
 [data-theme="dark"] .creative-tip-card.style-4 { background-color: rgba(245, 158, 11, 0.1) !important; border-color: rgba(245, 158, 11, 0.2) !important; }
+
 [data-theme="dark"] .creative-tip-content h3 { color: var(--text-main) !important; }
 [data-theme="dark"] .creative-tip-content p { color: var(--text-muted) !important; }
 [data-theme="dark"] .creative-tip-number { color: #ffffff !important; opacity: 0.03 !important; }
 
 /* ==========================================================================
-   6. من نحن والفوتر والنوافذ المنبثقة
+   7. من نحن والفوتر والنوافذ المنبثقة
 ========================================================================== */
 .about-section { max-width: 800px; margin: 80px auto; padding: 0 20px; text-align: center; }
 .about-card { background: var(--bg-card); padding: 50px; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); position: relative; overflow: hidden; border: 1px solid var(--input-border);}
@@ -218,6 +272,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .floating-whatsapp { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #25d366; color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 35px; text-decoration: none; box-shadow: 0 10px 20px rgba(37, 211, 102, 0.4); z-index: 999; transition: 0.3s; }
 .floating-whatsapp:hover { transform: scale(1.1); }
 
+/* النوافذ المنبثقة */
 .modal-overlay, .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 9999; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
 .modal-overlay.active, .custom-modal-overlay.active { opacity: 1; visibility: visible; }
 .modal-content, .custom-modal-content { background-color: var(--bg-card); padding: 40px; border-radius: 24px; text-align: center; width: 90%; max-width: 400px; transform: translateY(20px) scale(0.95); transition: all 0.3s ease; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: 1px solid var(--input-border);}
@@ -231,6 +286,9 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .btn-confirm:hover { background: var(--primary-hover); transform: translateY(-2px); }
 .btn-cancel { background: var(--input-bg); color: var(--text-muted); border: 1px solid var(--input-border);}
 
+/* ==========================================================================
+   8. صفحات الدخول والتسجيل (Login/Register)
+========================================================================== */
 .split-container { display: flex; background: var(--bg-card); border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.05); overflow: hidden; width: 100%; max-width: 1100px; min-height: 650px; border: 1px solid var(--input-border); }
 .brand-side { flex: 1; background: linear-gradient(135deg, #6d28d9, #4c1d95); padding: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; }
 .brand-side img { height: 100px; margin-bottom: 20px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3)); }
@@ -246,19 +304,19 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .two-cols { display: flex; gap: 20px; }
 .two-cols .form-group { flex: 1; }
 .btn-submit { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 800; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-.btn-submit:hover { background: var(--primary-hover); transform: translateY(-2px); }
+.btn-submit:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 10px 20px rgba(91,33,182,0.2); }
 
 /* ==========================================================================
-   7. الداش بورد وصفحة الفيديو (فصل التقسيم بشكل نهائي)
+   9. الداش بورد وصفحة الفيديو (تم فصل الـ Grid بالكامل هنا)
 ========================================================================== */
 
-/* تخصيص الداشبورد: القائمة الجانبية (280) يمين، المحتوى يسار */
+/* تخطيط الداش بورد (قائمة 280 يمين والمحتوى يسار) */
 .dashboard-container { 
     display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 30px; 
     max-width: 1400px; margin: 40px auto; padding: 0 20px; align-items: start; 
 }
 
-/* تخصيص صفحة الفيديو: المحتوى (الفيديو) يمين، القائمة الجانبية (الأستاذ) يسار 350 بيكسل */
+/* تخطيط صفحة الفيديو (المحتوى يمين والسايدبار يسار 350) - كده الفيديو هيكبر! */
 .watch-container { 
     display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 30px; 
     max-width: 1400px; margin: 40px auto; padding: 0 20px; align-items: start; 
@@ -275,13 +333,13 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .dash-nav li a { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 14px; color: var(--text-muted); text-decoration: none; font-weight: 800; transition: 0.3s; }
 .dash-nav li a i { font-size: 18px; width: 20px; text-align: center; }
 .dash-nav li a:hover, .dash-nav li a.active { background: rgba(var(--primary-color-rgb), 0.1); color: var(--primary-color); }
-.btn-logout { width: 100%; margin-top: 30px; padding: 15px; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); color: #ef4444; border-radius: 14px; cursor: pointer; font-weight: 900; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.3s; }
+.btn-logout { width: 100%; margin-top: 30px; padding: 15px; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); color: #ef4444; border-radius: 14px; cursor: pointer; font-weight: 900; font-family: 'Cairo'; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.3s; }
 .btn-logout:hover { background: #ef4444; color: #fff; }
 
 .dash-main { display: flex; flex-direction: column; gap: 30px; min-width: 0; }
 .dash-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 .search-bar { flex: 1; position: relative; max-width: 500px; }
-.search-bar input { width: 100%; padding: 15px 45px 15px 20px; border-radius: 15px; border: 1px solid var(--input-border); background: var(--bg-card); font-weight: 700; color: var(--text-main); outline: none; transition: 0.3s;}
+.search-bar input { width: 100%; padding: 15px 45px 15px 20px; border-radius: 15px; border: 1px solid var(--input-border); background: var(--bg-card); font-family: 'Cairo'; font-weight: 700; color: var(--text-main); outline: none; transition: 0.3s;}
 .search-bar input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(91,33,182,0.1);}
 .search-bar i { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 18px;}
 .user-quick-info { display: flex; align-items: center; gap: 15px; font-weight: 800; color: var(--text-main); }
@@ -294,7 +352,7 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .wallet-card { background: var(--bg-card); padding: 30px; border-radius: 24px; border: 1px solid var(--input-border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
 .wallet-info h3 { margin: 0 0 10px 0; color: var(--text-muted); font-size: 16px; font-weight: 800;}
 .wallet-amount { font-size: 35px; font-weight: 900; color: var(--text-main); margin: 0; }
-.btn-charge { background: var(--input-bg); border: 1px solid var(--input-border); padding: 12px 25px; border-radius: 12px; font-weight: 800; cursor: pointer; color: var(--text-main); transition: 0.3s; }
+.btn-charge { background: var(--input-bg); border: 1px solid var(--input-border); padding: 12px 25px; border-radius: 12px; font-weight: 800; font-family: 'Cairo'; cursor: pointer; color: var(--text-main); transition: 0.3s; }
 .btn-charge:hover { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
 
 .courses-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
@@ -315,9 +373,9 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .btn-download:hover { background: var(--primary-color); color: #fff; }
 
 /* ==========================================================================
-   8. تقرير ولي الأمر (معزول تماماً)
+   10. تقرير ولي الأمر
 ========================================================================== */
-.parent-report-body { background: var(--bg-body) !important; display: block !important; margin: 0; padding: 0; min-height: 100vh;}
+.parent-report-body { display: block !important; margin: 0; padding: 0; min-height: 100vh;}
 .parent-report-body .report-container { max-width: 900px; margin: 40px auto; padding: 20px; }
 .parent-report-body .report-header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 20px 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 30px; border: 1px solid var(--input-border);}
 .parent-report-body .report-header h2 { color: var(--primary-color); margin: 0; font-size: 24px; font-weight: 900; display: flex; align-items: center; gap: 10px;}
@@ -335,7 +393,7 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .parent-report-body .modern-table th { background: var(--input-bg); font-weight: 900; }
 
 /* ==========================================================================
-   9. الموبايل الشامل (Mobile Responsiveness)
+   11. الموبايل والشاشات الصغيرة (Responsive)
 ========================================================================== */
 .mobile-dash-header { display: none; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-card); border-bottom: 1px solid var(--input-border); }
 .close-mobile-sidebar { display: none; background: none; border: none; font-size: 24px; color: var(--text-muted); position: absolute; top: 20px; left: 20px; cursor: pointer; z-index: 1002;}
@@ -349,7 +407,7 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .mobile-user-profile .m-avatar { width: 50px; height: 50px; background: var(--primary-color); color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; }
 .mobile-user-profile .m-info h4 { margin: 0 0 5px 0; color: var(--text-main); font-size: 16px; font-weight: 900;}
 .mobile-user-profile .m-info span { color: #10b981; font-weight: 800; font-size: 13px; }
-.btn-logout-mobile { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 12px; border-radius: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+.btn-logout-mobile { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 12px; border-radius: 12px; font-weight: 800; font-family: 'Cairo'; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
 
 @media (max-width: 991px) {
     /* الرئيسية */
@@ -383,7 +441,7 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     .dash-header { flex-direction: column-reverse; align-items: flex-start; }
     .search-bar { width: 100%; max-width: 100%; }
     
-    /* القائمة الجانبية للموبايل في الداش بورد */
+    /* حل سحري لفتح القائمة الجانبية في الداش بورد على الموبايل */
     .mobile-dash-header { display: flex; }
     .dash-sidebar { 
         position: fixed; top: 0; right: -300px; width: 280px; height: 100vh; 
