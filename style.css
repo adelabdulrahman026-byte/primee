@@ -1107,13 +1107,6 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     .footer-contact-info { flex-direction: column; width: 100%; }
     .footer-bottom { flex-direction: column; justify-content: center; }
     
-    /* الدخول */
-    .split-container { flex-direction: column; min-height: auto; border-radius: 20px; }
-    .brand-side { padding: 30px 20px; }
-    .form-side { padding: 30px 20px; }
-    .two-cols { flex-direction: column; gap: 0; }
-    .logged-in-badge { padding: 5px; }
-    .badge-info { display: none; }
 
     /* الداش بورد والفيديو */
     .dashboard-container, .watch-container { grid-template-columns: 1fr; margin-top: 20px; }
