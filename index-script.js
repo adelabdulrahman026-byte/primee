@@ -34,7 +34,7 @@ async function fetchStudentNavData(phone) {
             const firstName = (data.fullName || "طالب").split(" ")[0];
             const balance = data.walletBalance || 0;
 
-            // تغيير زراير الدخول إلى كبسولة الحساب
+            // 1. تحديث زرار الهيدر في اللاب توب
             const navAuthSection = document.getElementById('navAuthSection');
             if (navAuthSection) {
                 navAuthSection.innerHTML = `
@@ -47,7 +47,29 @@ async function fetchStudentNavData(phone) {
                     </div>
                 `;
             }
+
+            // 2. تحديث القائمة الجانبية في الموبايل
+            const mobileAuthSection = document.getElementById('mobileAuthSection');
+            if (mobileAuthSection) {
+                mobileAuthSection.innerHTML = `
+                    <div class="logged-in-badge" style="width: 100%; justify-content: center; padding: 10px;" onclick="window.location.href='student-dashboard.html'">
+                        <div class="badge-avatar"><i class="fas fa-user-graduate"></i></div>
+                        <div class="badge-info" style="text-align: right;">
+                            <span class="s-name">أهلاً، ${firstName}</span>
+                            <span class="s-wallet">الرصيد: ${balance} ج.م</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 3. إظهار لينك "كورساتي" في الموبايل
+            const mobileMyCourses = document.getElementById('mobileMyCoursesLink');
+            if(mobileMyCourses) mobileMyCourses.style.display = 'block';
         }
+    } catch (error) {
+        console.error("خطأ في جلب بيانات الطالب:", error);
+    }
+}
     } catch (error) {
         console.error("خطأ في جلب بيانات الطالب:", error);
     }
