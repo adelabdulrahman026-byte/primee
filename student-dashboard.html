@@ -4,44 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الطالب - Primee</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="dashboard-body">
 
-    <div class="dashboard-layout">
-        <!-- القائمة الجانبية -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <h2>.Primee</h2>
-            </div>
-            <ul class="sidebar-nav">
+    <!-- نافذة الإشعارات (في حالة وجودها) -->
+    <div id="notificationModal" class="custom-modal-overlay"></div>
+
+    <!-- شريط علوي صغير للموبايل فقط عشان يفتح القائمة الجانبية -->
+    <div class="mobile-dash-header">
+        <div class="nav-brand" style="font-size: 24px; color: var(--primary-color); font-weight: 900;">Primee<span>.</span></div>
+        <button class="btn-hamburger" id="openMobileSidebar"><i class="fas fa-bars-staggered"></i></button>
+    </div>
+
+    <div class="dashboard-container">
+        
+        <!-- القائمة الجانبية (Sidebar) -->
+        <aside class="dash-sidebar" id="dashSidebar">
+            <button class="close-mobile-sidebar" id="closeMobileSidebar"><i class="fas fa-times"></i></button>
+            <div class="dash-brand">Primee<span>.</span></div>
+            
+            <ul class="dash-nav">
                 <li><a href="index.html"><i class="fas fa-home"></i> الرئيسية</a></li>
-                <li class="active"><a href="student-dashboard.html"><i class="fas fa-book-open"></i> كورساتي</a></li>
+                <li><a href="student-dashboard.html" class="active"><i class="fas fa-book-open"></i> كورساتي</a></li>
                 <li><a href="#"><i class="fas fa-wallet"></i> المحفظة</a></li>
                 <li><a href="#"><i class="fas fa-chart-line"></i> تقاريري</a></li>
             </ul>
-            <div class="sidebar-footer">
-                <button class="btn-logout" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-                </button>
-            </div>
+            
+            <button class="btn-logout" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+            </button>
         </aside>
 
-        <!-- المحتوى الرئيسي -->
-        <div class="main-content">
+        <!-- المحتوى الرئيسي (Main Content) -->
+        <div class="dash-main">
             
-            <!-- الشريط العلوي -->
-            <div class="top-navbar">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
+            <!-- الهيدر (البحث وبيانات الطالب) -->
+            <div class="dash-header">
+                <div class="search-bar">
                     <input type="text" placeholder="ابحث في موادك...">
+                    <i class="fas fa-search"></i>
                 </div>
-                <div class="user-profile">
-                    <div class="user-info">
-                        <span id="studentNameDisplay">جاري التحميل...</span>
-                        <small>طالب</small>
+                <div class="user-quick-info">
+                    <div class="user-text">
+                        <div id="studentNameDisplay">جاري التحميل...</div>
+                        <small style="color: var(--text-muted); font-size: 12px;">طالب بـ Primee</small>
                     </div>
                     <div class="user-avatar">
                         <i class="fas fa-user-graduate"></i>
@@ -50,21 +59,17 @@
             </div>
 
             <!-- البانر والمحفظة -->
-            <div class="dashboard-hero">
-                <div class="welcome-banner">
-                    <div class="banner-text">
-                        <h1 id="welcomeMessage">أهلاً بك! 🚀</h1>
-                        <p>هنا مساحتك الشخصية، تابع موادك، درجاتك، وتفوقك.</p>
-                    </div>
-                </div>
+            <div class="welcome-banner">
+                <h1 id="welcomeMessage">أهلاً بك! 🚀</h1>
+                <p>هنا مساحتك الشخصية، تابع موادك، درجاتك، وتفوقك.</p>
+            </div>
 
-                <div class="wallet-widget">
-                    <div class="widget-header">
-                        <i class="fas fa-wallet wallet-icon"></i> رصيد المحفظة
-                    </div>
-                    <h2 class="wallet-amount"><span id="walletBalance">0</span> ج.م</h2>
-                    <button class="btn-charge">شحن الرصيد +</button>
+            <div class="wallet-card">
+                <div class="wallet-info">
+                    <h3><i class="fas fa-wallet"></i> رصيد المحفظة</h3>
+                    <p class="wallet-amount"><span id="walletBalance">0</span> ج.م</p>
                 </div>
+                <button class="btn-charge">شحن الرصيد +</button>
             </div>
 
             <!-- الإحصائيات السريعة -->
@@ -92,38 +97,55 @@
                 </div>
             </div>
 
-            <!-- الكورسات المملوكة فقط (موادي) -->
+            <!-- الكورسات المملوكة (موادي) -->
             <div class="section-title">
-                <h3><i class="fas fa-play-circle" style="color: var(--primary-color);"></i> موادي الدراسية</h3>
+                <h3 style="color: var(--text-main); font-weight: 900;"><i class="fas fa-play-circle" style="color: var(--primary-color);"></i> موادي الدراسية</h3>
             </div>
             <div class="courses-grid" id="myCoursesGrid">
-                <!-- سيتم جلب الكورسات اللي الطالب اشتراها فقط هنا -->
+                <!-- سيتم جلب الكورسات اللي الطالب اشتراها هنا -->
             </div>
 
             <!-- تقرير الدرجات -->
-            <div class="section-title" style="margin-top: 40px;">
-                <h3><i class="fas fa-clipboard-list" style="color: var(--primary-color);"></i> تقرير الدرجات</h3>
+            <div class="section-title" style="margin-top: 20px;">
+                <h3 style="color: var(--text-main); font-weight: 900;"><i class="fas fa-clipboard-list" style="color: var(--primary-color);"></i> تقرير الدرجات</h3>
             </div>
-            <div class="grades-container">
-                <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th>اسم الحصة / الامتحان</th>
-                            <th>التاريخ</th>
-                            <th>الدرجة</th>
-                            <th>الحالة</th>
-                        </tr>
-                    </thead>
-                    <tbody id="gradesTableBody">
-                        <!-- سيتم جلب الدرجات هنا -->
-                    </tbody>
-                </table>
-            </div>
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>اسم الحصة / الامتحان</th>
+                        <th>التاريخ</th>
+                        <th>الدرجة</th>
+                        <th>الحالة</th>
+                    </tr>
+                </thead>
+                <tbody id="gradesTableBody">
+                    <tr><td colspan="4" style="text-align: center;">جاري جلب الدرجات...</td></tr>
+                </tbody>
+            </table>
 
         </div>
     </div>
 
-    <!-- استدعاء ملف الجافاسكريبت -->
+    <!-- سكربت التحكم في القائمة الجانبية للموبايل -->
+    <script>
+        const openBtn = document.getElementById('openMobileSidebar');
+        const closeBtn = document.getElementById('closeMobileSidebar');
+        const sidebar = document.getElementById('dashSidebar');
+
+        if(openBtn) {
+            openBtn.addEventListener('click', () => {
+                sidebar.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+        if(closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
+    </script>
+
     <script type="module" src="dashboard-script.js"></script>
 </body>
 </html>
