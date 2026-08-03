@@ -993,11 +993,7 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
    9. الداش بورد وصفحة الفيديو (تم فصل الـ Grid بالكامل هنا)
 ========================================================================== */
 
-/* تخطيط الداش بورد (قائمة 280 يمين والمحتوى يسار) */
-.dashboard-container { 
-    display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 30px; 
-    max-width: 1400px; margin: 40px auto; padding: 0 20px; align-items: start; 
-}
+
 
 /* تخطيط صفحة الفيديو (المحتوى يمين والسايدبار يسار 350) - كده الفيديو هيكبر! */
 .watch-container { 
