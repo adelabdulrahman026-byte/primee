@@ -77,6 +77,9 @@ async function fetchStudentNavData(phone) {
 // ==========================================
 // 2. تفعيل القائمة الجانبية (الصفوف)
 // ==========================================
+// ==========================================
+// 2. تفعيل القائمة الجانبية (الصفوف)
+// ==========================================
 const openDrawerBtn = document.getElementById('openDrawer');
 const closeDrawerBtn = document.getElementById('closeDrawer');
 const stagesDrawer = document.getElementById('stagesDrawer');
@@ -86,6 +89,8 @@ if (openDrawerBtn && stagesDrawer && drawerOverlay) {
     openDrawerBtn.addEventListener('click', () => {
         stagesDrawer.classList.add('open');
         drawerOverlay.classList.add('active');
+        // السطر ده بيجمد حركة الموقع اللي ورا القائمة
+        document.body.style.overflow = 'hidden'; 
     });
 }
 
@@ -93,12 +98,13 @@ function closeDrawer() {
     if (stagesDrawer && drawerOverlay) {
         stagesDrawer.classList.remove('open');
         drawerOverlay.classList.remove('active');
+        // السطر ده بيرجع الموقع يتحرك طبيعي لما تقفل القائمة
+        document.body.style.overflow = ''; 
     }
 }
 
 if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
 if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
-
 // ==========================================
 // 3. فلترة المدرسين من القائمة الجانبية (متوافقة مع التصميم الجديد)
 // ==========================================
