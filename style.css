@@ -319,3 +319,89 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
     .logged-in-badge { padding: 5px; }
     .badge-info { display: none; }
 }
+/* ==========================================================================
+   10. إنقاذ الداش بورد، صفحة الفيديو، وتقرير ولي الأمر (الأكواد المفقودة)
+========================================================================== */
+
+/* --- 1. حل مشكلة القائمة الجانبية (السكرول) --- */
+.side-drawer {
+    overflow-y: auto !important; /* بيجبر القائمة إنها تعمل سكرول من جواها */
+    -webkit-overflow-scrolling: touch; /* سكرول ناعم للموبايل */
+    padding-bottom: 40px; /* مساحة تحت عشان مفيش زراير تستخبى */
+}
+
+/* --- 2. تقرير ولي الأمر (Parent Report) --- */
+.report-container { max-width: 900px; margin: 40px auto; padding: 20px; }
+.report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; background: var(--bg-card); padding: 20px 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); border: 1px solid var(--input-border); }
+.report-header h2 { color: var(--primary-color); font-weight: 900; font-size: 24px; margin: 0; display: flex; align-items: center; gap: 10px; }
+.student-card { background: var(--bg-card); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 30px; display: flex; align-items: center; gap: 20px; border: 1px solid var(--input-border); }
+.student-avatar { width: 80px; height: 80px; background: rgba(91, 33, 182, 0.1); color: var(--primary-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 35px; flex-shrink: 0; }
+.student-info h3 { margin: 0 0 10px 0; font-size: 24px; color: var(--text-main); }
+.student-info p { margin: 0; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 8px;}
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.stat-card { background: var(--bg-card); padding: 20px; border-radius: 15px; border: 1px solid var(--input-border); display: flex; align-items: center; gap: 15px; }
+.stat-icon { width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; background: rgba(91,33,182,0.1); color: var(--primary-color); }
+.stat-info h3 { margin: 0; font-size: 24px; color: var(--text-main); }
+.stat-info p { margin: 0; color: var(--text-muted); font-size: 14px; font-weight: 600; }
+.modern-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 15px; overflow: hidden; border: 1px solid var(--input-border); }
+.modern-table th, .modern-table td { padding: 15px; text-align: right; border-bottom: 1px solid var(--input-border); }
+.modern-table th { background: var(--input-bg); color: var(--text-main); font-weight: 800; }
+
+/* --- 3. الداش بورد وصفحة الفيديو (Dashboard & Watch Page) --- */
+.dashboard-container, .watch-container { 
+    max-width: 1200px; 
+    margin: 40px auto; 
+    padding: 20px; 
+    display: grid; 
+    gap: 30px; 
+}
+@media (min-width: 992px) {
+    .dashboard-container { grid-template-columns: 280px 1fr; }
+    .watch-container { grid-template-columns: 1fr 350px; } /* الفيديو بياخد مساحة أكبر */
+}
+@media (max-width: 991px) {
+    .dashboard-container, .watch-container { grid-template-columns: 1fr; }
+}
+
+.dash-sidebar, .video-sidebar { 
+    background: var(--bg-card); 
+    padding: 25px; 
+    border-radius: 20px; 
+    border: 1px solid var(--input-border); 
+    height: fit-content; 
+}
+.dash-main, .video-main { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 25px; 
+}
+
+/* البانر الترحيبي في الداش بورد */
+.welcome-banner { 
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover)); 
+    color: white; 
+    padding: 35px; 
+    border-radius: 20px; 
+    box-shadow: 0 10px 30px rgba(91, 33, 182, 0.2);
+}
+.welcome-banner h1 { margin: 0 0 10px 0; color: white !important; font-size: 32px; font-weight: 900; }
+.welcome-banner p { margin: 0; opacity: 0.9; font-size: 16px; font-weight: 600; }
+
+/* عناصر صفحة الفيديو */
+.video-player-wrapper { 
+    background: #000; 
+    border-radius: 20px; 
+    overflow: hidden; 
+    aspect-ratio: 16 / 9; 
+}
+.video-details { 
+    background: var(--bg-card); 
+    padding: 25px; 
+    border-radius: 20px; 
+    border: 1px solid var(--input-border); 
+}
+.video-details h2 { margin: 0 0 15px 0; color: var(--text-main); font-weight: 900; }
+.video-details p { color: var(--text-muted); line-height: 1.8; font-weight: 600; }
+
+/* دعم الدارك مود للصفحات دي */
+[data-theme="dark"] .welcome-banner { border: 1px solid rgba(255,255,255,0.1); }
