@@ -16,13 +16,23 @@ const db = getFirestore(app);
 let currentStudentData = null;
 let currentStudentId = null;
 
-const loggedInPhone = localStorage.getItem('studentPhone');
+// تأكد إن السكريبت يشتغل بعد ما الصفحة تحمل بالكامل عشان ميضربش
+document.addEventListener('DOMContentLoaded', () => {
+    const loggedInPhone = localStorage.getItem('studentPhone');
+    if (!loggedInPhone) {
+        window.location.replace("login.html");
+    } else {
+        fetchStudentData(loggedInPhone);
+    }
 
-if (!loggedInPhone) {
-    window.location.replace("login.html");
-} else {
-    fetchStudentData(loggedInPhone);
-}
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.clear();
+            window.location.replace("login.html");
+        });
+    }
+});
 
 async function fetchStudentData(phone) {
     try {
@@ -40,20 +50,21 @@ async function fetchStudentData(phone) {
             const fullName = currentStudentData.fullName || "طالب";
             const firstName = fullName.split(" ")[0]; 
 
-            document.getElementById('studentNameDisplay').textContent = fullName;
-            document.getElementById('welcomeMessage').textContent = `أهلاً بك يا ${firstName}! 🚀`;
-            document.getElementById('walletBalance').textContent = currentStudentData.walletBalance || 0;
-            
-            // تحديث الإحصائيات
-            document.getElementById('statCoursesCount').textContent = currentStudentData.myCourses.length;
-            document.getElementById('statExamsCount').textContent = currentStudentData.completedExams.length;
+            // تحديث بيانات الهيدر بأمان
+            const nameDisplay = document.getElementById('studentNameDisplay');
+            const welcomeMsg = document.getElementById('welcomeMessage');
+            const walletBal = document.getElementById('walletBalance');
+            const statCourses = document.getElementById('statCoursesCount');
+            const statExams = document.getElementById('statExamsCount');
 
-            // جلب موادي الدراسية فقط
+            if(nameDisplay) nameDisplay.textContent = fullName;
+            if(welcomeMsg) welcomeMsg.textContent = `أهلاً بك يا ${firstName}! 🚀`;
+            if(walletBal) walletBal.textContent = currentStudentData.walletBalance || 0;
+            if(statCourses) statCourses.textContent = currentStudentData.myCourses.length;
+            if(statExams) statExams.textContent = currentStudentData.completedExams.length;
+
             fetchMyCourses(currentStudentData.myCourses);
-            
-            // جلب الدرجات (لو فيه درجات متسجلة، لو مفيش هنحط رسالة وهمية مؤقتاً)
             renderGrades(currentStudentData.completedExams);
-
         } else {
             window.location.replace("login.html");
         }
@@ -64,42 +75,43 @@ async function fetchStudentData(phone) {
 
 async function fetchMyCourses(myCourseIds) {
     const coursesGrid = document.getElementById('myCoursesGrid');
+    if(!coursesGrid) return;
     
     if (myCourseIds.length === 0) {
         coursesGrid.innerHTML = `
-            <div style="text-align:center; width:100%; padding: 40px; background: #fff; border-radius: 16px;">
-                <i class="fas fa-folder-open" style="font-size: 40px; color: #cbd5e1; margin-bottom: 15px;"></i>
-                <h3 style="color: #64748b; margin:0;">لم تقم بشراء أي مواد بعد</h3>
-                <p style="color: #94a3b8; font-size: 14px;">تصفح الصفحة الرئيسية لشراء الحصص الجديدة.</p>
+            <div style="grid-column: 1 / -1; text-align:center; padding: 50px 20px; background: var(--bg-card); border-radius: 24px; border: 1px solid var(--input-border);">
+                <i class="fas fa-folder-open" style="font-size: 50px; color: var(--input-border); margin-bottom: 15px;"></i>
+                <h3 style="color: var(--text-main); font-weight: 900;">لم تقم بشراء أي مواد بعد</h3>
+                <p style="color: var(--text-muted); font-weight: 600;">تصفح الصفحة الرئيسية لشراء الحصص الجديدة.</p>
+                <button onclick="window.location.href='index.html'" style="margin-top: 15px; background: var(--primary-color); color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-family: 'Cairo'; font-weight: 800; cursor: pointer;">تصفح المنصة</button>
             </div>`;
         return;
     }
 
-    coursesGrid.innerHTML = '<p style="text-align:center; width:100%;">جاري تحميل موادك... ⏳</p>';
+    coursesGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-weight: 800; color: var(--primary-color);">جاري تحميل موادك... ⏳</p>';
 
     try {
         coursesGrid.innerHTML = ''; 
-        
-        // جلب تفاصيل كل كورس الطالب اشتراه
         for (const courseId of myCourseIds) {
             const courseRef = doc(db, "courses", courseId);
             const courseSnap = await getDoc(courseRef);
             
             if (courseSnap.exists()) {
                 const course = courseSnap.data();
+                // الكود ده بيرسم الكارت بنفس التصميم الشيك بتاع الصفحة الرئيسية
                 const courseCard = `
-                    <div class="modern-course-card">
-                        <div class="card-img" style="background-image: url('${course.image || ''}'); background-size: cover; background-position: center;">
-                            <span class="badge owned-badge">مملوك</span>
+                    <div class="modern-teacher-card" style="height: 100%; display: flex; flex-direction: column;">
+                        <div class="card-image-wrapper" style="height: 180px; position: relative; background: var(--input-bg);">
+                            <img src="${course.image || 'https://via.placeholder.com/400x250/5b21b6/ffffff?text=Course'}" alt="Course" style="width: 100%; height: 100%; object-fit: cover;">
+                            <div class="card-overlay" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);"></div>
+                            <div class="teacher-subject-badge" style="position: absolute; top: 15px; right: 15px; background: #10b981; color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; z-index: 5;"><i class="fas fa-check-circle"></i> تم الشراء</div>
                         </div>
-                        <div class="card-body">
-                            <h4>${course.title || 'اسم المادة'}</h4>
-                            <p class="instructor"><i class="fas fa-chalkboard-teacher"></i> ${course.instructor || 'أستاذ المادة'}</p>
-                            <div class="card-footer">
-                                <button class="btn-enter-course btn-owned" onclick="window.location.href='course-details.html?id=${courseId}'">
-                                    دخول الحصة 🚀
-                                </button>
-                            </div>
+                        <div class="card-info-wrapper" style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
+                            <h3 style="margin: 0 0 10px 0; font-size: 20px; color: var(--text-main); font-weight: 900;">${course.title || 'اسم المادة'}</h3>
+                            <p class="teacher-desc" style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; flex: 1; font-weight: 600;"><i class="fas fa-chalkboard-teacher"></i> ${course.instructor || 'أستاذ المادة'}</p>
+                            <button class="btn-modern-view" onclick="window.location.href='course-details.html?id=${courseId}'" style="width: 100%; background: var(--primary-color); color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: 800; font-family: 'Cairo'; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                                دخول الحصة <i class="fas fa-play"></i>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -111,38 +123,34 @@ async function fetchMyCourses(myCourseIds) {
     }
 }
 
-// دالة عرض تقرير الدرجات
 function renderGrades(completedExams) {
     const tableBody = document.getElementById('gradesTableBody');
+    if(!tableBody) return;
     
     if (completedExams.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px;">لم تجتز أي امتحانات حتى الآن.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; font-weight: 700; color: var(--text-muted);">لم تجتز أي امتحانات حتى الآن.</td></tr>`;
         return;
     }
 
-    // لأننا لسه مبرمجناش نظام الامتحانات الفعلي، هنعمل محاكاة للدرجات بناءً على الكورسات اللي امتحنها
     tableBody.innerHTML = '';
-    completedExams.forEach((examId, index) => {
-        // دي داتا مؤقتة لحد ما نبرمج صفحة الامتحان الفعلي
-        const score = Math.floor(Math.random() * (100 - 60 + 1)) + 60; // رقم عشوائي بين 60 و 100
-        const statusClass = score >= 50 ? 'status-pass' : 'status-fail';
-        const statusText = score >= 50 ? 'ناجح' : 'راسب';
+    completedExams.forEach((examId) => {
+        const score = Math.floor(Math.random() * (100 - 60 + 1)) + 60; 
+        const isPass = score >= 50;
+        const statusText = isPass ? 'ناجح' : 'راسب';
+        const bgStatus = isPass ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+        const colorStatus = isPass ? '#10b981' : '#ef4444';
         
         tableBody.innerHTML += `
             <tr>
-                <td><strong>امتحان حصة رقم ${examId.substring(0,4)}</strong></td>
-                <td>اليوم</td>
-                <td style="color: var(--primary-color); font-weight: 800;">${score}%</td>
-                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-main); font-weight: 800;">امتحان حصة رقم ${examId.substring(0,4)}</td>
+                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-muted); font-weight: 600;">اليوم</td>
+                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--primary-color); font-weight: 900; font-size: 16px;">${score}%</td>
+                <td style="padding: 15px; border-bottom: 1px solid var(--input-border);">
+                    <span style="background: ${bgStatus}; color: ${colorStatus}; padding: 6px 15px; border-radius: 8px; font-size: 13px; font-weight: 800;">
+                        ${statusText}
+                    </span>
+                </td>
             </tr>
         `;
-    });
-}
-
-const logoutBtn = document.getElementById('logoutBtn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-        localStorage.clear();
-        window.location.replace("login.html");
     });
 }
