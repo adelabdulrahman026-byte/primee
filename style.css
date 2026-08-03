@@ -323,3 +323,72 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--p
 .swiper-pagination-bullet-active {
     background-color: var(--primary-color) !important;
 }
+/* ==================== تصليح ألوان الدارك مود المنسية ==================== */
+.main-navbar, .side-drawer { background-color: var(--bg-card) !important; }
+.hero-content h1, .section-header h2, .about-card h2, .footer-logo h3 { color: var(--text-main) !important; }
+.nav-brand { color: var(--primary-color) !important; }
+.nav-brand span { color: var(--text-main) !important; }
+
+/* ==================== فلاتر الباقات الشيك ==================== */
+.packages-filters {
+    display: flex; justify-content: center; gap: 15px; margin-bottom: 40px; flex-wrap: wrap;
+}
+.filter-btn {
+    background: var(--bg-card); border: 2px solid var(--input-border);
+    color: var(--text-muted); padding: 12px 25px; border-radius: 50px;
+    font-size: 16px; font-weight: 800; font-family: 'Cairo'; cursor: pointer;
+    display: flex; align-items: center; gap: 10px; transition: 0.3s;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.02);
+}
+.filter-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: translateY(-3px); }
+.filter-btn.active { background: var(--primary-color); border-color: var(--primary-color); color: #fff; box-shadow: 0 10px 20px rgba(91,33,182,0.3); }
+
+/* ==================== قسم النصائح (دليلك للتفوق) ==================== */
+.tips-container { display: flex; flex-direction: column; gap: 30px; }
+.tip-card {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-card); border-radius: 24px; padding: 40px;
+    position: relative; overflow: hidden; border: 1px solid var(--input-border);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.03); transition: 0.4s;
+}
+.tip-card:hover { transform: scale(1.02); }
+.tip-card.reverse { flex-direction: row-reverse; } /* بيعكس الكارت عشان يبقوا زجزاج */
+
+.tip-number {
+    position: absolute; top: -20px; left: -10px; font-size: 150px;
+    font-weight: 900; opacity: 0.05; color: var(--text-main); font-family: sans-serif;
+}
+.tip-card.reverse .tip-number { left: auto; right: -10px; }
+
+.tip-content { flex: 1; padding: 0 20px; z-index: 2; }
+.tip-content h3 { font-size: 24px; margin: 0 0 15px 0; color: var(--text-main); }
+.tip-content p { font-size: 16px; color: var(--text-muted); line-height: 1.8; margin: 0; }
+
+.tip-image {
+    width: 150px; height: 150px; border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 60px; z-index: 2; box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+/* ألوان مخصصة لكل نصيحة بتليق مع هوية الموقع */
+.tip-card.style-1 { background: linear-gradient(135deg, var(--bg-card), #f3e8ff); border-color: #d8b4fe; }
+.tip-card.style-1 .tip-image { background: #d8b4fe; color: #6b21a8; }
+
+.tip-card.style-2 { background: linear-gradient(135deg, var(--bg-card), #e0f2fe); border-color: #7dd3fc; }
+.tip-card.style-2 .tip-image { background: #7dd3fc; color: #0369a1; }
+
+.tip-card.style-3 { background: linear-gradient(135deg, var(--bg-card), #fef3c7); border-color: #fcd34d; }
+.tip-card.style-3 .tip-image { background: #fcd34d; color: #b45309; }
+
+.tip-card.style-4 { background: linear-gradient(135deg, var(--bg-card), #dcfce7); border-color: #86efac; }
+.tip-card.style-4 .tip-image { background: #86efac; color: #15803d; }
+
+[data-theme="dark"] .tip-card.style-1 { background: linear-gradient(135deg, var(--bg-card), rgba(107, 33, 168, 0.2)); border-color: #6b21a8; }
+[data-theme="dark"] .tip-card.style-2 { background: linear-gradient(135deg, var(--bg-card), rgba(3, 105, 161, 0.2)); border-color: #0369a1; }
+[data-theme="dark"] .tip-card.style-3 { background: linear-gradient(135deg, var(--bg-card), rgba(180, 83, 9, 0.2)); border-color: #b45309; }
+[data-theme="dark"] .tip-card.style-4 { background: linear-gradient(135deg, var(--bg-card), rgba(21, 128, 61, 0.2)); border-color: #15803d; }
+
+@media (max-width: 768px) {
+    .tip-card, .tip-card.reverse { flex-direction: column; text-align: center; gap: 20px; padding: 30px 20px; }
+    .tip-number { font-size: 100px; top: -10px; }
+}
