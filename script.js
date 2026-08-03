@@ -1,122 +1,117 @@
-// 1. استدعاء مكتبات فايربيز (استخدام روابط الـ CDN عشان يشتغل مباشرة في المتصفح)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- كود الـ firebaseConfig الخاص بمشروعك ---
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
     authDomain: "academy-444b6.firebaseapp.com",
     projectId: "academy-444b6",
     storageBucket: "academy-444b6.firebasestorage.app",
     messagingSenderId: "1079254330731",
-    appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e",
-    measurementId: "G-TQBXQ48M2W"
+    appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e"
 };
-// ------------------------------------------
 
-// 2. تشغيل فايربيز والاتصال بقاعدة البيانات
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 3. تفعيل زرار الوضع الليلي (مع حفظ اختيار الطالب)
+// تفعيل الوضع الليلي
 const themeBtn = document.getElementById('themeBtn');
-const bodyElement = document.body;
-
-// التحقق من الاختيار المحفوظ في المتصفح عشان يفضل ثابت
-if (localStorage.getItem('theme') === 'dark') {
-    bodyElement.setAttribute('data-theme', 'dark');
-    if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
-}
-
-if (themeBtn) {
+if(themeBtn) {
     themeBtn.addEventListener('click', () => {
-        if (bodyElement.getAttribute('data-theme') === 'dark') {
-            bodyElement.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-            themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        const body = document.body;
+        if (body.getAttribute('data-theme') === 'dark') {
+            body.removeAttribute('data-theme');
+            themeBtn.textContent = '🌙';
         } else {
-            bodyElement.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-            themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+            body.setAttribute('data-theme', 'dark');
+            themeBtn.textContent = '☀️';
         }
     });
 }
 
-// 4. تفعيل زرار رفع الصورة (شكلياً حالياً)
-const uploadBtn = document.getElementById('uploadBtn');
-const profilePicInput = document.getElementById('profilePic');
-if (uploadBtn && profilePicInput) {
-    uploadBtn.addEventListener('click', () => profilePicInput.click());
+// دوال النوافذ المنبثقة
+function showAlert(title, message) {
+    const alertTitle = document.getElementById('alertTitle');
+    const alertMessage = document.getElementById('alertMessage');
+    const alertModal = document.getElementById('alertModal');
+    
+    if(alertTitle && alertMessage && alertModal) {
+        alertTitle.textContent = title;
+        alertMessage.textContent = message;
+        alertModal.classList.add('active');
+    } else {
+        alert(title + "\n" + message); // بديل سريع لو نسينا نحط نافذة الـ HTML
+    }
 }
 
-// 5. إرسال البيانات لفايربيز
+window.closeAlertModal = function() {
+    const alertModal = document.getElementById('alertModal');
+    if(alertModal) alertModal.classList.remove('active');
+};
+
+// ==========================================
+// عملية إنشاء الحساب ومنع التكرار
+// ==========================================
 const registerForm = document.getElementById('registerForm');
+
 if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); // منع الصفحة من عمل ريفرش
+        e.preventDefault();
         
-        // تغيير نص الزرار عشان الطالب يعرف إن فيه تحميل
         const submitBtn = document.querySelector('.btn-submit');
-        if (submitBtn) {
-            submitBtn.textContent = 'جاري إنشاء الحساب... ⏳';
-            submitBtn.disabled = true;
-        }
+        submitBtn.textContent = 'جاري التحقق... ⏳';
+        submitBtn.disabled = true;
 
-        // تجميع البيانات من الحقول (مع حماية برمجية للتأكد من وجودها)
-        const studentData = {
-            fullName: document.getElementById('fullName')?.value || "",
-            studentPhone: document.getElementById('studentPhone')?.value || "",
-            parentPhone: document.getElementById('parentPhone')?.value || "",
-            password: document.getElementById('password')?.value || "",
-            grade: document.getElementById('grade')?.value || "",
-            governorate: document.getElementById('governorate')?.value || "",
-            address: document.getElementById('address')?.value || "",
-            role: "student",
-            walletBalance: 0,
-            isBlocked: false,
-            deviceId: "", 
-            myCourses: [], // إضافة المصفوفة فارغة مسبقاً عشان تقرير ولي الأمر ميضربش
-            completedExams: [], // إضافة المصفوفة فارغة مسبقاً
-            createdAt: new Date().toISOString() // تسجيل وقت وتاريخ إنشاء الحساب
-        };
+        // سحب البيانات بأسماء (IDs) مطابقة لملف الـ HTML بتاعك بالمللي + قص المسافات
+        const fullName = document.getElementById('fullName').value.trim();
+        const phone = document.getElementById('studentPhone').value.trim();
+        const parentPhone = document.getElementById('parentPhone').value.trim();
+        const password = document.getElementById('password').value;
+        const grade = document.getElementById('grade').value;
+        const governorate = document.getElementById('governorate').value;
+        const address = document.getElementById('address').value.trim();
 
         try {
-            // رفع البيانات لمجلد users في Firestore
-            const docRef = await addDoc(collection(db, "users"), studentData);
-            console.log("تم التسجيل برقم ID: ", docRef.id);
+            // 1. فحص هل الرقم ده متسجل قبل كده ولا لأ؟ 🔍
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("studentPhone", "==", phone));
+            const querySnapshot = await getDocs(q);
 
-            // إرسال البيانات لسكربت جوجل (Webhook) عشان يبعت رسالة واتساب
-            const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzexynePg71_RsL1F2-d80Mev2JM78UsMT1Y2ZNr684Sp3B1bE67JfwI_I2d34-NwFm/exec"; 
-            
-            fetch(WEBHOOK_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: "welcome",
-                    phone: studentData.studentPhone, // هيبعت للطالب
-                    password: studentData.password,
-                    name: studentData.fullName
-                })
-            }).catch(err => console.error("مشكلة في إرسال الواتساب:", err));
-
-            // إظهار نافذة النجاح بدل الـ alert
-            const successModal = document.getElementById('successModal');
-            if (successModal) {
-                successModal.classList.add('active');        
-            } else {
-                // لو النافذة مش موجودة في الـ HTML يظهر تنبيه عادي ويوجهه للدخول
-                alert("تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.");
-                window.location.href = "login.html";
-            }
-            
-        } catch (error) {
-            console.error("حصل مشكلة: ", error);
-            alert("حصلت مشكلة في التسجيل. تأكد من اتصالك بالإنترنت وتصاريح قاعدة البيانات.");
-        } finally {
-            // إرجاع الزرار لشكله الطبيعي
-            if (submitBtn) {
+            if (!querySnapshot.empty) {
+                // لو الرقم موجود، بنطرد الطلب ونقفل التسجيل
+                showAlert("عذراً ⚠️", "رقم الهاتف ده مسجل بيه حساب قبل كده. تقدر تسجل دخول، أو استخدم رقم تاني.");
                 submitBtn.textContent = 'إنشاء الحساب الآن';
                 submitBtn.disabled = false;
+                return; // بتوقف الكود هنا فوراً ومبتكملش
             }
+
+            // 2. الكود عدى والفحص سليم (الرقم جديد) -> هنحفظ الحساب في الداتا بيز
+            await addDoc(collection(db, "users"), {
+                fullName: fullName,
+                studentPhone: phone,
+                parentPhone: parentPhone,
+                password: password,
+                grade: grade,
+                governorate: governorate,
+                address: address,
+                myCourses: [],
+                completedExams: [],
+                deviceId: "", // بنسيبه فاضي عشان يتبصم لما يعمل تسجيل دخول
+                walletBalance: 0,
+                isBlocked: false,
+                joinDate: new Date().toISOString()
+            });
+
+            // 3. إظهار نافذة النجاح الخاصة بك
+            const successModal = document.getElementById('successModal');
+            if(successModal) {
+                successModal.classList.add('active');
+            }
+
+        } catch (error) {
+            console.error("خطأ:", error);
+            showAlert("مشكلة تقنية", "حدث خطأ أثناء الاتصال بقاعدة البيانات.");
+            submitBtn.textContent = 'إنشاء الحساب الآن';
+            submitBtn.disabled = false;
         }
     });
 }
