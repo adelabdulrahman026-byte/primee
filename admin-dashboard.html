@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الإدارة - Primee</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* ستايل مخصص للوحة الإدارة عشان نعزلها عن باقى الموقع */
+        body { margin: 0; font-family: 'Cairo', sans-serif; background: #0f172a; color: #f8fafc; display: flex; min-height: 100vh; overflow-x: hidden; }
+        
+        /* القائمة الجانبية */
+        .admin-sidebar { width: 260px; background: #1e293b; border-left: 1px solid #334155; display: flex; flex-direction: column; position: fixed; right: 0; top: 0; height: 100vh; z-index: 100; transition: 0.3s; }
+        .admin-brand { padding: 25px; text-align: center; font-size: 26px; font-weight: 900; color: #f59e0b; border-bottom: 1px solid #334155; }
+        .admin-brand span { color: #f8fafc; }
+        .admin-nav { list-style: none; padding: 15px; margin: 0; flex: 1; }
+        .admin-nav li a { display: flex; align-items: center; gap: 15px; padding: 15px; color: #cbd5e1; text-decoration: none; font-weight: 700; border-radius: 12px; margin-bottom: 10px; transition: 0.3s; }
+        .admin-nav li a:hover, .admin-nav li a.active { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .admin-nav li a i { font-size: 20px; width: 25px; text-align: center; }
+        .btn-logout { margin: 15px; padding: 15px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; display: flex; justify-content: center; align-items: center; gap: 10px; font-family: 'Cairo'; transition: 0.3s; }
+        .btn-logout:hover { background: #ef4444; color: #fff; }
+
+        /* المحتوى الرئيسي */
+        .admin-main { flex: 1; margin-right: 260px; padding: 30px; display: flex; flex-direction: column; gap: 30px; }
+        
+        .admin-header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 20px 30px; border-radius: 20px; border: 1px solid #334155; }
+        .admin-header h2 { margin: 0; font-size: 22px; font-weight: 800; color: #f8fafc; }
+        
+        /* كروت الإحصائيات */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .stat-card { background: #1e293b; padding: 25px; border-radius: 20px; border: 1px solid #334155; display: flex; align-items: center; gap: 20px; }
+        .stat-icon { width: 60px; height: 60px; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 26px; }
+        .stat-info h3 { margin: 0 0 5px 0; font-size: 28px; font-weight: 900; }
+        .stat-info p { margin: 0; color: #94a3b8; font-weight: 600; font-size: 15px; }
+
+        /* جدول أحدث الطلاب */
+        .admin-table-container { background: #1e293b; border-radius: 20px; border: 1px solid #334155; padding: 25px; overflow-x: auto; }
+        .admin-table-container h3 { margin: 0 0 20px 0; font-size: 20px; color: #f8fafc; font-weight: 800; border-bottom: 1px solid #334155; padding-bottom: 15px;}
+        table { width: 100%; border-collapse: collapse; text-align: right; }
+        th, td { padding: 15px; border-bottom: 1px solid #334155; }
+        th { color: #94a3b8; font-weight: 800; font-size: 15px; }
+        td { color: #f8fafc; font-weight: 700; font-size: 15px; }
+        
+        /* التنبيه المنبثق اللحظي (Toast) */
+        .toast-notification { position: fixed; bottom: -100px; left: 30px; background: #10b981; color: #fff; padding: 15px 25px; border-radius: 15px; font-weight: 800; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 15px; transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 9999; }
+        .toast-notification.show { bottom: 30px; }
+        .toast-notification i { font-size: 24px; }
+    </style>
+</head>
+<body>
+
+    <!-- القائمة الجانبية -->
+    <aside class="admin-sidebar">
+        <div class="admin-brand">Primee<span>.</span></div>
+        <ul class="admin-nav">
+            <li><a href="#" class="active"><i class="fas fa-chart-pie"></i> لوحة القيادة</a></li>
+            <li><a href="#"><i class="fas fa-users"></i> إدارة الطلاب</a></li>
+            <li><a href="#"><i class="fas fa-video"></i> إدارة الكورسات</a></li>
+            <li><a href="#"><i class="fas fa-wallet"></i> العمليات المالية</a></li>
+        </ul>
+        <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+    </aside>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="admin-main">
+        <div class="admin-header">
+            <h2>مرحباً بك يا مدير النظام 👋</h2>
+            <div style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 10px 20px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; gap: 10px; cursor: pointer;" id="enableSoundBtn">
+                <i class="fas fa-volume-up"></i> تفعيل صوت الإشعارات
+            </div>
+        </div>
+
+        <!-- الإحصائيات السريعة -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;"><i class="fas fa-users"></i></div>
+                <div class="stat-info">
+                    <h3 id="totalStudentsCount">0</h3>
+                    <p>إجمالي الطلاب</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="fas fa-money-bill-wave"></i></div>
+                <div class="stat-info">
+                    <h3 id="totalRevenue">0 ج.م</h3>
+                    <p>إجمالي الأرباح</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="fas fa-laptop-code"></i></div>
+                <div class="stat-info">
+                    <h3 id="totalCourses">0</h3>
+                    <p>الكورسات النشطة</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- جدول الطلاب الجدد -->
+        <div class="admin-table-container">
+            <h3>أحدث الطلاب المسجلين (مباشر) 🟢</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>رقم الطالب</th>
+                        <th>المرحلة</th>
+                        <th>المحفظة</th>
+                        <th>وقت التسجيل</th>
+                    </tr>
+                </thead>
+                <tbody id="recentStudentsTable">
+                    <tr><td colspan="5" style="text-align: center; color: #94a3b8;">جاري جلب البيانات... ⏳</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- إشعار التوست (بيظهر لما طالب جديد يسجل) -->
+    <div id="liveToast" class="toast-notification">
+        <i class="fas fa-bell"></i>
+        <div>
+            <div style="font-size: 14px; opacity: 0.9;">تسجيل جديد!</div>
+            <div id="toastMessage" style="font-size: 16px;">انضم طالب جديد للمنصة</div>
+        </div>
+    </div>
+
+    <!-- ملف الأكواد -->
+    <script type="module" src="admin-dashboard.js"></script>
+</body>
+</html>
