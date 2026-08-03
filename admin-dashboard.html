@@ -6,12 +6,9 @@
     <title>لوحة تحكم الإدارة - Primee</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link rel="stylesheet" href="style.css">
     <style>
-        /* ستايل مخصص للوحة الإدارة عشان نعزلها عن باقى الموقع */
         body { margin: 0; font-family: 'Cairo', sans-serif; background: #0f172a; color: #f8fafc; display: flex; min-height: 100vh; overflow-x: hidden; }
-        
-        /* القائمة الجانبية */
         .admin-sidebar { width: 260px; background: #1e293b; border-left: 1px solid #334155; display: flex; flex-direction: column; position: fixed; right: 0; top: 0; height: 100vh; z-index: 100; transition: 0.3s; }
         .admin-brand { padding: 25px; text-align: center; font-size: 26px; font-weight: 900; color: #f59e0b; border-bottom: 1px solid #334155; }
         .admin-brand span { color: #f8fafc; }
@@ -22,20 +19,16 @@
         .btn-logout { margin: 15px; padding: 15px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; display: flex; justify-content: center; align-items: center; gap: 10px; font-family: 'Cairo'; transition: 0.3s; }
         .btn-logout:hover { background: #ef4444; color: #fff; }
 
-        /* المحتوى الرئيسي */
         .admin-main { flex: 1; margin-right: 260px; padding: 30px; display: flex; flex-direction: column; gap: 30px; }
-        
         .admin-header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 20px 30px; border-radius: 20px; border: 1px solid #334155; }
         .admin-header h2 { margin: 0; font-size: 22px; font-weight: 800; color: #f8fafc; }
         
-        /* كروت الإحصائيات */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
         .stat-card { background: #1e293b; padding: 25px; border-radius: 20px; border: 1px solid #334155; display: flex; align-items: center; gap: 20px; }
         .stat-icon { width: 60px; height: 60px; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 26px; }
         .stat-info h3 { margin: 0 0 5px 0; font-size: 28px; font-weight: 900; }
         .stat-info p { margin: 0; color: #94a3b8; font-weight: 600; font-size: 15px; }
 
-        /* جدول أحدث الطلاب */
         .admin-table-container { background: #1e293b; border-radius: 20px; border: 1px solid #334155; padding: 25px; overflow-x: auto; }
         .admin-table-container h3 { margin: 0 0 20px 0; font-size: 20px; color: #f8fafc; font-weight: 800; border-bottom: 1px solid #334155; padding-bottom: 15px;}
         table { width: 100%; border-collapse: collapse; text-align: right; }
@@ -43,36 +36,33 @@
         th { color: #94a3b8; font-weight: 800; font-size: 15px; }
         td { color: #f8fafc; font-weight: 700; font-size: 15px; }
         
-        /* التنبيه المنبثق اللحظي (Toast) */
-        .toast-notification { position: fixed; bottom: -100px; left: 30px; background: #10b981; color: #fff; padding: 15px 25px; border-radius: 15px; font-weight: 800; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 15px; transition: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 9999; }
+        .toast-notification { position: fixed; bottom: -100px; left: 30px; background: #10b981; color: #fff; padding: 15px 25px; border-radius: 15px; font-weight: 800; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 15px; transition: 0.5s; z-index: 9999; }
         .toast-notification.show { bottom: 30px; }
-        .toast-notification i { font-size: 24px; }
+        
+        /* أزرار نوافذ التنبيه الخاصة بالأدمن */
+        .admin-modal-btn { padding: 10px 25px; border-radius: 10px; border: none; font-family: 'Cairo'; font-weight: 800; cursor: pointer; font-size: 16px; transition: 0.3s; }
     </style>
 </head>
 <body>
 
-    <!-- القائمة الجانبية -->
     <aside class="admin-sidebar">
         <div class="admin-brand">Primee<span>.</span></div>
         <ul class="admin-nav">
             <li><a href="#" class="active"><i class="fas fa-chart-pie"></i> لوحة القيادة</a></li>
             <li><a href="#"><i class="fas fa-users"></i> إدارة الطلاب</a></li>
             <li><a href="#"><i class="fas fa-video"></i> إدارة الكورسات</a></li>
-            <li><a href="#"><i class="fas fa-wallet"></i> العمليات المالية</a></li>
         </ul>
         <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
     </aside>
 
-    <!-- المحتوى الرئيسي -->
     <main class="admin-main">
         <div class="admin-header">
-            <h2>مرحباً بك يا مدير النظام 👋</h2>
+            <h2>مرحباً بك  👋</h2>
             <div style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 10px 20px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; gap: 10px; cursor: pointer;" id="enableSoundBtn">
                 <i class="fas fa-volume-up"></i> تفعيل صوت الإشعارات
             </div>
         </div>
 
-        <!-- الإحصائيات السريعة -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;"><i class="fas fa-users"></i></div>
@@ -88,16 +78,48 @@
                     <p>إجمالي الأرباح</p>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="fas fa-laptop-code"></i></div>
-                <div class="stat-info">
-                    <h3 id="totalCourses">0</h3>
-                    <p>الكورسات النشطة</p>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- قسم الإدارة السريعة (تم نقله للأعلى) -->
+        <!-- ========================================== -->
+        <div class="admin-table-container">
+            <h3><i class="fas fa-user-cog" style="color: #3b82f6;"></i> الإدارة السريعة للطلاب</h3>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
+                <input type="tel" id="searchPhoneInput" placeholder="أدخل رقم هاتف الطالب..." style="flex: 1; min-width: 250px; padding: 15px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-size: 16px;">
+                <button id="btnSearchStudent" style="background: #3b82f6; color: #fff; border: none; padding: 15px 30px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer;"><i class="fas fa-search"></i> بحث</button>
+            </div>
+
+            <div id="studentResultCard" style="display: none; background: #0f172a; padding: 25px; border-radius: 15px; border: 1px solid #334155;">
+                <div style="display: flex; justify-content: space-between; align-items: stretch; flex-wrap: wrap; gap: 20px;">
+                    
+                    <div style="flex: 1; min-width: 250px;">
+                        <h4 id="resStudentName" style="margin: 0 0 15px 0; font-size: 24px; color: #f8fafc; font-weight: 900;">-</h4>
+                        <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-phone" style="width: 20px;"></i> الهاتف: <span id="resStudentPhone" style="color: #cbd5e1;">-</span></p>
+                        <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-graduation-cap" style="width: 20px;"></i> المرحلة: <span id="resStudentGrade" style="color: #cbd5e1;">-</span></p>
+                        <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-wallet" style="width: 20px;"></i> الرصيد الحالي: <span id="resStudentWallet" style="color: #10b981; font-weight: 900; font-size: 18px;">0 ج.م</span></p>
+                        <p style="margin: 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-shield-alt" style="width: 20px;"></i> حالة الحساب: <span id="resStudentStatus" style="font-weight: 900;">نشط</span></p>
+                    </div>
+
+                    <div style="flex: 1; min-width: 250px; background: #1e293b; padding: 20px; border-radius: 12px; border: 1px dashed #475569;">
+                        <h5 style="margin: 0 0 15px 0; color: #cbd5e1; font-size: 16px; font-weight: 800;">تعديل الرصيد (إيداع / خصم)</h5>
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <input type="number" id="chargeAmount" placeholder="المبلغ" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-weight: 800;">
+                            <button id="btnChargeWallet" style="background: #10b981; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i></button>
+                            <!-- زرار الخصم الجديد -->
+                            <button id="btnDeductWallet" style="background: #ef4444; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-minus"></i></button>
+                        </div>
+
+                        <button id="btnToggleBlock" style="width: 100%; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 12px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-ban"></i> حظر الطالب</button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- جدول الطلاب الجدد -->
+        <!-- ========================================== -->
+        <!-- جدول الطلاب (بقى تحت) -->
+        <!-- ========================================== -->
         <div class="admin-table-container">
             <h3>أحدث الطلاب المسجلين (مباشر) 🟢</h3>
             <table>
@@ -115,52 +137,9 @@
                 </tbody>
             </table>
         </div>
-        <!-- ========================================== -->
-        <!-- قسم إدارة الطلاب (البحث، الشحن، الحظر) -->
-        <!-- ========================================== -->
-        <div class="admin-table-container" style="margin-top: 10px;">
-            <h3><i class="fas fa-user-cog" style="color: #3b82f6;"></i> الإدارة السريعة للطلاب</h3>
-            
-            <!-- شريط البحث -->
-            <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
-                <input type="tel" id="searchPhoneInput" placeholder="أدخل رقم هاتف الطالب للبحث..." style="flex: 1; min-width: 250px; padding: 15px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-size: 16px;">
-                <button id="btnSearchStudent" style="background: #3b82f6; color: #fff; border: none; padding: 15px 30px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; transition: 0.3s;"><i class="fas fa-search"></i> بحث</button>
-            </div>
-
-            <!-- كارت نتيجة البحث (مخفي في البداية وبيظهر لما نلاقي الطالب) -->
-            <div id="studentResultCard" style="display: none; background: #0f172a; padding: 25px; border-radius: 15px; border: 1px solid #334155; transition: 0.3s;">
-                <div style="display: flex; justify-content: space-between; align-items: stretch; flex-wrap: wrap; gap: 20px;">
-                    
-                    <!-- بيانات الطالب -->
-                    <div style="flex: 1; min-width: 250px;">
-                        <h4 id="resStudentName" style="margin: 0 0 15px 0; font-size: 24px; color: #f8fafc; font-weight: 900;">-</h4>
-                        <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-phone" style="width: 20px;"></i> الهاتف: <span id="resStudentPhone" style="color: #cbd5e1;">-</span></p>
-                        <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-graduation-cap" style="width: 20px;"></i> المرحلة: <span id="resStudentGrade" style="color: #cbd5e1;">-</span></p>
-                        <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-wallet" style="width: 20px;"></i> الرصيد الحالي: <span id="resStudentWallet" style="color: #10b981; font-weight: 900; font-size: 18px;">0 ج.م</span></p>
-                        <p style="margin: 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-shield-alt" style="width: 20px;"></i> حالة الحساب: <span id="resStudentStatus" style="font-weight: 900;">نشط</span></p>
-                    </div>
-
-                    <!-- لوحة التحكم (شحن وحظر) -->
-                    <div style="flex: 1; min-width: 250px; background: #1e293b; padding: 20px; border-radius: 12px; border: 1px dashed #475569; display: flex; flex-direction: column; justify-content: center;">
-                        <h5 style="margin: 0 0 15px 0; color: #cbd5e1; font-size: 16px; font-weight: 800;">إجراءات سريعة</h5>
-                        
-                        <!-- شحن المحفظة -->
-                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                            <input type="number" id="chargeAmount" placeholder="المبلغ (ج.م)" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-weight: 800;">
-                            <button id="btnChargeWallet" style="background: #10b981; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; transition: 0.3s;">شحن</button>
-                        </div>
-
-                        <!-- زرار الحظر/فك الحظر -->
-                        <button id="btnToggleBlock" style="width: 100%; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 12px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; transition: 0.3s;">
-                            <i class="fas fa-ban"></i> حظر الطالب
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
 
-    <!-- إشعار التوست (بيظهر لما طالب جديد يسجل) -->
+    <!-- توست الإشعارات الجانبي -->
     <div id="liveToast" class="toast-notification">
         <i class="fas fa-bell"></i>
         <div>
@@ -169,7 +148,33 @@
         </div>
     </div>
 
-    <!-- ملف الأكواد -->
+    <!-- ========================================================= -->
+    <!-- نوافذ الإدارة الفخمة (بديلة للـ Alert والـ Confirm) -->
+    <!-- ========================================================= -->
+    
+    <!-- نافذة التنبيه (رسالة فقط) -->
+    <div class="modal-overlay" id="customAdminAlert">
+        <div class="modal-content" style="background: #1e293b; border: 1px solid #334155; text-align: center;">
+            <div class="modal-icon" id="adminAlertIcon" style="font-size: 60px; margin-bottom: 15px;"></div>
+            <h3 id="adminAlertTitle" style="color: #f8fafc; font-size: 24px; font-weight: 900;">تنبيه</h3>
+            <p id="adminAlertMsg" style="color: #94a3b8; font-weight: 600; margin-bottom: 25px;"></p>
+            <button class="admin-modal-btn" onclick="document.getElementById('customAdminAlert').classList.remove('active')" style="background: #3b82f6; color: #fff; width: 100%;">حسناً</button>
+        </div>
+    </div>
+
+    <!-- نافذة التأكيد (سؤال نعم/لا) -->
+    <div class="modal-overlay" id="customAdminConfirm">
+        <div class="modal-content" style="background: #1e293b; border: 1px solid #334155; text-align: center;">
+            <div class="modal-icon" style="color: #f59e0b; font-size: 60px; margin-bottom: 15px;"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3 style="color: #f8fafc; font-size: 24px; font-weight: 900;">تأكيد الإجراء</h3>
+            <p id="adminConfirmMsg" style="color: #94a3b8; font-weight: 600; margin-bottom: 25px;"></p>
+            <div style="display: flex; gap: 15px;">
+                <button id="btnConfirmYes" class="admin-modal-btn" style="background: #ef4444; color: #fff; flex: 1;">نعم، متأكد</button>
+                <button id="btnConfirmNo" class="admin-modal-btn" style="background: #334155; color: #fff; flex: 1; border: 1px solid #475569;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="admin-dashboard.js"></script>
 </body>
 </html>
