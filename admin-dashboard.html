@@ -115,6 +115,49 @@
                 </tbody>
             </table>
         </div>
+        <!-- ========================================== -->
+        <!-- قسم إدارة الطلاب (البحث، الشحن، الحظر) -->
+        <!-- ========================================== -->
+        <div class="admin-table-container" style="margin-top: 10px;">
+            <h3><i class="fas fa-user-cog" style="color: #3b82f6;"></i> الإدارة السريعة للطلاب</h3>
+            
+            <!-- شريط البحث -->
+            <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
+                <input type="tel" id="searchPhoneInput" placeholder="أدخل رقم هاتف الطالب للبحث..." style="flex: 1; min-width: 250px; padding: 15px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-size: 16px;">
+                <button id="btnSearchStudent" style="background: #3b82f6; color: #fff; border: none; padding: 15px 30px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; transition: 0.3s;"><i class="fas fa-search"></i> بحث</button>
+            </div>
+
+            <!-- كارت نتيجة البحث (مخفي في البداية وبيظهر لما نلاقي الطالب) -->
+            <div id="studentResultCard" style="display: none; background: #0f172a; padding: 25px; border-radius: 15px; border: 1px solid #334155; transition: 0.3s;">
+                <div style="display: flex; justify-content: space-between; align-items: stretch; flex-wrap: wrap; gap: 20px;">
+                    
+                    <!-- بيانات الطالب -->
+                    <div style="flex: 1; min-width: 250px;">
+                        <h4 id="resStudentName" style="margin: 0 0 15px 0; font-size: 24px; color: #f8fafc; font-weight: 900;">-</h4>
+                        <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-phone" style="width: 20px;"></i> الهاتف: <span id="resStudentPhone" style="color: #cbd5e1;">-</span></p>
+                        <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-graduation-cap" style="width: 20px;"></i> المرحلة: <span id="resStudentGrade" style="color: #cbd5e1;">-</span></p>
+                        <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-wallet" style="width: 20px;"></i> الرصيد الحالي: <span id="resStudentWallet" style="color: #10b981; font-weight: 900; font-size: 18px;">0 ج.م</span></p>
+                        <p style="margin: 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-shield-alt" style="width: 20px;"></i> حالة الحساب: <span id="resStudentStatus" style="font-weight: 900;">نشط</span></p>
+                    </div>
+
+                    <!-- لوحة التحكم (شحن وحظر) -->
+                    <div style="flex: 1; min-width: 250px; background: #1e293b; padding: 20px; border-radius: 12px; border: 1px dashed #475569; display: flex; flex-direction: column; justify-content: center;">
+                        <h5 style="margin: 0 0 15px 0; color: #cbd5e1; font-size: 16px; font-weight: 800;">إجراءات سريعة</h5>
+                        
+                        <!-- شحن المحفظة -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <input type="number" id="chargeAmount" placeholder="المبلغ (ج.م)" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-weight: 800;">
+                            <button id="btnChargeWallet" style="background: #10b981; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; transition: 0.3s;">شحن</button>
+                        </div>
+
+                        <!-- زرار الحظر/فك الحظر -->
+                        <button id="btnToggleBlock" style="width: 100%; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 12px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; transition: 0.3s;">
+                            <i class="fas fa-ban"></i> حظر الطالب
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- إشعار التوست (بيظهر لما طالب جديد يسجل) -->
