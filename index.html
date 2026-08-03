@@ -54,16 +54,17 @@
 
     <!-- القائمة الجانبية (Drawer) للصفوف -->
 <!-- القائمة الجانبية (Drawer) المحدثة للموبايل -->
+<!-- القائمة الجانبية (Drawer) الاحترافية -->
     <div id="stagesDrawer" class="side-drawer">
         <div class="drawer-header">
             <div class="nav-brand" style="font-size: 24px;">Primee<span>.</span></div>
             <button id="closeDrawer" class="btn-close-drawer"><i class="fas fa-times"></i></button>
         </div>
         
-        <!-- مكان مخصص يظهر فيه اسم الطالب ومحفظته في الموبايل -->
-        <div id="mobileAuthSection" style="padding: 20px; border-bottom: 1px solid var(--input-border);">
-            <a href="login.html" class="btn-submit" style="display:block; text-align:center; padding: 10px; font-size: 15px;">تسجيل الدخول</a>
-            <a href="register.html" class="btn-nav-signup" style="display:block; text-align:center; margin-top: 10px;">إنشاء حساب</a>
+        <!-- قسم تسجيل الدخول / بيانات الطالب في الموبايل -->
+        <div id="mobileAuthSection" class="mobile-auth-wrapper">
+            <a href="login.html" class="btn-primary-mobile">تسجيل الدخول</a>
+            <a href="register.html" class="btn-secondary-mobile">إنشاء حساب</a>
         </div>
 
         <ul class="drawer-links">
@@ -71,8 +72,8 @@
             <li><a href="#" onclick="document.getElementById('parentModal').classList.add('active'); closeDrawer();"><i class="fas fa-user-shield"></i> متابعة ولي الأمر</a></li>
             <li id="mobileMyCoursesLink" style="display: none;"><a href="student-dashboard.html"><i class="fas fa-laptop-code"></i> كورساتي</a></li>
             
-            <hr style="border: 0; border-top: 1px solid var(--input-border); margin: 15px 0;">
-            <p style="padding: 0 15px; color: var(--text-muted); font-size: 13px; font-weight: 800;">تصفح الصفوف:</p>
+            <div class="drawer-divider"></div>
+            <span class="drawer-subtitle">تصفح الصفوف:</span>
             
             <li><a href="#"><i class="fas fa-school"></i> المرحلة الابتدائية</a></li>
             <li><a href="#"><i class="fas fa-book"></i> المرحلة الإعدادية</a></li>
@@ -218,21 +219,15 @@
         </div>
 
         <!-- زراير الفلترة الجديدة (بوم 💥) -->
-        <div class="packages-filters">
-            <button class="filter-btn active">
-                <i class="fas fa-school"></i>
-                <span>باقات الابتدائية</span>
-            </button>
-            <button class="filter-btn">
-                <i class="fas fa-book"></i>
-                <span>باقات الإعدادية</span>
-            </button>
-            <button class="filter-btn">
-                <i class="fas fa-user-graduate"></i>
-                <span>باقات البكالوريا</span>
-            </button>
-        </div>
-        
+        <!-- زراير فلترة الباقات الشيك -->
+    <div class="packages-filters-container">
+        <button class="modern-filter-btn active">باقات الابتدائية</button>
+        <button class="modern-filter-btn">باقات الإعدادية</button>
+        <button class="modern-filter-btn">باقات الثانوية</button>
+    </div>
+
+    <!-- قسم الباقات الشاملة -->
+    <section class="packages-section" style="max-width: 1200px; margin: 20px auto 80px; padding: 0 20px;">
         <div class="packages-grid">
             <!-- كارت الباقة -->
             <div class="package-card">
@@ -242,22 +237,66 @@
                 </div>
                 <div class="package-teachers">
                     <div class="avatar-group">
-                        <img src="https://via.placeholder.com/50/5b21b6/ffffff?text=Boda" alt="T1">
-                        <img src="https://via.placeholder.com/50/3b82f6/ffffff?text=Ali" alt="T2">
-                        <img src="https://via.placeholder.com/50/10b981/ffffff?text=T3" alt="T3">
+                        <img src="https://via.placeholder.com/50/5b21b6/ffffff?text=B" alt="T1">
+                        <img src="https://via.placeholder.com/50/3b82f6/ffffff?text=A" alt="T2">
+                        <img src="https://via.placeholder.com/50/10b981/ffffff?text=T" alt="T3">
                     </div>
                     <span class="teachers-count">+3 مدرسين</span>
                 </div>
                 <ul class="package-features">
                     <li><i class="fas fa-check-circle"></i> علوم، رياضيات، ولغات</li>
                     <li><i class="fas fa-check-circle"></i> متابعة دورية مع ولي الأمر</li>
-                    <li><i class="fas fa-check-circle"></i> خصم 20% على الاشتراك الشهري</li>
                 </ul>
                 <div class="package-price">
                     <span class="old-price">500 ج.م</span>
                     <span class="new-price">400 ج.م</span>
                 </div>
                 <button class="btn-package-subscribe">اشترك الآن</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- قسم النصائح (زي الصورة بالظبط) -->
+    <section class="creative-tips-section">
+        <div class="section-header" style="text-align: center; margin-bottom: 40px;">
+            <h2 style="font-size: 32px;">دليلك للنجاح مع <span style="color: var(--primary-color);">Primee</span> 🚀</h2>
+        </div>
+
+        <div class="creative-tips-container">
+            <!-- الكارت الأول (أخضر باستيل) -->
+            <div class="creative-tip-card" style="background-color: #d1fae5;">
+                <div class="creative-tip-content">
+                    <span class="creative-tip-number">1</span>
+                    <h3>لقيت كورس عاجبك؟</h3>
+                    <p>دوس "اشترك الآن" وابدأ تعلم فوراً! تقدر تتابع من الموبايل أو اللابتوب في أي وقت.</p>
+                </div>
+                <div class="creative-tip-image">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3413/3413535.png" alt="اختر كورس">
+                </div>
+            </div>
+
+            <!-- الكارت الثاني (لبني باستيل) -->
+            <div class="creative-tip-card" style="background-color: #cffafe;">
+                <div class="creative-tip-content">
+                    <span class="creative-tip-number">2</span>
+                    <h3>ذاكر واتمرن</h3>
+                    <p>اتفرج على الفيديوهات، حل الامتحانات، خد نقاط، وارجع للمحتوى وقت ما تحب.</p>
+                </div>
+                <div class="creative-tip-image">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2436/2436874.png" alt="ذاكر">
+                </div>
+            </div>
+
+            <!-- الكارت الثالث (بنفسجي فاتح باستيل) -->
+            <div class="creative-tip-card" style="background-color: #e0e7ff;">
+                <div class="creative-tip-content">
+                    <span class="creative-tip-number">3</span>
+                    <h3>اسأل، شارك، ونافس</h3>
+                    <p>ادخل مجموعات المناقشة، اسأل عن أي حاجة مش واضحة، وشارك أفكارك مع زمايلك.</p>
+                </div>
+                <div class="creative-tip-image">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="شارك">
+                </div>
             </div>
         </div>
     </section>
