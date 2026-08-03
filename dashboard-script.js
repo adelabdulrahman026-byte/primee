@@ -9,7 +9,19 @@ const firebaseConfig = {
     messagingSenderId: "1079254330731",
     appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e"
 };
+import { onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// طرد الطالب فوراً لو تم حظره من الأدمن
+const loggedInUserId = localStorage.getItem('loggedInUserId');
+if (loggedInUserId) {
+    onSnapshot(doc(db, "users", loggedInUserId), (docSnap) => {
+        if (docSnap.exists() && docSnap.data().isBlocked === true) {
+            localStorage.clear();
+            alert("⚠️ تم إيقاف حسابك بواسطة الإدارة وسيتم تسجيل خروجك الآن.");
+            window.location.replace("login.html");
+        }
+    });
+}
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
