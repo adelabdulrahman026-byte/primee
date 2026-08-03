@@ -13,31 +13,36 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const urlParams = new URLSearchParams(window.location.search);
-const courseId = urlParams.get('id') ? urlParams.get('id').trim() : null;
+// تأكد إن السكريبت بيشتغل بعد تحميل الـ HTML عشان ميضربش Error
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseId = urlParams.get('id') ? urlParams.get('id').trim() : null;
+    const loggedInPhone = localStorage.getItem('studentPhone');
 
-const loggedInPhone = localStorage.getItem('studentPhone');
-const securityOverlay = document.getElementById('securityOverlay');
-let currentStudentId = null;
+    if (!loggedInPhone || !courseId) {
+        window.location.replace("login.html");
+        return;
+    }
 
-if (!loggedInPhone || !courseId) {
-    window.location.replace("login.html");
-} else {
-    document.getElementById('studentWatermark').textContent = loggedInPhone;
-    verifyAccessAndLoadCourse();
-}
+    const watermark = document.getElementById('studentWatermark');
+    if (watermark) {
+        watermark.textContent = loggedInPhone;
+    }
 
-// دالة استخراج الـ ID بتاع فيديو ڤيميو من أي رابط
+    verifyAccessAndLoadCourse(loggedInPhone, courseId);
+});
+
 function extractVimeoID(url) {
+    if(!url) return null;
     const regex = /(?:www\.|player\.)?vimeo.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^\/]*)\/videos\/|album\/(?:\d+)\/video\/|video\/|)(\d+)(?:[a-zA-Z0-9_\-]+)?/i;
     const match = url.match(regex);
     return match ? match[1] : null;
 }
 
-async function verifyAccessAndLoadCourse() {
+async function verifyAccessAndLoadCourse(phone, courseId) {
     try {
         const usersRef = collection(db, "users");
-        const q = query(usersRef, where("studentPhone", "==", loggedInPhone));
+        const q = query(usersRef, where("studentPhone", "==", phone));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
@@ -46,18 +51,21 @@ async function verifyAccessAndLoadCourse() {
         }
 
         const studentData = querySnapshot.docs[0].data();
-        currentStudentId = querySnapshot.docs[0].id;
+        const currentStudentId = querySnapshot.docs[0].id;
         const myCourses = studentData.myCourses || [];
         const completedExams = studentData.completedExams || []; 
 
-        // 1. نظام حماية ملكية الحصة
+        const securityOverlay = document.getElementById('securityOverlay');
+        const securityMessage = document.getElementById('securityMessage');
+
+        // 1. نظام الحماية
         if (!myCourses.includes(courseId)) {
-            securityOverlay.style.display = 'flex';
-            document.getElementById('securityMessage').innerHTML = `يجب شراء هذه الحصة أولاً.<br><br><span style="color:#f59e0b; font-size:12px;">كود تصحيح: الكورس [${courseId}] غير موجود في حسابك.</span>`;
+            if(securityOverlay) securityOverlay.style.display = 'flex';
+            if(securityMessage) securityMessage.innerHTML = `يجب شراء هذه الحصة أولاً.<br><br><span style="color:#f59e0b; font-size:12px;">كود تصحيح: الكورس [${courseId}] غير موجود في حسابك.</span>`;
             return; 
         }
 
-        securityOverlay.style.display = 'none';
+        if(securityOverlay) securityOverlay.style.display = 'none';
 
         const courseRef = doc(db, "courses", courseId);
         const courseSnap = await getDoc(courseRef);
@@ -65,39 +73,46 @@ async function verifyAccessAndLoadCourse() {
         if (courseSnap.exists()) {
             const courseData = courseSnap.data();
             
-            document.getElementById('courseTitleHeader').textContent = courseData.title;
-            document.getElementById('courseTitle').textContent = courseData.title;
-            document.getElementById('courseInstructor').textContent = courseData.instructor || "أستاذ المادة";
+            // حقن البيانات بأمان
+            const cTitleHeader = document.getElementById('courseTitleHeader');
+            const cTitle = document.getElementById('courseTitle');
+            const cInstructor = document.getElementById('courseInstructor');
+            const cDesc = document.getElementById('courseDescription');
+
+            if(cTitleHeader) cTitleHeader.textContent = courseData.title || "حصة بدون عنوان";
+            if(cTitle) cTitle.textContent = courseData.title || "حصة بدون عنوان";
+            if(cInstructor) cInstructor.textContent = courseData.instructor || "أستاذ المادة";
+            if(cDesc && courseData.description) cDesc.textContent = courseData.description;
+
+            // 2. نظام قفل الامتحان
+            const examOverlay = document.getElementById('examLockOverlay');
+            const vidContainer = document.getElementById('videoContainer');
             
-            if (courseData.description) {
-                document.getElementById('courseDescription').textContent = courseData.description;
-            }
-
-            // 🛑 2. نظام حماية الامتحان الإجباري
             if (courseData.requiresExam === true && !completedExams.includes(courseId)) {
-                document.getElementById('examLockOverlay').style.display = 'flex';
-                document.getElementById('videoContainer').style.display = 'none';
+                if(examOverlay) examOverlay.style.display = 'flex';
+                if(vidContainer) vidContainer.style.display = 'none';
                 
-                document.getElementById('startExamBtn').onclick = async () => {
-                    alert("جارِ التحويل للامتحان...");
-                    await updateDoc(doc(db, "users", currentStudentId), {
-                        completedExams: arrayUnion(courseId)
-                    });
-                    alert("نجحت! سيتم فتح الفيديو.");
-                    location.reload(); 
-                };
-                return; // بنوقف تحميل الفيديو هنا عشان لازم يمتحن الأول
+                const startBtn = document.getElementById('startExamBtn');
+                if(startBtn) {
+                    startBtn.onclick = async () => {
+                        alert("جارِ التحويل للامتحان...");
+                        await updateDoc(doc(db, "users", currentStudentId), {
+                            completedExams: arrayUnion(courseId)
+                        });
+                        alert("نجحت! سيتم فتح الفيديو.");
+                        location.reload(); 
+                    };
+                }
+                return;
             }
 
-            // 🎬 3. دمج ڤيميو داخل المشغل الأنيق (Plyr)
+            // 3. مشغل Plyr مع Vimeo
             const videoUrl = courseData.videoUrl || "";
             const vimeoID = extractVimeoID(videoUrl);
-            const videoContainer = document.getElementById('videoContainer');
-            // 👇 السطر ده كان ناقص في كودك وهو اللي بيجيب العلامة المائية
-            const watermark = document.getElementById('studentWatermark'); 
+            const watermarkElem = document.getElementById('studentWatermark'); 
 
-            if (vimeoID) {
-                videoContainer.innerHTML = `
+            if (vimeoID && vidContainer) {
+                vidContainer.innerHTML = `
                     <div class="plyr__video-embed" id="player">
                         <iframe
                             src="https://player.vimeo.com/video/${vimeoID}?loop=false&amp;byline=false&amp;portrait=false&amp;title=false&amp;speed=true&amp;transparent=0&amp;gesture=media"
@@ -107,30 +122,31 @@ async function verifyAccessAndLoadCourse() {
                         </iframe>
                     </div>`;
                 
-                // تشغيل Plyr وفرض السيطرة على الفيديو
-                const player = new Plyr('#player', {
-                    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-                    i18n: { speed: 'السرعة', normal: 'عادي' }
-                });
+                // تشغيل Plyr بعد ما الـ iframe يترسم بثانية عشان ميضربش
+                setTimeout(() => {
+                    const player = new Plyr('#player', {
+                        speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+                        i18n: { speed: 'السرعة', normal: 'عادي' }
+                    });
 
-                // زرع العلامة المائية عشان تفضل ظاهرة دايماً حتى لو كبر الشاشة
-                player.on('ready', () => {
-                    const plyrContainer = document.querySelector('.plyr');
-                    if (plyrContainer && watermark) {
-                        plyrContainer.appendChild(watermark);
-                    }
-                });
-            } else {
-                videoContainer.innerHTML = `<p style="color:#ef4444; padding:20px; text-align:center;">رابط الفيديو غير متوفر أو غير صحيح.</p>`;
+                    player.on('ready', () => {
+                        const plyrContainer = document.querySelector('.plyr');
+                        if (plyrContainer && watermarkElem) {
+                            plyrContainer.appendChild(watermarkElem);
+                        }
+                    });
+                }, 100);
+            } else if(vidContainer) {
+                vidContainer.innerHTML = `<p style="color:#ef4444; padding:30px; text-align:center; font-weight: 800;">رابط الفيديو غير متوفر أو غير صحيح.</p>`;
             }
 
         } else {
-            alert("الحصة غير موجودة.");
+            alert("عذراً، هذه الحصة غير موجودة في قاعدة البيانات.");
             window.location.replace("student-dashboard.html");
         }
 
     } catch (error) {
-        console.error("خطأ:", error);
-        alert("حدث خطأ في تحميل بيانات الحصة.");
+        console.error("تفاصيل الخطأ:", error);
+        alert("حدث خطأ في تحميل الحصة، يرجى تحديث الصفحة.");
     }
 }
