@@ -10,7 +10,7 @@
     <!-- مكتبة السلايدر CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
 
     <!-- كود إشعارات OneSignal -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -25,7 +25,7 @@
 </head>
 <body class="index-body">
 
-    <!-- نافذة الإشعارات الأنيقة (تظهر مرة واحدة) -->
+    <!-- نافذة الإشعارات الأنيقة -->
     <div id="notificationModal" class="custom-modal-overlay">
         <div class="custom-modal-content">
             <div class="modal-icon" style="color: #f59e0b;"><i class="fas fa-bell"></i></div>
@@ -52,9 +52,7 @@
         </div>
     </div>
 
-    <!-- القائمة الجانبية (Drawer) للصفوف -->
-<!-- القائمة الجانبية (Drawer) المحدثة للموبايل -->
-<!-- القائمة الجانبية (Drawer) الاحترافية -->
+    <!-- القائمة الجانبية (Drawer) الاحترافية للموبايل -->
     <div id="stagesDrawer" class="side-drawer">
         <div class="drawer-header">
             <div class="nav-brand" style="font-size: 24px;">Primee<span>.</span></div>
@@ -70,6 +68,7 @@
         <ul class="drawer-links">
             <li><a href="index.html"><i class="fas fa-home"></i> الرئيسية</a></li>
             <li><a href="#" onclick="document.getElementById('parentModal').classList.add('active'); closeDrawer();"><i class="fas fa-user-shield"></i> متابعة ولي الأمر</a></li>
+            <!-- تم تصحيح الرابط هنا بإضافة .html -->
             <li id="mobileMyCoursesLink" style="display: none;"><a href="student-dashboard.html"><i class="fas fa-laptop-code"></i> كورساتي</a></li>
             
             <div class="drawer-divider"></div>
@@ -86,10 +85,8 @@
     <nav class="main-navbar">
         <div class="nav-right-side">
             <div class="nav-brand">Primee<span>.</span></div>
-            <!-- أيقونة القائمة الجانبية وتحديث شكلها -->
             <button id="openDrawer" class="btn-hamburger"><i class="fas fa-bars-staggered"></i> الصفوف</button>
             
-            <!-- زرار الدارك مود الجديد -->
             <button class="theme-toggle" id="themeToggleBtn" title="تغيير المظهر" style="margin-right: 15px;">
                 <i class="fas fa-moon"></i>
             </button>
@@ -103,7 +100,6 @@
         </ul>
 
         <div class="nav-left-side" id="navAuthSection">
-            <!-- سيتم تغيير هذا الجزء بالجافاسكريبت حسب حالة الدخول -->
             <a href="login.html" class="btn-nav-login">تسجيل الدخول</a>
             <a href="register.html" class="btn-nav-signup">إنشاء حساب</a>
         </div>
@@ -121,7 +117,6 @@
             </div>
         </div>
         <div class="hero-image">
-            <!-- اللوجو المتحرك الجديد -->
             <div class="animated-logo-container">
                 <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" class="main-animated-logo">
                 <div class="floating-badge badge-1"><i class="fas fa-graduation-cap"></i> محتوى مميز</div>
@@ -130,18 +125,16 @@
         </div>
     </header>
 
-    <!-- قسم المدرسين (بنظام السلايدر التلقائي) -->
+    <!-- قسم المدرسين -->
     <section id="teachersSection" class="teachers-section">
         <div class="section-header">
             <h2>نخبة المعلمين</h2>
             <a href="#" class="view-all">عرض جميع المدرسين <i class="fas fa-arrow-left"></i></a>
         </div>
         
-        <!-- حاوية السلايدر الرئيسية -->
         <div class="swiper teachers-slider">
             <div class="swiper-wrapper" id="teachersGrid">
                 
-                <!-- كارت مدرس 1 -->
                 <div class="swiper-slide">
                     <div class="modern-teacher-card">
                         <div class="card-image-wrapper">
@@ -163,7 +156,6 @@
                     </div>
                 </div>
                 
-                <!-- كارت مدرس 2 -->
                 <div class="swiper-slide">
                     <div class="modern-teacher-card">
                         <div class="card-image-wrapper">
@@ -184,7 +176,6 @@
                     </div>
                 </div>
 
-                <!-- كارت مدرس 3 (عشان السلايدر يلف بشكل كامل) -->
                 <div class="swiper-slide">
                     <div class="modern-teacher-card">
                         <div class="card-image-wrapper">
@@ -206,30 +197,24 @@
                 </div>
 
             </div>
-            <!-- النقط السفلية للسلايدر -->
             <div class="swiper-pagination"></div>
         </div>
     </section>
 
-   <!-- قسم الباقات الشاملة + الفلاتر الشيك -->
+    <!-- قسم الباقات الشاملة -->
     <section class="packages-section" style="max-width: 1200px; margin: 80px auto; padding: 0 20px;">
         <div class="section-header" style="text-align: center; justify-content: center; flex-direction: column; gap: 10px;">
             <h2>الباقات الشاملة <span style="color: #f59e0b;"><i class="fas fa-crown"></i></span></h2>
             <p style="color: var(--text-muted); font-weight: 600;">وفر فلوسك واشترك في باقات مجمعة لأقوى المدرسين</p>
         </div>
 
-        <!-- زراير الفلترة الجديدة (بوم 💥) -->
-        <!-- زراير فلترة الباقات الشيك -->
-    <div class="packages-filters-container">
-        <button class="modern-filter-btn active">باقات الابتدائية</button>
-        <button class="modern-filter-btn">باقات الإعدادية</button>
-        <button class="modern-filter-btn">باقات الثانوية</button>
-    </div>
+        <div class="packages-filters-container">
+            <button class="modern-filter-btn active">باقات الابتدائية</button>
+            <button class="modern-filter-btn">باقات الإعدادية</button>
+            <button class="modern-filter-btn">باقات الثانوية</button>
+        </div>
 
-    <!-- قسم الباقات الشاملة -->
-    <section class="packages-section" style="max-width: 1200px; margin: 20px auto 80px; padding: 0 20px;">
         <div class="packages-grid">
-            <!-- كارت الباقة -->
             <div class="package-card">
                 <div class="package-header">
                     <span class="package-badge">الأكثر مبيعاً</span>
@@ -256,14 +241,13 @@
         </div>
     </section>
 
-    <!-- قسم النصائح (دليلك للنجاح) -->
+    <!-- قسم النصائح -->
     <section class="creative-tips-section">
         <div class="section-header" style="text-align: center; margin-bottom: 40px;">
             <h2 style="font-size: 32px; font-weight: 900;">دليلك للنجاح مع <span style="color: var(--primary-color);">Primee</span> 🚀</h2>
         </div>
 
         <div class="creative-tips-container">
-            <!-- الكارت الأول -->
             <div class="creative-tip-card style-1">
                 <div class="creative-tip-content">
                     <span class="creative-tip-number">1</span>
@@ -275,7 +259,6 @@
                 </div>
             </div>
 
-            <!-- الكارت الثاني (معكوس) -->
             <div class="creative-tip-card style-2 reverse">
                 <div class="creative-tip-content">
                     <span class="creative-tip-number">2</span>
@@ -287,7 +270,6 @@
                 </div>
             </div>
 
-            <!-- الكارت الثالث -->
             <div class="creative-tip-card style-3">
                 <div class="creative-tip-content">
                     <span class="creative-tip-number">3</span>
@@ -299,7 +281,6 @@
                 </div>
             </div>
 
-            <!-- الكارت الرابع (معكوس) -->
             <div class="creative-tip-card style-4 reverse">
                 <div class="creative-tip-content">
                     <span class="creative-tip-number">4</span>
@@ -322,7 +303,7 @@
         </div>
     </section>
 
-    <!-- الفوتر الحديث -->
+    <!-- الفوتر -->
     <div class="modern-footer-container">
         <div class="footer-card">
             <div class="footer-logo">
@@ -350,14 +331,13 @@
         </div>
     </div>
 
-    <!-- أيقونة الواتساب الطائرة -->
+    <!-- أيقونة الواتساب -->
     <a href="https://wa.me/201093139047" class="floating-whatsapp" target="_blank">
         <i class="fab fa-whatsapp"></i>
     </a>
 
-    <!-- مكتبة Swiper JS الخاصة بالسلايدر -->
+    <!-- مكتبة Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-
     <script type="module" src="index-script.js"></script>
 </body>
 </html>
