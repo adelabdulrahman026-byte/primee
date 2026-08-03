@@ -34,7 +34,7 @@ async function fetchStudentNavData(phone) {
             const firstName = (data.fullName || "طالب").split(" ")[0];
             const balance = data.walletBalance || 0;
 
-            // 1. تحديث زرار الهيدر في اللاب توب
+            // 1. تحديث الهيدر في اللاب توب
             const navAuthSection = document.getElementById('navAuthSection');
             if (navAuthSection) {
                 navAuthSection.innerHTML = `
@@ -48,17 +48,20 @@ async function fetchStudentNavData(phone) {
                 `;
             }
 
-            // 2. تحديث القائمة الجانبية في الموبايل
+            // 2. تحديث القائمة الجانبية في الموبايل (إخفاء زراير الدخول وإظهار بيانات الطالب)
             const mobileAuthSection = document.getElementById('mobileAuthSection');
             if (mobileAuthSection) {
                 mobileAuthSection.innerHTML = `
-                    <div class="logged-in-badge" style="width: 100%; justify-content: center; padding: 10px;" onclick="window.location.href='student-dashboard.html'">
-                        <div class="badge-avatar"><i class="fas fa-user-graduate"></i></div>
-                        <div class="badge-info" style="text-align: right;">
-                            <span class="s-name">أهلاً، ${firstName}</span>
-                            <span class="s-wallet">الرصيد: ${balance} ج.م</span>
+                    <div class="mobile-user-profile" onclick="window.location.href='student-dashboard.html'">
+                        <div class="m-avatar"><i class="fas fa-user-graduate"></i></div>
+                        <div class="m-info">
+                            <h4>أهلاً بك، ${firstName}</h4>
+                            <span>الرصيد: ${balance} ج.م</span>
                         </div>
                     </div>
+                    <button class="btn-logout-mobile" onclick="localStorage.removeItem('studentPhone'); window.location.reload();">
+                        <i class="fas fa-sign-out-alt"></i> تسجيل خروج
+                    </button>
                 `;
             }
 
@@ -66,10 +69,6 @@ async function fetchStudentNavData(phone) {
             const mobileMyCourses = document.getElementById('mobileMyCoursesLink');
             if(mobileMyCourses) mobileMyCourses.style.display = 'block';
         }
-    } catch (error) {
-        console.error("خطأ في جلب بيانات الطالب:", error);
-    }
-}
     } catch (error) {
         console.error("خطأ في جلب بيانات الطالب:", error);
     }
