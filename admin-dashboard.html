@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الإدارة - Primee</title>
     
-    <!-- مكتبة Tus للرفع المباشر لفيمو (فوق الـ CSS لمنع أي خطأ) -->
-    <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3.4.0/dist/tus.min.js"></script>
+    <!-- مكتبة Tus للرفع المباشر (تم تغيير الرابط لرابط أقوى وأكثر استقراراً) -->
+    <script src="https://unpkg.com/tus-js-client@3.4.0/dist/tus.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -71,7 +71,7 @@
             <li><a id="navStudents" onclick="switchTab('studentsSection', this)"><i class="fas fa-users"></i> إدارة الطلاب</a></li>
             <li><a id="navCourses" onclick="switchTab('coursesSection', this)"><i class="fas fa-video"></i> إدارة الكورسات</a></li>
             <li><a id="navExams" onclick="switchTab('examsSection', this)"><i class="fas fa-file-alt"></i> إدارة الامتحانات</a></li>
-            <li><a id="navGrading" onclick="switchTab('gradingSection', this)"><i class="fas fa-marker"></i> سجل الامتحانات والتصحيح</a></li>
+            <li><a id="navGrading" onclick="switchTab('gradingSection', this)"><i class="fas fa-eye"></i> سجل المشاهدات والتصحيح</a></li>
         </ul>
         <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
     </aside>
@@ -217,8 +217,9 @@
         <!-- 4. قسم إدارة الامتحانات (Exam Builder المتقدم) -->
         <div id="examsSection" class="admin-section">
             <div class="admin-table-container">
-                <h3><i class="fas fa-file-signature" style="color: #3b82f6;"></i> إنشاء امتحان جديد</h3>
+                <h3 id="examFormTitle"><i class="fas fa-file-signature" style="color: #3b82f6;"></i> إنشاء/تعديل امتحان</h3>
                 <form id="addExamForm">
+                    <input type="hidden" id="editingExamId" value="">
                     <div class="form-group-admin" style="margin-bottom: 20px;">
                         <label>اسم الامتحان (مثال: امتحان الباب الأول)</label>
                         <input type="text" id="examTitle" required>
@@ -230,7 +231,10 @@
                         <i class="fas fa-plus"></i> إضافة سؤال جديد
                     </button>
                     
-                    <button type="submit" id="btnSaveExam" style="background: #10b981; color: #fff; border: none; padding: 15px 30px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; width: 100%;"><i class="fas fa-save"></i> حفظ الامتحان</button>
+                    <div style="display: flex; gap: 15px;">
+                        <button type="submit" id="btnSaveExam" style="background: #10b981; color: #fff; border: none; padding: 15px 30px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; flex: 1;"><i class="fas fa-save"></i> حفظ الامتحان</button>
+                        <button type="button" id="btnCancelExamEdit" style="display: none; background: #334155; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">إلغاء التعديل</button>
+                    </div>
                 </form>
             </div>
 
@@ -245,16 +249,29 @@
             </div>
         </div>
 
-        <!-- 5. قسم سجل الامتحانات والتصحيح الشامل -->
+        <!-- 5. قسم سجل الامتحانات والتصحيح الشامل (المشاهدات) -->
         <div id="gradingSection" class="admin-section">
             <div class="admin-table-container">
-                <h3><i class="fas fa-marker" style="color: #3b82f6;"></i> سجل الامتحانات والمشاهدات</h3>
-                <div style="margin-bottom: 20px;">
-                    <select id="filterGradingStatus" style="padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #334155; font-family: 'Cairo';">
-                        <option value="all">عرض الكل</option>
-                        <option value="pending" selected>قيد التصحيح (المقالي)</option>
-                        <option value="failed">الراسبين (لإعادة الامتحان)</option>
-                    </select>
+                <h3><i class="fas fa-eye" style="color: #3b82f6;"></i> سجل المشاهدات والتصحيح</h3>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                    
+                    <div class="form-group-admin" style="flex: 1; min-width: 200px;">
+                        <label>فلتر بالحالة:</label>
+                        <select id="filterGradingStatus">
+                            <option value="all">عرض الكل</option>
+                            <option value="passed">الناجحين (شاهدوا الحصة)</option>
+                            <option value="failed">الراسبين (لم يشاهدوا)</option>
+                            <option value="pending" selected>قيد التصحيح (المقالي)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group-admin" style="flex: 1; min-width: 200px;">
+                        <label>فلتر بامتحان/حصة معينة:</label>
+                        <select id="filterSpecificExam">
+                            <option value="all">كل الامتحانات / الحصص</option>
+                        </select>
+                    </div>
+
                 </div>
                 <table>
                     <thead>
