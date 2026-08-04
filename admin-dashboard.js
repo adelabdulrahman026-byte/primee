@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// لاحظ: شلنا استدعاء الـ Storage خالص عشان هنستخدم ImgBB
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -15,7 +14,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// 1. جلب مفاتيح الأمان (Vimeo & ImgBB) بأمان تام
+// جلب مفاتيح الأمان المخفية من قاعدة البيانات
 // ==========================================
 let SECURE_API_KEYS = null;
 async function getSecureApiKeys() {
@@ -27,12 +26,40 @@ async function getSecureApiKeys() {
             SECURE_API_KEYS = docSnap.data();
             return SECURE_API_KEYS;
         } else {
-            throw new Error("لم يتم العثور على مفاتيح الأمان في قاعدة البيانات!");
+            console.error("لم يتم العثور على مفاتيح الأمان في قاعدة البيانات!");
+            return null;
         }
     } catch (error) {
         console.error("خطأ في جلب مفاتيح الأمان:", error);
-        throw error;
+        return null;
     }
+}
+
+// ==========================================
+// إرسال واتساب للأدمن (في حالة التصحيح اليدوي)
+// ==========================================
+async function sendWhatsAppToParent(parentPhone, msgText) {
+    if(!parentPhone || parentPhone === "غير متوفر") return;
+    
+    const keys = await getSecureApiKeys();
+    if (!keys || !keys.wapilot_instance || !keys.wapilot_token) return;
+
+    const instanceId = keys.wapilot_instance; 
+    const token = keys.wapilot_token;
+    let formattedPhone = parentPhone.startsWith('0') ? '2' + parentPhone : parentPhone;
+    
+    const url = `https://api.wapilot.net/api/v2/${instanceId}/send-message`;
+    try {
+        await fetch(url, {
+            method: "POST",
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ phone: formattedPhone, message: msgText })
+        });
+        console.log("تم إرسال إشعار الواتساب بنجاح.");
+    } catch(err) { console.error("فشل إرسال الواتساب:", err); }
 }
 
 // ==========================================
@@ -227,31 +254,241 @@ document.getElementById('btnToggleBlock')?.addEventListener('click', async () =>
 });
 
 // ==========================================
-// إدارة الامتحانات (Exam Builder)
+// إدارة الكورسات (رفع ImgBB و Vimeo + التعديل)
+// ==========================================
+const coursesRef = collection(db, "courses");
+
+async function uploadImageToImgBB(file) {
+    const keys = await getSecureApiKeys(); 
+    if(!keys || !keys.imgbb_token) throw new Error("مفتاح ImgBB غير موجود في قاعدة البيانات!");
+
+    const formData = new FormData();
+    formData.append("image", file);
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${keys.imgbb_token}`, { method: "POST", body: formData });
+    const data = await response.json();
+    if (data.success) return data.data.url;
+    else throw new Error("فشل رفع الصورة على ImgBB");
+}
+
+async function uploadToVimeo(file, progressCallback) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const keys = await getSecureApiKeys(); 
+            if(!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo غير موجود في قاعدة البيانات!");
+
+            const upload = new tus.Upload(file, {
+                endpoint: "https://api.vimeo.com/me/videos",
+                retryDelays: [0, 3000, 5000, 10000, 20000],
+                headers: {
+                    Authorization: `Bearer ${keys.vimeo_token}`, 
+                    Accept: "application/vnd.vimeo.*+json;version=3.4"
+                },
+                uploadSize: file.size,
+                onError: function(error) { reject(error); },
+                onProgress: function(bytesUploaded, bytesTotal) {
+                    const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+                    progressCallback(percentage);
+                },
+                onSuccess: function() {
+                    const videoId = upload.url.split('/').pop();
+                    resolve(`https://player.vimeo.com/video/${videoId}`);
+                }
+            });
+            upload.start();
+        } catch (error) { reject(error); }
+    });
+}
+
+document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveCourse');
+    const editingId = document.getElementById('editingCourseId').value;
+    
+    btn.textContent = editingId ? 'جاري التعديل... ⏳' : 'جاري الرفع والنشر... ⏳';
+    btn.disabled = true;
+
+    const title = document.getElementById('courseTitle').value.trim();
+    const instructor = document.getElementById('courseInstructor').value.trim();
+    const grade = document.getElementById('courseGrade').value;
+    const price = parseInt(document.getElementById('coursePrice').value) || 0;
+    const requiredExamId = document.getElementById('requiredExamSelect').value;
+    const pdfUrl = document.getElementById('coursePdf').value.trim();
+    
+    const imageFile = document.getElementById('courseImageFile').files[0];
+    const videoFile = document.getElementById('courseVideoFile').files[0];
+    
+    try {
+        let imageUrl = null;
+        let videoUrl = null;
+
+        if (imageFile) {
+            document.getElementById('imgStatus').style.display = 'inline';
+            document.getElementById('imgStatus').textContent = "جاري رفع الصورة... ⏳";
+            document.getElementById('imgStatus').style.color = '#f59e0b';
+            imageUrl = await uploadImageToImgBB(imageFile);
+            document.getElementById('imgStatus').textContent = "تم رفع الصورة بنجاح ✔️";
+            document.getElementById('imgStatus').style.color = '#10b981';
+        }
+
+        if (videoFile) {
+            document.getElementById('videoProgressContainer').style.display = 'block';
+            document.getElementById('videoStatus').textContent = "جاري رفع الفيديو لفيمو... يرجى عدم إغلاق الصفحة";
+            videoUrl = await uploadToVimeo(videoFile, (progress) => {
+                document.getElementById('videoProgressBar').style.width = progress + '%';
+                document.getElementById('videoStatus').textContent = `تم الرفع: ${progress}%`;
+            });
+        }
+
+        const courseData = { title, instructor, grade, price, requiredExamId, pdfUrl };
+        if (imageUrl) courseData.image = imageUrl;
+        if (videoUrl) courseData.videoUrl = videoUrl;
+
+        if (editingId) {
+            await updateDoc(doc(db, "courses", editingId), courseData);
+            adminAlert("تم التعديل", "تم تعديل بيانات الحصة بنجاح.", "success");
+            document.getElementById('btnCancelEdit').click();
+        } else {
+            if(!imageUrl || !videoUrl) throw new Error("يجب رفع صورة وغلاف للحصة الجديدة!");
+            courseData.createdAt = new Date().toISOString();
+            await addDoc(coursesRef, courseData);
+            adminAlert("تم النشر", "تم رفع الحصة بنجاح.", "success");
+            document.getElementById('addCourseForm').reset();
+            document.getElementById('videoProgressContainer').style.display = 'none';
+            document.getElementById('videoStatus').textContent = "اختر ملف الفيديو (سيتم الرفع عند الضغط على نشر)";
+            document.getElementById('imgStatus').style.display = 'none';
+        }
+    } catch (error) {
+        console.error(error);
+        adminAlert("خطأ", error.message || "حدث خطأ أثناء الرفع", "error");
+    } finally {
+        btn.innerHTML = editingId ? 'حفظ التعديلات' : '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة';
+        btn.disabled = false;
+    }
+});
+
+onSnapshot(query(coursesRef), (snapshot) => {
+    const table = document.getElementById('adminCoursesTable');
+    if(!table) return;
+
+    if(snapshot.empty) {
+        table.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8;">لا توجد كورسات مضافة حتى الآن.</td></tr>`;
+        return;
+    }
+
+    table.innerHTML = '';
+    snapshot.forEach((docSnap) => {
+        const course = docSnap.data();
+        const courseId = docSnap.id;
+        let gradeAr = course.grade;
+        if(gradeAr === 'sec3') gradeAr = 'الثالث الثانوي';
+        else if(gradeAr === 'sec2') gradeAr = 'الثاني الثانوي';
+        else if(gradeAr === 'sec1') gradeAr = 'الأول الثانوي';
+        else if(gradeAr === 'prep3') gradeAr = 'الثالث الإعدادي';
+        else if(gradeAr === 'prep2') gradeAr = 'الثاني الإعدادي';
+        else if(gradeAr === 'prep1') gradeAr = 'الأول الإعدادي';
+        else gradeAr = 'غير محدد';
+
+        let examText = course.requiredExamId ? '<span style="color:#ef4444; font-weight:800;"><i class="fas fa-lock"></i> مقفول</span>' : '<span style="color:#10b981; font-weight:800;"><i class="fas fa-unlock"></i> مفتوح</span>';
+
+        table.innerHTML += `
+            <tr>
+                <td><strong>${course.title || '-'}</strong></td>
+                <td>${course.instructor || '-'}</td>
+                <td>${gradeAr}</td>
+                <td>${examText} <br><small style="color:#f59e0b; font-weight: 800;">السعر: ${course.price || 0} ج.م</small></td>
+                <td style="display: flex; gap: 10px; justify-content: center;">
+                    <button onclick="editCourse('${courseId}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid #3b82f6; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 800; font-family: 'Cairo';"><i class="fas fa-edit"></i> تعديل</button>
+                    <button onclick="deleteCourse('${courseId}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 800; font-family: 'Cairo';"><i class="fas fa-trash"></i> حذف</button>
+                </td>
+            </tr>
+        `;
+    });
+});
+
+window.editCourse = async function(id) {
+    const docSnap = await getDoc(doc(db, "courses", id));
+    if(docSnap.exists()) {
+        const course = docSnap.data();
+        document.getElementById('editingCourseId').value = id;
+        document.getElementById('courseFormTitle').innerHTML = `<i class="fas fa-edit" style="color:#3b82f6;"></i> تعديل: ${course.title}`;
+        document.getElementById('courseTitle').value = course.title || '';
+        document.getElementById('courseInstructor').value = course.instructor || '';
+        document.getElementById('courseGrade').value = course.grade || '';
+        document.getElementById('coursePrice').value = course.price || 0;
+        document.getElementById('coursePdf').value = course.pdfUrl || '';
+        document.getElementById('requiredExamSelect').value = course.requiredExamId || "";
+        document.getElementById('btnSaveCourse').innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات';
+        document.getElementById('btnCancelEdit').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
+    document.getElementById('editingCourseId').value = "";
+    document.getElementById('courseFormTitle').innerHTML = `<i class="fas fa-plus-circle" style="color: #f59e0b;"></i> إضافة حصة أو كورس جديد`;
+    document.getElementById('addCourseForm').reset();
+    document.getElementById('btnSaveCourse').innerHTML = '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة';
+    document.getElementById('btnCancelEdit').style.display = 'none';
+    document.getElementById('imgStatus').style.display = 'none';
+});
+
+window.deleteCourse = async function(id) {
+    const isConfirmed = await adminConfirm("هل أنت متأكد من حذف هذه الحصة نهائياً؟");
+    if(!isConfirmed) return;
+    try {
+        await deleteDoc(doc(db, "courses", id));
+        adminAlert("تم الحذف", "تمت إزالة الحصة بنجاح.", "success");
+    } catch (error) { adminAlert("خطأ", "فشل الحذف", "error"); }
+};
+
+// ==========================================
+// إدارة الامتحانات (المتقدم: مقالي واختياري وصور)
 // ==========================================
 const examsRef = collection(db, "exams");
 let questionCount = 0;
+
+window.toggleQType = function(id) {
+    const type = document.getElementById(`qType_${id}`).value;
+    const mcqContainer = document.getElementById(`mcqContainer_${id}`);
+    if(type === 'mcq') mcqContainer.style.display = 'block';
+    else mcqContainer.style.display = 'none';
+}
 
 document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
     questionCount++;
     const container = document.getElementById('questionsContainer');
     const qHtml = `
-        <div class="question-box" id="qBox_${questionCount}">
-            <h5 style="color: #f59e0b; margin: 0 0 10px 0;">سؤال رقم ${questionCount} <button type="button" onclick="document.getElementById('qBox_${questionCount}').remove()" style="float: left; background: none; border: none; color: #ef4444; cursor: pointer;"><i class="fas fa-trash"></i></button></h5>
-            <input type="text" class="q-text form-group-admin input" placeholder="اكتب السؤال هنا..." style="width: 100%; padding: 10px; margin-bottom: 10px;" required>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                <input type="text" class="q-opt1" placeholder="الاختيار الأول" style="padding: 10px;" required>
-                <input type="text" class="q-opt2" placeholder="الاختيار الثاني" style="padding: 10px;" required>
-                <input type="text" class="q-opt3" placeholder="الاختيار الثالث" style="padding: 10px;" required>
-                <input type="text" class="q-opt4" placeholder="الاختيار الرابع" style="padding: 10px;" required>
+        <div class="question-box" id="qBox_${questionCount}" style="background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h5 style="color: #f59e0b; margin: 0; font-size: 16px;">سؤال رقم ${questionCount}</h5>
+                <button type="button" onclick="document.getElementById('qBox_${questionCount}').remove()" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i> حذف</button>
             </div>
-            <select class="q-correct" style="width: 100%; padding: 10px;" required>
-                <option value="" disabled selected>اختر الإجابة الصحيحة</option>
-                <option value="1">الاختيار الأول</option>
-                <option value="2">الاختيار الثاني</option>
-                <option value="3">الاختيار الثالث</option>
-                <option value="4">الاختيار الرابع</option>
-            </select>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <select class="q-type form-group-admin" id="qType_${questionCount}" onchange="toggleQType(${questionCount})" style="padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                    <option value="mcq">اختيار من متعدد</option>
+                    <option value="essay">سؤال مقالي</option>
+                </select>
+                <input type="file" class="q-image" accept="image/*" style="padding: 5px; background: #0f172a; border-radius: 8px; color: #94a3b8; font-size: 13px;">
+            </div>
+            
+            <textarea class="q-text" placeholder="اكتب صيغة السؤال هنا..." style="width: 100%; padding: 12px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #334155; margin-bottom: 15px; font-family: 'Cairo'; resize: vertical;" required></textarea>
+            
+            <div class="q-mcq-container" id="mcqContainer_${questionCount}">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" class="q-opt1" placeholder="الاختيار الأول" style="padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                    <input type="text" class="q-opt2" placeholder="الاختيار الثاني" style="padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                    <input type="text" class="q-opt3" placeholder="الاختيار الثالث" style="padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                    <input type="text" class="q-opt4" placeholder="الاختيار الرابع" style="padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                </div>
+                <select class="q-correct" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid #10b981; font-weight: 800;">
+                    <option value="" disabled selected>اختر الإجابة الصحيحة</option>
+                    <option value="1">الاختيار الأول هو الصحيح</option>
+                    <option value="2">الاختيار الثاني هو الصحيح</option>
+                    <option value="3">الاختيار الثالث هو الصحيح</option>
+                    <option value="4">الاختيار الرابع هو الصحيح</option>
+                </select>
+            </div>
         </div>
     `;
     container.insertAdjacentHTML('beforeend', qHtml);
@@ -264,29 +501,46 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
     if(qBoxes.length === 0) return adminAlert("خطأ", "يجب إضافة سؤال واحد على الأقل", "error");
 
     const btn = document.getElementById('btnSaveExam');
-    btn.textContent = "جاري الحفظ..."; btn.disabled = true;
-
-    const questionsArray = [];
-    qBoxes.forEach(box => {
-        questionsArray.push({
-            text: box.querySelector('.q-text').value,
-            options: [
-                box.querySelector('.q-opt1').value,
-                box.querySelector('.q-opt2').value,
-                box.querySelector('.q-opt3').value,
-                box.querySelector('.q-opt4').value
-            ],
-            correctIndex: parseInt(box.querySelector('.q-correct').value) - 1
-        });
-    });
+    btn.textContent = "جاري الحفظ ورفع الصور... ⏳"; 
+    btn.disabled = true;
 
     try {
+        const questionsArray = [];
+        for (const box of qBoxes) {
+            const type = box.querySelector('.q-type').value;
+            const text = box.querySelector('.q-text').value;
+            const imageFile = box.querySelector('.q-image').files[0];
+            
+            let imageUrl = null;
+            if (imageFile) imageUrl = await uploadImageToImgBB(imageFile);
+
+            if (type === 'mcq') {
+                questionsArray.push({
+                    type: 'mcq',
+                    text: text,
+                    imageUrl: imageUrl,
+                    options: [
+                        box.querySelector('.q-opt1').value,
+                        box.querySelector('.q-opt2').value,
+                        box.querySelector('.q-opt3').value,
+                        box.querySelector('.q-opt4').value
+                    ],
+                    correctIndex: parseInt(box.querySelector('.q-correct').value) - 1
+                });
+            } else {
+                questionsArray.push({
+                    type: 'essay',
+                    text: text,
+                    imageUrl: imageUrl
+                });
+            }
+        }
         await addDoc(examsRef, { title: title, questions: questionsArray, createdAt: new Date().toISOString() });
         adminAlert("نجاح", "تم حفظ الامتحان بنجاح!", "success");
         document.getElementById('addExamForm').reset();
         document.getElementById('questionsContainer').innerHTML = '';
         questionCount = 0;
-    } catch(err) { adminAlert("خطأ", "فشل الحفظ", "error"); }
+    } catch(err) { adminAlert("خطأ", "فشل الحفظ: " + err.message, "error"); } 
     finally { btn.innerHTML = '<i class="fas fa-save"></i> حفظ الامتحان'; btn.disabled = false; }
 });
 
@@ -314,222 +568,83 @@ window.deleteExam = async function(id) {
     if(await adminConfirm("هل أنت متأكد من حذف الامتحان؟")) await deleteDoc(doc(db, "exams", id));
 }
 
-
 // ==========================================
-// إدارة الكورسات (رفع ImgBB و Vimeo + التعديل)
+// قسم تصحيح الامتحانات (Grading System)
 // ==========================================
-const coursesRef = collection(db, "courses");
+const submissionsRef = collection(db, "exam_submissions");
 
-// دالة الرفع للصور (ImgBB)
-async function uploadImageToImgBB(file) {
-    const keys = await getSecureApiKeys(); 
-    const IMGBB_API_KEY = keys.imgbb_token; 
-    if(!IMGBB_API_KEY) throw new Error("مفتاح ImgBB غير موجود في قاعدة البيانات!");
-
-    const formData = new FormData();
-    formData.append("image", file);
-
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-        method: "POST",
-        body: formData
-    });
-
-    const data = await response.json();
-    if (data.success) {
-        return data.data.url;
-    } else {
-        throw new Error("فشل رفع الصورة على ImgBB");
-    }
-}
-
-// دالة الرفع للفيديوهات (Vimeo)
-async function uploadToVimeo(file, progressCallback) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const keys = await getSecureApiKeys(); 
-            const vimeoToken = keys.vimeo_token; 
-            if(!vimeoToken) throw new Error("مفتاح Vimeo غير موجود في قاعدة البيانات!");
-
-            const upload = new tus.Upload(file, {
-                endpoint: "https://api.vimeo.com/me/videos",
-                retryDelays: [0, 3000, 5000, 10000, 20000],
-                headers: {
-                    Authorization: `Bearer ${vimeoToken}`, 
-                    Accept: "application/vnd.vimeo.*+json;version=3.4"
-                },
-                uploadSize: file.size,
-                onError: function(error) { reject(error); },
-                onProgress: function(bytesUploaded, bytesTotal) {
-                    const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-                    progressCallback(percentage);
-                },
-                onSuccess: function() {
-                    const videoId = upload.url.split('/').pop();
-                    resolve(`https://player.vimeo.com/video/${videoId}`);
-                }
-            });
-            upload.start();
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
-
-// دالة إضافة / تعديل الحصة
-document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('btnSaveCourse');
-    const editingId = document.getElementById('editingCourseId').value;
-    
-    btn.textContent = editingId ? 'جاري التعديل... ⏳' : 'جاري الرفع والنشر... ⏳';
-    btn.disabled = true;
-
-    const title = document.getElementById('courseTitle').value.trim();
-    const instructor = document.getElementById('courseInstructor').value.trim();
-    const grade = document.getElementById('courseGrade').value;
-    const price = parseInt(document.getElementById('coursePrice').value) || 0;
-    const requiredExamId = document.getElementById('requiredExamSelect').value;
-    const pdfUrl = document.getElementById('coursePdf').value.trim();
-    
-    const imageFile = document.getElementById('courseImageFile').files[0];
-    const videoFile = document.getElementById('courseVideoFile').files[0];
-    
-    try {
-        let imageUrl = null;
-        let videoUrl = null;
-
-        // رفع الصورة عبر ImgBB
-        if (imageFile) {
-            document.getElementById('imgStatus').style.display = 'inline';
-            document.getElementById('imgStatus').textContent = "جاري رفع الصورة... ⏳";
-            document.getElementById('imgStatus').style.color = '#f59e0b';
-            
-            imageUrl = await uploadImageToImgBB(imageFile);
-            
-            document.getElementById('imgStatus').textContent = "تم رفع الصورة بنجاح ✔️";
-            document.getElementById('imgStatus').style.color = '#10b981';
-        }
-
-        // رفع الفيديو لـ Vimeo
-        if (videoFile) {
-            document.getElementById('videoProgressContainer').style.display = 'block';
-            document.getElementById('videoStatus').textContent = "جاري رفع الفيديو لفيمو... يرجى عدم إغلاق الصفحة";
-            videoUrl = await uploadToVimeo(videoFile, (progress) => {
-                document.getElementById('videoProgressBar').style.width = progress + '%';
-                document.getElementById('videoStatus').textContent = `تم الرفع: ${progress}%`;
-            });
-        }
-
-        const courseData = { title, instructor, grade, price, requiredExamId, pdfUrl };
-        if (imageUrl) courseData.image = imageUrl;
-        if (videoUrl) courseData.videoUrl = videoUrl;
-
-        if (editingId) {
-            await updateDoc(doc(db, "courses", editingId), courseData);
-            adminAlert("تم التعديل", "تم تعديل بيانات الحصة بنجاح.", "success");
-            document.getElementById('btnCancelEdit').click();
-        } else {
-            if(!imageUrl || !videoUrl) throw new Error("يجب رفع صورة وغلاف للحصة الجديدة!");
-            courseData.createdAt = new Date().toISOString();
-            await addDoc(coursesRef, courseData);
-            adminAlert("تم النشر", "تم رفع الحصة بنجاح.", "success");
-            
-            document.getElementById('addCourseForm').reset();
-            document.getElementById('videoProgressContainer').style.display = 'none';
-            document.getElementById('videoStatus').textContent = "اختر ملف الفيديو (سيتم الرفع عند الضغط على نشر)";
-            document.getElementById('imgStatus').style.display = 'none';
-        }
-    } catch (error) {
-        console.error(error);
-        adminAlert("خطأ", error.message || "حدث خطأ أثناء الرفع", "error");
-    } finally {
-        btn.innerHTML = editingId ? 'حفظ التعديلات' : '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة';
-        btn.disabled = false;
-    }
-});
-
-// عرض الكورسات في الجدول (مع زرار التعديل والحذف)
-onSnapshot(query(coursesRef), (snapshot) => {
-    const table = document.getElementById('adminCoursesTable');
+onSnapshot(query(submissionsRef), (snapshot) => {
+    const table = document.getElementById('adminGradingTable');
     if(!table) return;
-
-    if(snapshot.empty) {
-        table.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8;">لا توجد كورسات مضافة حتى الآن.</td></tr>`;
-        return;
-    }
-
+    
     table.innerHTML = '';
-    snapshot.forEach((docSnap) => {
-        const course = docSnap.data();
-        const courseId = docSnap.id;
+    const filter = document.getElementById('filterGradingStatus')?.value || 'all';
 
-        let gradeAr = course.grade;
-        if(gradeAr === 'sec3') gradeAr = 'الثالث الثانوي';
-        else if(gradeAr === 'sec2') gradeAr = 'الثاني الثانوي';
-        else if(gradeAr === 'sec1') gradeAr = 'الأول الثانوي';
-        else if(gradeAr === 'prep3') gradeAr = 'الثالث الإعدادي';
-        else if(gradeAr === 'prep2') gradeAr = 'الثاني الإعدادي';
-        else if(gradeAr === 'prep1') gradeAr = 'الأول الإعدادي';
-        else gradeAr = 'غير محدد';
+    snapshot.forEach(docSnap => {
+        const sub = docSnap.data();
+        const subId = docSnap.id;
+        
+        if(filter !== 'all' && sub.status !== filter) return; 
 
-        let examText = course.requiredExamId ? 
-            '<span style="color:#ef4444; font-weight:800;"><i class="fas fa-lock"></i> مقفول</span>' : 
-            '<span style="color:#10b981; font-weight:800;"><i class="fas fa-unlock"></i> مفتوح</span>';
+        let statusText = '';
+        if(sub.status === 'passed') statusText = '<span style="color:#10b981; font-weight:800;">ناجح</span>';
+        else if(sub.status === 'failed') statusText = '<span style="color:#ef4444; font-weight:800;">راسب</span>';
+        else statusText = '<span style="color:#f59e0b; font-weight:800;">قيد المراجعة</span>';
+
+        let resetBtn = `<button onclick="resetStudentExam('${subId}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px;"><i class="fas fa-redo"></i> إعادة للراسب</button>`;
+        let gradeBtn = sub.status === 'pending' ? `<button onclick="gradeStudentExam('${subId}')" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid #10b981; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px;"><i class="fas fa-check"></i> تصحيح يدوي</button>` : '';
 
         table.innerHTML += `
             <tr>
-                <td><strong>${course.title || '-'}</strong></td>
-                <td>${course.instructor || '-'}</td>
-                <td>${gradeAr}</td>
-                <td>${examText} <br><small style="color:#f59e0b; font-weight: 800;">السعر: ${course.price || 0} ج.م</small></td>
-                <td style="display: flex; gap: 10px; justify-content: center;">
-                    <button onclick="editCourse('${courseId}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid #3b82f6; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 800; font-family: 'Cairo';"><i class="fas fa-edit"></i> تعديل</button>
-                    <button onclick="deleteCourse('${courseId}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 800; font-family: 'Cairo';"><i class="fas fa-trash"></i> حذف</button>
+                <td><strong>${sub.studentName}</strong><br><small style="color:#94a3b8;">${sub.studentPhone}</small></td>
+                <td>${sub.examTitle}</td>
+                <td>${sub.score}%</td>
+                <td>${statusText}</td>
+                <td style="display:flex; gap:5px; flex-wrap:wrap;">
+                    ${gradeBtn}
+                    ${resetBtn}
                 </td>
             </tr>
         `;
     });
 });
 
-// تفعيل وضع التعديل
-window.editCourse = async function(id) {
-    const docSnap = await getDoc(doc(db, "courses", id));
-    if(docSnap.exists()) {
-        const course = docSnap.data();
-        
-        document.getElementById('editingCourseId').value = id;
-        document.getElementById('courseFormTitle').innerHTML = `<i class="fas fa-edit" style="color:#3b82f6;"></i> تعديل: ${course.title}`;
-        
-        document.getElementById('courseTitle').value = course.title || '';
-        document.getElementById('courseInstructor').value = course.instructor || '';
-        document.getElementById('courseGrade').value = course.grade || '';
-        document.getElementById('coursePrice').value = course.price || 0;
-        document.getElementById('coursePdf').value = course.pdfUrl || '';
-        document.getElementById('requiredExamSelect').value = course.requiredExamId || "";
-        
-        document.getElementById('btnSaveCourse').innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات';
-        document.getElementById('btnCancelEdit').style.display = 'block';
-        
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-}
-
-// زرار إلغاء التعديل
-document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
-    document.getElementById('editingCourseId').value = "";
-    document.getElementById('courseFormTitle').innerHTML = `<i class="fas fa-plus-circle" style="color: #f59e0b;"></i> إضافة حصة أو كورس جديد`;
-    document.getElementById('addCourseForm').reset();
-    document.getElementById('btnSaveCourse').innerHTML = '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة';
-    document.getElementById('btnCancelEdit').style.display = 'none';
-    document.getElementById('imgStatus').style.display = 'none';
+document.getElementById('filterGradingStatus')?.addEventListener('change', () => {
+    // تحديث الجدول عند تغيير الفلتر
+    const event = new Event('change');
 });
 
-// دالة الحذف
-window.deleteCourse = async function(id) {
-    const isConfirmed = await adminConfirm("هل أنت متأكد من حذف هذه الحصة نهائياً؟");
-    if(!isConfirmed) return;
+// التصحيح اليدوي وإرسال الواتساب
+window.gradeStudentExam = async function(subId) {
+    const isPassed = await adminConfirm("هل تريد نجاح الطالب في هذا الامتحان (إعطاء 100%)؟ \n(اختر نعم للنجاح، وإلغاء لترسيبه)");
     try {
-        await deleteDoc(doc(db, "courses", id));
-        adminAlert("تم الحذف", "تمت إزالة الحصة بنجاح.", "success");
-    } catch (error) { adminAlert("خطأ", "فشل الحذف", "error"); }
-};
+        const newStatus = isPassed ? 'passed' : 'failed';
+        const newScore = isPassed ? 100 : 0;
+        
+        // تحديث الداتا بيز
+        await updateDoc(doc(db, "exam_submissions", subId), {
+            status: newStatus,
+            score: newScore
+        });
+
+        // جلب بيانات الطالب لإرسال رسالة واتساب
+        const subSnap = await getDoc(doc(db, "exam_submissions", subId));
+        if(subSnap.exists()){
+            const subData = subSnap.data();
+            let waMsg = `مرحباً ولي أمر الطالب/ة: ${subData.studentName}\nتم تصحيح الامتحان المقالي (${subData.examTitle}).\nالنتيجة الآن: ${newStatus === 'passed' ? 'ناجح ✅' : 'راسب ❌'}\nتم تحديث حالة الحصة للطالب.`;
+            await sendWhatsAppToParent(subData.parentPhone, waMsg);
+        }
+
+        adminAlert("تم التصحيح", `تم تقييم الطالب كـ: ${newStatus}`, "success");
+    } catch (e) { console.error(e); }
+}
+
+// إعادة الامتحان
+window.resetStudentExam = async function(subId) {
+    const confirm = await adminConfirm("هل أنت متأكد من مسح نتيجة الطالب ليتمكن من إعادة الامتحان؟");
+    if(!confirm) return;
+    try {
+        await deleteDoc(doc(db, "exam_submissions", subId));
+        adminAlert("تم المسح", "تم مسح الامتحان.. يمكن للطالب الدخول للحصة وامتحانها مجدداً.", "success");
+    } catch (e) { console.error(e); }
+}
