@@ -763,3 +763,222 @@ window.resetStudentExam = async function(subId) {
         adminAlert("تم المسح", "تم مسح النتيجة.. يمكن للطالب الدخول للحصة وامتحانها مجدداً.", "success");
     } catch (e) { console.error(e); }
 }
+// ==========================================
+// 6. إدارة المدرسين (إضافة وتحديث القوائم)
+// ==========================================
+const teachersRef = collection(db, "teachers");
+
+// إضافة مدرس
+document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveTeacher');
+    btn.innerHTML = "جاري الرفع... ⏳"; btn.disabled = true;
+
+    try {
+        const name = document.getElementById('teacherName').value.trim();
+        const subject = document.getElementById('teacherSubject').value.trim();
+        const stages = document.getElementById('teacherStages').value.trim();
+        const imageFile = document.getElementById('teacherImage').files[0];
+
+        let imageUrl = "https://via.placeholder.com/150"; // صورة افتراضية
+        if (imageFile) {
+            imageUrl = await uploadImageToImgBB(imageFile); // بنستخدم نفس دالة الرفع اللي عملناها
+        }
+
+        await addDoc(teachersRef, {
+            name: name,
+            subject: subject,
+            stages: stages,
+            imageUrl: imageUrl,
+            createdAt: new Date().toISOString()
+        });
+
+        adminAlert("نجاح", "تمت إضافة المدرس بنجاح!", "success");
+        document.getElementById('addTeacherForm').reset();
+    } catch (err) {
+        adminAlert("خطأ", "فشل إضافة المدرس", "error");
+    } finally {
+        btn.innerHTML = "<i class='fas fa-plus'></i> إضافة المدرس"; btn.disabled = false;
+    }
+});
+
+// عرض المدرسين وحقنهم في قائمة "إضافة حصة"
+onSnapshot(query(teachersRef), (snapshot) => {
+    const table = document.getElementById('adminTeachersTable');
+    const selectInstructor = document.getElementById('courseInstructor');
+    
+    if(table) table.innerHTML = '';
+    if(selectInstructor) selectCourseInstructorHTML = '<option value="" disabled selected>اختر المدرس</option>';
+
+    snapshot.forEach(docSnap => {
+        const teacher = docSnap.data();
+        const tId = docSnap.id;
+        
+        if(table) {
+            table.innerHTML += `
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${teacher.imageUrl}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                            <strong>${teacher.name}</strong>
+                        </div>
+                    </td>
+                    <td>${teacher.subject}</td>
+                    <td>${teacher.stages}</td>
+                    <td><button onclick="deleteTeacher('${tId}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+                </tr>
+            `;
+        }
+        if(selectInstructor) {
+            selectInstructor.innerHTML += `<option value="${teacher.name}">${teacher.name} (${teacher.subject})</option>`;
+        }
+    });
+});
+
+window.deleteTeacher = async function(id) {
+    if(await adminConfirm("هل أنت متأكد من حذف هذا المدرس؟")) await deleteDoc(doc(db, "teachers", id));
+}
+
+// ==========================================
+// 7. مصنع وتتبع الأكواد (Code Generator)
+// ==========================================
+const codesRef = collection(db, "charge_codes");
+let allCodesData = [];
+
+// توليد كود عشوائي صعب التخمين (مثال: PR-9A2K-B7X1)
+function generateRandomCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // شلنا الحروف المتشابهة زي O و 0
+    let result = 'PR-';
+    for (let i = 0; i < 4; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += '-';
+    for (let i = 0; i < 4; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+    return result;
+}
+
+document.getElementById('generateCodesForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const count = parseInt(document.getElementById('codesCount').value);
+    const price = parseInt(document.getElementById('codePrice').value);
+    const delegate = document.getElementById('codeDelegate').value.trim();
+    const type = document.getElementById('codeType').value;
+    
+    if (count > 500) return adminAlert("تنبيه", "أقصى عدد للتوليد في المرة الواحدة هو 500 كود منعاً للضغط على الخادم.", "error");
+
+    const btn = document.getElementById('btnGenerateCodes');
+    btn.innerHTML = "جاري التوليد... ⏳"; btn.disabled = true;
+
+    try {
+        const batchDate = new Date().toISOString();
+        // بنعمل loop ونرمي الأكواد في الداتا بيز
+        for (let i = 0; i < count; i++) {
+            const uniqueCode = generateRandomCode();
+            await addDoc(codesRef, {
+                code: uniqueCode,
+                value: price,
+                delegate: delegate,
+                type: type,
+                isUsed: false,
+                usedByPhone: null,
+                usedByName: null,
+                usedAt: null,
+                createdAt: batchDate
+            });
+        }
+        adminAlert("تمت العملية", `تم توليد ${count} كود بنجاح للمندوب ${delegate}`, "success");
+        document.getElementById('generateCodesForm').reset();
+    } catch(err) { adminAlert("خطأ", "حدث خطأ أثناء التوليد", "error"); }
+    finally { btn.innerHTML = "<i class='fas fa-cogs'></i> توليد الأكواد الآن"; btn.disabled = false; }
+});
+
+// عرض الأكواد والفلترة
+onSnapshot(query(codesRef), (snapshot) => {
+    allCodesData = [];
+    snapshot.forEach(docSnap => allCodesData.push({ id: docSnap.id, ...docSnap.data() }));
+    renderCodesTable();
+});
+
+function renderCodesTable() {
+    const table = document.getElementById('adminCodesTable');
+    if(!table) return;
+    
+    table.innerHTML = '';
+    const searchTerm = document.getElementById('searchCodeInput')?.value.toLowerCase() || '';
+    const filterStatus = document.getElementById('filterCodeStatus')?.value || 'all';
+
+    let count = 0;
+    allCodesData.forEach(c => {
+        // الفلترة
+        if (filterStatus === 'used' && !c.isUsed) return;
+        if (filterStatus === 'unused' && c.isUsed) return;
+        if (searchTerm && !c.code.toLowerCase().includes(searchTerm) && !c.delegate.toLowerCase().includes(searchTerm)) return;
+
+        count++;
+        let statusText = c.isUsed 
+            ? `<span style="color:#ef4444; font-weight:800;">تم الشحن لـ: ${c.usedByName} <br><small>(${c.usedByPhone})</small></span>` 
+            : `<span style="color:#10b981; font-weight:800;">جديد (لم يُستخدم)</span>`;
+
+        let timeText = '-';
+        if(c.createdAt) {
+            const d = new Date(c.createdAt);
+            timeText = d.toLocaleDateString('ar-EG');
+        }
+
+        table.innerHTML += `
+            <tr>
+                <td style="font-family: monospace; font-size:16px; font-weight:900; color:#f59e0b;">${c.code}</td>
+                <td>${c.value} ج.م</td>
+                <td>${c.delegate}</td>
+                <td>${statusText}</td>
+                <td>${timeText}</td>
+                <td><button onclick="deleteCode('${c.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+            </tr>
+        `;
+    });
+    
+    if(count === 0) table.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #94a3b8;">لا توجد أكواد لعرضها...</td></tr>`;
+}
+
+document.getElementById('searchCodeInput')?.addEventListener('input', renderCodesTable);
+document.getElementById('filterCodeStatus')?.addEventListener('change', renderCodesTable);
+
+window.deleteCode = async function(id) {
+    if(await adminConfirm("تأكيد حذف هذا الكود؟")) await deleteDoc(doc(db, "charge_codes", id));
+}
+
+// ==========================================
+// 8. تصدير الأكواد لشيت إكسيل (CSV Download)
+// ==========================================
+document.getElementById('btnExportCodes')?.addEventListener('click', () => {
+    if(allCodesData.length === 0) return adminAlert("عذراً", "لا توجد أكواد لتصديرها", "error");
+    
+    // تجهيز رأس ملف الـ CSV
+    let csvContent = "\uFEFF"; // لدعم اللغة العربية في الإكسيل
+    csvContent += "الكود,القيمة,المندوب,الحالة,اسم الطالب,رقم الطالب,تاريخ التوليد,تاريخ الاستخدام\n";
+    
+    // سحب الداتا للفلتر الحالي
+    const filterStatus = document.getElementById('filterCodeStatus')?.value || 'all';
+    
+    allCodesData.forEach(c => {
+        if (filterStatus === 'used' && !c.isUsed) return;
+        if (filterStatus === 'unused' && c.isUsed) return;
+
+        let statusStr = c.isUsed ? "مستخدم" : "غير مستخدم";
+        let usedName = c.isUsed ? c.usedByName : "-";
+        let usedPhone = c.isUsed ? c.usedByPhone : "-";
+        
+        let createdD = c.createdAt ? new Date(c.createdAt).toLocaleDateString('ar-EG') : "-";
+        let usedD = c.usedAt ? new Date(c.usedAt).toLocaleDateString('ar-EG') : "-";
+
+        csvContent += `${c.code},${c.value},${c.delegate},${statusStr},${usedName},${usedPhone},${createdD},${usedD}\n`;
+    });
+
+    // إنشاء وتحميل الملف
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Primee_Codes_${new Date().toLocaleDateString('en-GB')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
