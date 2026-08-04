@@ -72,6 +72,8 @@
             <li><a id="navCourses" onclick="switchTab('coursesSection', this)"><i class="fas fa-video"></i> إدارة الكورسات</a></li>
             <li><a id="navExams" onclick="switchTab('examsSection', this)"><i class="fas fa-file-alt"></i> إدارة الامتحانات</a></li>
             <li><a id="navGrading" onclick="switchTab('gradingSection', this)"><i class="fas fa-eye"></i> سجل المشاهدات والتصحيح</a></li>
+            <li><a id="navTeachers" onclick="switchTab('teachersSection', this)"><i class="fas fa-chalkboard-teacher"></i> إدارة المدرسين</a></li>
+            <li><a id="navCodes" onclick="switchTab('codesSection', this)"><i class="fas fa-qrcode"></i> مصنع وتتبع الأكواد</a></li>
         </ul>
         <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
     </aside>
@@ -151,7 +153,7 @@
                         </div>
                         <div class="form-group-admin">
                             <label>اسم المدرس</label>
-                            <input type="text" id="courseInstructor" placeholder="مثال: أستاذ أحمد" required>
+                            <select id="courseInstructor" required><option value="" disabled selected>جاري تحميل المدرسين...</option></select>
                         </div>
                         <div class="form-group-admin">
                             <label>المرحلة الدراسية</label>
@@ -290,7 +292,94 @@
                 </table>
             </div>
         </div>
+<!-- 6. قسم إدارة المدرسين -->
+        <div id="teachersSection" class="admin-section">
+            <div class="admin-table-container">
+                <h3><i class="fas fa-chalkboard-teacher" style="color: #3b82f6;"></i> إضافة مدرس جديد</h3>
+                <form id="addTeacherForm">
+                    <div class="form-grid">
+                        <div class="form-group-admin">
+                            <label>اسم المدرس</label>
+                            <input type="text" id="teacherName" placeholder="مثال: أ. عبدالرحمن عادل" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>المادة التي يدرسها</label>
+                            <input type="text" id="teacherSubject" placeholder="مثال: فيزياء، لغات..." required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>المراحل (مفصول بينها بفاصلة)</label>
+                            <input type="text" id="teacherStages" placeholder="إعدادي, ثانوي" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>صورة المدرس</label>
+                            <input type="file" id="teacherImage" accept="image/*" required>
+                        </div>
+                    </div>
+                    <button type="submit" id="btnSaveTeacher" style="background: #f59e0b; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i> إضافة المدرس</button>
+                </form>
+            </div>
 
+            <div class="admin-table-container" style="margin-top: 20px;">
+                <h3>المدرسين المسجلين بالمنصة</h3>
+                <table>
+                    <thead><tr><th>المدرس</th><th>المادة</th><th>المراحل</th><th>إجراءات</th></tr></thead>
+                    <tbody id="adminTeachersTable">
+                        <tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب المدرسين...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 7. قسم مصنع وتتبع الأكواد -->
+        <div id="codesSection" class="admin-section">
+            <div class="admin-table-container">
+                <h3><i class="fas fa-qrcode" style="color: #10b981;"></i> توليد أكواد جديدة</h3>
+                <form id="generateCodesForm">
+                    <div class="form-grid">
+                        <div class="form-group-admin">
+                            <label>عدد الأكواد المطلوبة</label>
+                            <input type="number" id="codesCount" placeholder="مثال: 50" min="1" max="500" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>سعر / قيمة الكود (ج.م)</label>
+                            <input type="number" id="codePrice" placeholder="مثال: 100" min="1" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>اسم المندوب / السنتر</label>
+                            <input type="text" id="codeDelegate" placeholder="مثال: مكتبة الأمل" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>نوع الكود</label>
+                            <select id="codeType" required>
+                                <option value="wallet">شحن محفظة (رصيد عام)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" id="btnGenerateCodes" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-cogs"></i> توليد الأكواد الآن</button>
+                </form>
+            </div>
+
+            <div class="admin-table-container" style="margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 15px;">
+                    <h3 style="margin: 0; border: none; padding: 0;">تتبع الأكواد (سجل الشحن)</h3>
+                    <button id="btnExportCodes" style="background: #3b82f6; color: #fff; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 800; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-file-excel"></i> تحميل كـ Excel (CSV)</button>
+                </div>
+                <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                    <input type="text" id="searchCodeInput" placeholder="ابحث بكود أو مندوب..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';">
+                    <select id="filterCodeStatus" style="padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';">
+                        <option value="all">كل الأكواد</option>
+                        <option value="unused">لم تُستخدم بعد</option>
+                        <option value="used">تم الشحن (مُستخدمة)</option>
+                    </select>
+                </div>
+                <table>
+                    <thead><tr><th>الكود</th><th>القيمة</th><th>المندوب</th><th>الحالة / الطالب</th><th>تاريخ التوليد</th><th>إجراءات</th></tr></thead>
+                    <tbody id="adminCodesTable">
+                        <tr><td colspan="6" style="text-align: center; color: #94a3b8;">جاري جلب الأكواد...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </main>
 
     <!-- النوافذ المنبثقة -->
