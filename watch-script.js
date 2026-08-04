@@ -41,35 +41,31 @@ async function getSecureApiKeys() {
 async function sendWhatsAppToParent(parentPhone, msgText) {
     if(!parentPhone || parentPhone === "غير متوفر") return;
     
-    // سحب المفاتيح من الداتا بيز بأمان
     const keys = await getSecureApiKeys();
-    if (!keys || !keys.wapilot_instance || !keys.wapilot_token) {
-        console.error("مفاتيح WaPilot غير موجودة في قاعدة البيانات!");
-        return;
-    }
+    if (!keys || !keys.wapilot_instance || !keys.wapilot_token) return;
 
     const instanceId = keys.wapilot_instance; 
     const token = keys.wapilot_token;
     
-    // تظبيط رقم التليفون
+    // تظبيط الرقم (إضافة 2 لمصر لو مش موجودة)
     let formattedPhone = parentPhone.startsWith('0') ? '2' + parentPhone : parentPhone;
     
-    // الرابط اللي إنت حددته لـ WaPilot
-    const url = `https://api.wapilot.net/api/v2/${instanceId}/send-message`;
+    // الرابط المظبوط بتاعك
+    var url = "https://api.wapilot.net/api/v2/" + instanceId + "/send-message";
     
     try {
         await fetch(url, {
             method: "POST",
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // أو حسب التوكن المطلوب في منصة WaPilot
+                'Authorization': `Bearer ${token}` 
             },
             body: JSON.stringify({
                 phone: formattedPhone,
                 message: msgText
             })
         });
-        console.log("تم إرسال رسالة الواتساب لولي الأمر عبر WaPilot بنجاح.");
+        console.log("تم إرسال إشعار الواتساب عبر WaPilot بنجاح.");
     } catch(err) { 
         console.error("فشل إرسال الواتساب:", err); 
     }
