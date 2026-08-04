@@ -96,7 +96,15 @@
                     </div>
                 </div>
             </div>
-
+          <!-- صندوق شحن الرصيد للطالب -->
+<div style="background: #1e293b; padding: 25px; border-radius: 15px; border: 1px solid #334155; margin-bottom: 30px;">
+    <h3 style="color: #10b981; margin: 0 0 15px 0;"><i class="fas fa-wallet"></i> شحن المحفظة بالكود</h3>
+    <p style="color: #94a3b8; font-size: 14px; margin-bottom: 15px;">أدخل الكود المكون من 8 رموز لشحن رصيدك فوراً.</p>
+    <form id="redeemCodeForm" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="chargeCodeInput" placeholder="مثال: PR-XXXX-XXXX" style="flex: 1; padding: 15px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-size: 16px; font-weight: 800; text-transform: uppercase;" required>
+        <button type="submit" id="btnRedeem" style="background: #10b981; color: #fff; border: none; padding: 15px 30px; border-radius: 10px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-bolt"></i> شحن الآن</button>
+    </form>
+</div>
             <!-- الكورسات المملوكة (موادي) -->
             <div class="section-title">
                 <h3 style="color: var(--text-main); font-weight: 900;"><i class="fas fa-play-circle" style="color: var(--primary-color);"></i> موادي الدراسية</h3>
