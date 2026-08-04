@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// دمجنا onSnapshot هنا فوق مع باقي الاستدعاءات
+import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -16,7 +17,7 @@ const db = getFirestore(app);
 let currentStudentData = null;
 let currentStudentId = null;
 
-// تأكد إن السكريبت يشتغل بعد ما الصفحة تحمل بالكامل عشان ميضربش
+// تأكد إن السكريبت يشتغل بعد ما الصفحة تحمل بالكامل
 document.addEventListener('DOMContentLoaded', () => {
     const loggedInPhone = localStorage.getItem('studentPhone');
     if (!loggedInPhone) {
@@ -65,6 +66,18 @@ async function fetchStudentData(phone) {
 
             fetchMyCourses(currentStudentData.myCourses);
             renderGrades(currentStudentData.completedExams);
+            
+            // =========================================================
+            // كود المراقبة اللحظية (الطرد لو الأدمن عمل حظر)
+            // =========================================================
+            onSnapshot(doc(db, "users", currentStudentId), (docSnap) => {
+                if (docSnap.exists() && docSnap.data().isBlocked === true) {
+                    localStorage.clear();
+                    alert("⚠️ تم إيقاف حسابك بواسطة الإدارة وسيتم تسجيل خروجك الآن.");
+                    window.location.replace("login.html");
+                }
+            });
+
         } else {
             window.location.replace("login.html");
         }
@@ -98,7 +111,6 @@ async function fetchMyCourses(myCourseIds) {
             
             if (courseSnap.exists()) {
                 const course = courseSnap.data();
-                // الكود ده بيرسم الكارت بنفس التصميم الشيك بتاع الصفحة الرئيسية
                 const courseCard = `
                     <div class="modern-teacher-card" style="height: 100%; display: flex; flex-direction: column;">
                         <div class="card-image-wrapper" style="height: 180px; position: relative; background: var(--input-bg);">
@@ -152,18 +164,5 @@ function renderGrades(completedExams) {
                 </td>
             </tr>
         `;
-    });
-}
-import { onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// طرد الطالب فوراً لو تم حظره من الأدمن
-const loggedInUserId = localStorage.getItem('loggedInUserId');
-if (loggedInUserId) {
-    onSnapshot(doc(db, "users", loggedInUserId), (docSnap) => {
-        if (docSnap.exists() && docSnap.data().isBlocked === true) {
-            localStorage.clear();
-            alert("⚠️ تم إيقاف حسابك بواسطة الإدارة وسيتم تسجيل خروجك الآن.");
-            window.location.replace("login.html");
-        }
     });
 }
