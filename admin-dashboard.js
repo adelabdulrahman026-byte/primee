@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// استدعاء الفايربيز ستوريدج لرفع الصور
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+// لاحظ: شلنا استدعاء الـ Storage خالص عشان هنستخدم ImgBB
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -14,31 +13,31 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app); // تعريف الستوريدج
 
-// متغير فاضي هيتملي وقت الرفع بس
-let VIMEO_ACCESS_TOKEN = null;
-
-// دالة بتجيب التوكن من الداتا بيز بأمان
-async function getVimeoToken() {
-    if (VIMEO_ACCESS_TOKEN) return VIMEO_ACCESS_TOKEN; // لو جبناه قبل كده مش هنجيبه تاني
-    
+// ==========================================
+// 1. جلب مفاتيح الأمان (Vimeo & ImgBB) بأمان تام
+// ==========================================
+let SECURE_API_KEYS = null;
+async function getSecureApiKeys() {
+    if (SECURE_API_KEYS) return SECURE_API_KEYS; 
     try {
         const docRef = doc(db, "settings", "api_keys");
         const docSnap = await getDoc(docRef);
-        
         if (docSnap.exists()) {
-            VIMEO_ACCESS_TOKEN = docSnap.data().vimeo_token;
-            return VIMEO_ACCESS_TOKEN;
+            SECURE_API_KEYS = docSnap.data();
+            return SECURE_API_KEYS;
         } else {
-            throw new Error("لم يتم العثور على مفتاح Vimeo في قاعدة البيانات!");
+            throw new Error("لم يتم العثور على مفاتيح الأمان في قاعدة البيانات!");
         }
     } catch (error) {
-        console.error("خطأ في جلب مفتاح الأمان:", error);
+        console.error("خطأ في جلب مفاتيح الأمان:", error);
         throw error;
     }
 }
-// حماية ونوافذ (نفس الكود السابق)
+
+// ==========================================
+// حماية الصفحة وتنبيهات
+// ==========================================
 if (localStorage.getItem('adminLoggedIn') !== 'true') window.location.replace('admin-login.html');
 document.getElementById('adminLogoutBtn')?.addEventListener('click', () => { localStorage.clear(); window.location.replace('admin-login.html'); });
 
@@ -66,8 +65,68 @@ function showLiveToast(msg) {
     setTimeout(() => { toast.classList.remove('show'); }, 4000);
 }
 
+const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+document.getElementById('enableSoundBtn')?.addEventListener('click', function() {
+    notificationSound.play().then(() => {
+        notificationSound.pause();
+        notificationSound.currentTime = 0;
+        this.innerHTML = '<i class="fas fa-check-circle"></i> تم تفعيل الصوت';
+        this.style.background = 'rgba(16, 185, 129, 0.1)';
+        this.style.color = '#10b981';
+    }).catch(err => console.log(err));
+});
+
 // ==========================================
-// 1. قسم إدارة الطلاب (تحديث رقم ولي الأمر)
+// مراقبة الطلاب والأرباح
+// ==========================================
+let isInitialLoad = true; 
+const usersRef = collection(db, "users");
+
+onSnapshot(query(usersRef), (snapshot) => {
+    document.getElementById('totalStudentsCount').textContent = snapshot.size;
+    let totalRev = 0;
+    const studentsArray = [];
+
+    snapshot.forEach((doc) => { 
+        const data = doc.data();
+        studentsArray.push(data);
+        if(data.walletBalance) totalRev += parseInt(data.walletBalance);
+    });
+    document.getElementById('totalRevenue').textContent = totalRev + ' ج.م';
+
+    snapshot.docChanges().forEach((change) => {
+        if (change.type === "added" && !isInitialLoad) {
+            notificationSound.play().catch(e => console.log(e));
+            showLiveToast(change.doc.data().fullName || "طالب جديد");
+        }
+    });
+    
+    const tableBody = document.getElementById('recentStudentsTable');
+    if(tableBody) {
+        tableBody.innerHTML = '';
+        studentsArray.reverse().slice(0, 10).forEach(student => {
+            const tr = document.createElement('tr');
+            const walletText = student.walletBalance > 0 ? `<span style="color:#10b981;">${student.walletBalance} ج.م</span>` : `0 ج.م`;
+            let gradeAr = student.grade;
+            if(gradeAr === 'sec3') gradeAr = 'الثالث الثانوي';
+            else if(gradeAr === 'sec1') gradeAr = 'الأول الثانوي';
+            else if(gradeAr === 'prep3') gradeAr = 'الثالث الإعدادي';
+            
+            tr.innerHTML = `
+                <td><strong>${student.fullName || '-'}</strong></td>
+                <td style="color: #f59e0b;">${student.studentPhone || '-'}</td>
+                <td>${gradeAr || '-'}</td>
+                <td>${walletText}</td>
+                <td style="color: #94a3b8; font-size: 13px;">الآن</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+    isInitialLoad = false;
+});
+
+// ==========================================
+// إدارة الطلاب (بحث، شحن، خصم، حظر)
 // ==========================================
 let currentStudentId = null;
 let currentStudentData = null;
@@ -77,7 +136,7 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
     
     document.getElementById('btnSearchStudent').innerHTML = 'جاري...';
     try {
-        const qSearch = query(collection(db, "users"), where("studentPhone", "==", phone));
+        const qSearch = query(usersRef, where("studentPhone", "==", phone));
         const querySnapshot = await getDocs(qSearch);
         if(querySnapshot.empty) {
             adminAlert("عذراً", "لا يوجد طالب بهذا الرقم", "error");
@@ -88,25 +147,91 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
             
             document.getElementById('resStudentName').textContent = currentStudentData.fullName;
             document.getElementById('resStudentPhone').textContent = currentStudentData.studentPhone;
-            // عرض رقم ولي الأمر!
             document.getElementById('resParentPhone').textContent = currentStudentData.parentPhone || "غير متوفر";
             
-            document.getElementById('resStudentGrade').textContent = currentStudentData.grade;
+            let gradeAr = currentStudentData.grade;
+            if(gradeAr === 'sec3') gradeAr = 'الثالث الثانوي';
+            document.getElementById('resStudentGrade').textContent = gradeAr || '-';
             document.getElementById('resStudentWallet').textContent = (currentStudentData.walletBalance || 0) + ' ج.م';
+            
+            const statusSpan = document.getElementById('resStudentStatus');
+            const btnToggleBlock = document.getElementById('btnToggleBlock');
+            
+            if(currentStudentData.isBlocked) {
+                statusSpan.textContent = 'محظور ⛔';
+                statusSpan.style.color = '#ef4444';
+                btnToggleBlock.innerHTML = '<i class="fas fa-unlock"></i> فك الحظر';
+                btnToggleBlock.style.color = '#10b981';
+                btnToggleBlock.style.borderColor = '#10b981';
+                btnToggleBlock.style.background = 'rgba(16, 185, 129, 0.1)';
+            } else {
+                statusSpan.textContent = 'نشط 🟢';
+                statusSpan.style.color = '#10b981';
+                btnToggleBlock.innerHTML = '<i class="fas fa-ban"></i> حظر الطالب';
+                btnToggleBlock.style.color = '#ef4444';
+                btnToggleBlock.style.borderColor = '#ef4444';
+                btnToggleBlock.style.background = 'rgba(239, 68, 68, 0.1)';
+            }
             document.getElementById('studentResultCard').style.display = 'block';
         }
     } catch(error) { console.error(error); } 
     finally { document.getElementById('btnSearchStudent').innerHTML = '<i class="fas fa-search"></i> بحث'; }
 });
-// (كود الشحن والخصم والحظر زي ما هو تمام شغال)
+
+document.getElementById('btnChargeWallet')?.addEventListener('click', async () => {
+    const amount = parseInt(document.getElementById('chargeAmount').value);
+    if(!amount || amount <= 0) return adminAlert("خطأ", "أدخل مبلغ صحيح للشحن", "error");
+    if(!currentStudentId) return;
+
+    try {
+        const newBalance = (parseInt(currentStudentData.walletBalance) || 0) + amount; 
+        await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
+        currentStudentData.walletBalance = newBalance;
+        document.getElementById('resStudentWallet').textContent = newBalance + ' ج.م';
+        document.getElementById('chargeAmount').value = '';
+        adminAlert("تم الشحن 💸", `تم شحن ${amount} ج.م بنجاح!`, "success");
+    } catch(error) { adminAlert("خطأ", "فشل الشحن", "error"); }
+});
+
+document.getElementById('btnDeductWallet')?.addEventListener('click', async () => {
+    const amount = parseInt(document.getElementById('chargeAmount').value);
+    if(!amount || amount <= 0) return adminAlert("خطأ", "أدخل مبلغ صحيح للخصم", "error");
+    if(!currentStudentId) return;
+
+    const currentBalance = parseInt(currentStudentData.walletBalance) || 0;
+    const isConfirmed = await adminConfirm(`هل أنت متأكد من خصم ${amount} ج.م من رصيد الطالب؟`);
+    if(!isConfirmed) return;
+
+    try {
+        const newBalance = Math.max(0, currentBalance - amount); 
+        await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
+        currentStudentData.walletBalance = newBalance;
+        document.getElementById('resStudentWallet').textContent = newBalance + ' ج.م';
+        document.getElementById('chargeAmount').value = '';
+        adminAlert("تم الخصم 📉", `تم خصم ${amount} ج.م بنجاح!`, "success");
+    } catch(error) { adminAlert("خطأ", "فشل الخصم", "error"); }
+});
+
+document.getElementById('btnToggleBlock')?.addEventListener('click', async () => {
+    if(!currentStudentId) return;
+    const newBlockStatus = !currentStudentData.isBlocked; 
+    const confirmMsg = newBlockStatus ? "⚠️ هل أنت متأكد من حظر هذا الطالب؟" : "هل أنت متأكد من فك الحظر؟";
+    const isConfirmed = await adminConfirm(confirmMsg);
+    if(!isConfirmed) return;
+
+    try {
+        await updateDoc(doc(db, "users", currentStudentId), { isBlocked: newBlockStatus });
+        adminAlert("نجاح", newBlockStatus ? "تم حظر الطالب بنجاح ⛔" : "تم فك الحظر 🟢", "success");
+        document.getElementById('btnSearchStudent').click();
+    } catch(error) { adminAlert("خطأ", "حدث خطأ", "error"); }
+});
 
 // ==========================================
-// 2. قسم إدارة الامتحانات (Exam Builder)
+// إدارة الامتحانات (Exam Builder)
 // ==========================================
 const examsRef = collection(db, "exams");
 let questionCount = 0;
 
-// إضافة سؤال جديد في الفورم
 document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
     questionCount++;
     const container = document.getElementById('questionsContainer');
@@ -132,7 +257,6 @@ document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
     container.insertAdjacentHTML('beforeend', qHtml);
 });
 
-// حفظ الامتحان في الفايربيز
 document.getElementById('addExamForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = document.getElementById('examTitle').value;
@@ -166,7 +290,6 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
     finally { btn.innerHTML = '<i class="fas fa-save"></i> حفظ الامتحان'; btn.disabled = false; }
 });
 
-// جلب الامتحانات وعرضها في الجدول والقائمة المنسدلة بتاعت الكورسات
 onSnapshot(query(examsRef), (snapshot) => {
     const table = document.getElementById('adminExamsTable');
     const select = document.getElementById('requiredExamSelect');
@@ -175,7 +298,6 @@ onSnapshot(query(examsRef), (snapshot) => {
 
     snapshot.forEach(docSnap => {
         const exam = docSnap.data();
-        // إضافة للجدول
         if(table) {
             table.innerHTML += `<tr>
                 <td><strong>${exam.title}</strong></td>
@@ -184,56 +306,76 @@ onSnapshot(query(examsRef), (snapshot) => {
                 <td><button onclick="deleteExam('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
             </tr>`;
         }
-        // إضافة لقائمة اختيار الكورس
-        if(select) {
-            select.innerHTML += `<option value="${docSnap.id}">${exam.title}</option>`;
-        }
+        if(select) select.innerHTML += `<option value="${docSnap.id}">${exam.title}</option>`;
     });
 });
 
 window.deleteExam = async function(id) {
-    if(await adminConfirm("هل أنت متأكد من حذف الامتحان؟")) {
-        await deleteDoc(doc(db, "exams", id));
-    }
+    if(await adminConfirm("هل أنت متأكد من حذف الامتحان؟")) await deleteDoc(doc(db, "exams", id));
 }
 
+
 // ==========================================
-// 3. قسم إدارة الكورسات (رفع الصور وفيمو + التعديل)
+// إدارة الكورسات (رفع ImgBB و Vimeo + التعديل)
 // ==========================================
 const coursesRef = collection(db, "courses");
 
-// دالة رفع الفيديو لفيمو باستخدام TUS (تحتاج Access Token)
-async function uploadToVimeo(file, progressCallback) {
-    return new Promise((resolve, reject) => {
-        if(VIMEO_ACCESS_TOKEN === "YOUR_VIMEO_ACCESS_TOKEN_HERE") {
-            reject("برجاء وضع الـ Vimeo Access Token في الكود أولاً!");
-            return;
-        }
+// دالة الرفع للصور (ImgBB)
+async function uploadImageToImgBB(file) {
+    const keys = await getSecureApiKeys(); 
+    const IMGBB_API_KEY = keys.imgbb_token; 
+    if(!IMGBB_API_KEY) throw new Error("مفتاح ImgBB غير موجود في قاعدة البيانات!");
 
-        const upload = new tus.Upload(file, {
-            endpoint: "https://api.vimeo.com/me/videos",
-            retryDelays: [0, 3000, 5000, 10000, 20000],
-            headers: {
-                Authorization: `Bearer ${VIMEO_ACCESS_TOKEN}`,
-                Accept: "application/vnd.vimeo.*+json;version=3.4"
-            },
-            uploadSize: file.size,
-            onError: function(error) { reject(error); },
-            onProgress: function(bytesUploaded, bytesTotal) {
-                const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-                progressCallback(percentage);
-            },
-            onSuccess: function() {
-                // استخراج لينك الـ ID بتاع فيمو
-                const videoId = upload.url.split('/').pop();
-                resolve(`https://player.vimeo.com/video/${videoId}`);
-            }
-        });
-        upload.start();
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json();
+    if (data.success) {
+        return data.data.url;
+    } else {
+        throw new Error("فشل رفع الصورة على ImgBB");
+    }
+}
+
+// دالة الرفع للفيديوهات (Vimeo)
+async function uploadToVimeo(file, progressCallback) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const keys = await getSecureApiKeys(); 
+            const vimeoToken = keys.vimeo_token; 
+            if(!vimeoToken) throw new Error("مفتاح Vimeo غير موجود في قاعدة البيانات!");
+
+            const upload = new tus.Upload(file, {
+                endpoint: "https://api.vimeo.com/me/videos",
+                retryDelays: [0, 3000, 5000, 10000, 20000],
+                headers: {
+                    Authorization: `Bearer ${vimeoToken}`, 
+                    Accept: "application/vnd.vimeo.*+json;version=3.4"
+                },
+                uploadSize: file.size,
+                onError: function(error) { reject(error); },
+                onProgress: function(bytesUploaded, bytesTotal) {
+                    const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+                    progressCallback(percentage);
+                },
+                onSuccess: function() {
+                    const videoId = upload.url.split('/').pop();
+                    resolve(`https://player.vimeo.com/video/${videoId}`);
+                }
+            });
+            upload.start();
+        } catch (error) {
+            reject(error);
+        }
     });
 }
 
-// حفظ أو تعديل الكورس
+// دالة إضافة / تعديل الحصة
 document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnSaveCourse');
@@ -247,6 +389,7 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
     const grade = document.getElementById('courseGrade').value;
     const price = parseInt(document.getElementById('coursePrice').value) || 0;
     const requiredExamId = document.getElementById('requiredExamSelect').value;
+    const pdfUrl = document.getElementById('coursePdf').value.trim();
     
     const imageFile = document.getElementById('courseImageFile').files[0];
     const videoFile = document.getElementById('courseVideoFile').files[0];
@@ -255,43 +398,46 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
         let imageUrl = null;
         let videoUrl = null;
 
-        // 1. لو اختار صورة، نرفعها لفايربيز ستوريدج
+        // رفع الصورة عبر ImgBB
         if (imageFile) {
-            const imgRef = ref(storage, 'course_images/' + Date.now() + '_' + imageFile.name);
-            await uploadBytesResumable(imgRef, imageFile);
-            imageUrl = await getDownloadURL(imgRef);
+            document.getElementById('imgStatus').style.display = 'inline';
+            document.getElementById('imgStatus').textContent = "جاري رفع الصورة... ⏳";
+            document.getElementById('imgStatus').style.color = '#f59e0b';
+            
+            imageUrl = await uploadImageToImgBB(imageFile);
+            
+            document.getElementById('imgStatus').textContent = "تم رفع الصورة بنجاح ✔️";
+            document.getElementById('imgStatus').style.color = '#10b981';
         }
 
-        // 2. لو اختار فيديو، نرفعه لفيمو
+        // رفع الفيديو لـ Vimeo
         if (videoFile) {
             document.getElementById('videoProgressContainer').style.display = 'block';
             document.getElementById('videoStatus').textContent = "جاري رفع الفيديو لفيمو... يرجى عدم إغلاق الصفحة";
-            
             videoUrl = await uploadToVimeo(videoFile, (progress) => {
                 document.getElementById('videoProgressBar').style.width = progress + '%';
                 document.getElementById('videoStatus').textContent = `تم الرفع: ${progress}%`;
             });
         }
 
-        // تجميع البيانات
-        const courseData = { title, instructor, grade, price, requiredExamId };
-        if (imageUrl) courseData.image = imageUrl; // لو رفع صورة جديدة
-        if (videoUrl) courseData.videoUrl = videoUrl; // لو رفع فيديو جديد
+        const courseData = { title, instructor, grade, price, requiredExamId, pdfUrl };
+        if (imageUrl) courseData.image = imageUrl;
+        if (videoUrl) courseData.videoUrl = videoUrl;
 
         if (editingId) {
-            // تحديث كورس موجود
             await updateDoc(doc(db, "courses", editingId), courseData);
             adminAlert("تم التعديل", "تم تعديل بيانات الحصة بنجاح.", "success");
-            document.getElementById('btnCancelEdit').click(); // قفل وضع التعديل
+            document.getElementById('btnCancelEdit').click();
         } else {
-            // إضافة كورس جديد
             if(!imageUrl || !videoUrl) throw new Error("يجب رفع صورة وغلاف للحصة الجديدة!");
             courseData.createdAt = new Date().toISOString();
             await addDoc(coursesRef, courseData);
             adminAlert("تم النشر", "تم رفع الحصة بنجاح.", "success");
+            
             document.getElementById('addCourseForm').reset();
             document.getElementById('videoProgressContainer').style.display = 'none';
-            document.getElementById('videoStatus').textContent = "اختر ملف الفيديو";
+            document.getElementById('videoStatus').textContent = "اختر ملف الفيديو (سيتم الرفع عند الضغط على نشر)";
+            document.getElementById('imgStatus').style.display = 'none';
         }
     } catch (error) {
         console.error(error);
@@ -302,24 +448,43 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
     }
 });
 
-// عرض الكورسات في الجدول (مع زرار التعديل)
+// عرض الكورسات في الجدول (مع زرار التعديل والحذف)
 onSnapshot(query(coursesRef), (snapshot) => {
     const table = document.getElementById('adminCoursesTable');
     if(!table) return;
+
+    if(snapshot.empty) {
+        table.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8;">لا توجد كورسات مضافة حتى الآن.</td></tr>`;
+        return;
+    }
+
     table.innerHTML = '';
     snapshot.forEach((docSnap) => {
         const course = docSnap.data();
-        let examText = course.requiredExamId ? '<span style="color:#ef4444;"><i class="fas fa-lock"></i> مقفول بامتحان</span>' : '<span style="color:#10b981;">مفتوح</span>';
-        
+        const courseId = docSnap.id;
+
+        let gradeAr = course.grade;
+        if(gradeAr === 'sec3') gradeAr = 'الثالث الثانوي';
+        else if(gradeAr === 'sec2') gradeAr = 'الثاني الثانوي';
+        else if(gradeAr === 'sec1') gradeAr = 'الأول الثانوي';
+        else if(gradeAr === 'prep3') gradeAr = 'الثالث الإعدادي';
+        else if(gradeAr === 'prep2') gradeAr = 'الثاني الإعدادي';
+        else if(gradeAr === 'prep1') gradeAr = 'الأول الإعدادي';
+        else gradeAr = 'غير محدد';
+
+        let examText = course.requiredExamId ? 
+            '<span style="color:#ef4444; font-weight:800;"><i class="fas fa-lock"></i> مقفول</span>' : 
+            '<span style="color:#10b981; font-weight:800;"><i class="fas fa-unlock"></i> مفتوح</span>';
+
         table.innerHTML += `
             <tr>
-                <td><strong>${course.title}</strong></td>
-                <td>${course.instructor}</td>
-                <td>${course.grade}</td>
-                <td>${examText}</td>
-                <td style="display: flex; gap: 10px;">
-                    <button onclick="editCourse('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid #3b82f6; padding: 6px 12px; border-radius: 8px; cursor: pointer;"><i class="fas fa-edit"></i> تعديل</button>
-                    <button onclick="deleteCourse('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; cursor: pointer;"><i class="fas fa-trash"></i></button>
+                <td><strong>${course.title || '-'}</strong></td>
+                <td>${course.instructor || '-'}</td>
+                <td>${gradeAr}</td>
+                <td>${examText} <br><small style="color:#f59e0b; font-weight: 800;">السعر: ${course.price || 0} ج.م</small></td>
+                <td style="display: flex; gap: 10px; justify-content: center;">
+                    <button onclick="editCourse('${courseId}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid #3b82f6; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 800; font-family: 'Cairo';"><i class="fas fa-edit"></i> تعديل</button>
+                    <button onclick="deleteCourse('${courseId}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 800; font-family: 'Cairo';"><i class="fas fa-trash"></i> حذف</button>
                 </td>
             </tr>
         `;
@@ -331,30 +496,40 @@ window.editCourse = async function(id) {
     const docSnap = await getDoc(doc(db, "courses", id));
     if(docSnap.exists()) {
         const course = docSnap.data();
+        
         document.getElementById('editingCourseId').value = id;
         document.getElementById('courseFormTitle').innerHTML = `<i class="fas fa-edit" style="color:#3b82f6;"></i> تعديل: ${course.title}`;
         
-        document.getElementById('courseTitle').value = course.title;
-        document.getElementById('courseInstructor').value = course.instructor;
-        document.getElementById('courseGrade').value = course.grade;
-        document.getElementById('coursePrice').value = course.price;
+        document.getElementById('courseTitle').value = course.title || '';
+        document.getElementById('courseInstructor').value = course.instructor || '';
+        document.getElementById('courseGrade').value = course.grade || '';
+        document.getElementById('coursePrice').value = course.price || 0;
+        document.getElementById('coursePdf').value = course.pdfUrl || '';
         document.getElementById('requiredExamSelect').value = course.requiredExamId || "";
         
         document.getElementById('btnSaveCourse').innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات';
         document.getElementById('btnCancelEdit').style.display = 'block';
-        window.scrollTo(0, 0); // نطلع الشاشة لفوق
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
 
-// إلغاء التعديل
+// زرار إلغاء التعديل
 document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
     document.getElementById('editingCourseId').value = "";
     document.getElementById('courseFormTitle').innerHTML = `<i class="fas fa-plus-circle" style="color: #f59e0b;"></i> إضافة حصة أو كورس جديد`;
     document.getElementById('addCourseForm').reset();
     document.getElementById('btnSaveCourse').innerHTML = '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة';
     document.getElementById('btnCancelEdit').style.display = 'none';
+    document.getElementById('imgStatus').style.display = 'none';
 });
 
+// دالة الحذف
 window.deleteCourse = async function(id) {
-    if(await adminConfirm("هل أنت متأكد من الحذف؟")) await deleteDoc(doc(db, "courses", id));
+    const isConfirmed = await adminConfirm("هل أنت متأكد من حذف هذه الحصة نهائياً؟");
+    if(!isConfirmed) return;
+    try {
+        await deleteDoc(doc(db, "courses", id));
+        adminAlert("تم الحذف", "تمت إزالة الحصة بنجاح.", "success");
+    } catch (error) { adminAlert("خطأ", "فشل الحذف", "error"); }
 };
