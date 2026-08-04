@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 // دمجنا onSnapshot هنا فوق مع باقي الاستدعاءات
-import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -166,3 +166,71 @@ function renderGrades(completedExams) {
         `;
     });
 }
+// ==========================================
+// شحن المحفظة عن طريق نظام الأكواد
+// ==========================================
+document.getElementById('redeemCodeForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const codeInput = document.getElementById('chargeCodeInput').value.trim().toUpperCase();
+    const btn = document.getElementById('btnRedeem');
+    
+    if(!codeInput) return alert("رجاء إدخال الكود أولاً.");
+    
+    btn.innerHTML = "جاري الفحص... ⏳"; btn.disabled = true;
+
+    try {
+        const studentPhone = localStorage.getItem('studentPhone');
+        // جلب بيانات الطالب الحالي
+        const studentQ = query(collection(db, "users"), where("studentPhone", "==", studentPhone));
+        const studentSnap = await getDocs(studentQ);
+        if(studentSnap.empty) throw new Error("بيانات الطالب غير موجودة.");
+        
+        const studentDoc = studentSnap.docs[0];
+        const studentId = studentDoc.id;
+        const studentData = studentDoc.data();
+
+        // فحص الكود في قاعدة البيانات
+        const codesQ = query(collection(db, "charge_codes"), where("code", "==", codeInput));
+        const codeSnap = await getDocs(codesQ);
+
+        if(codeSnap.empty) {
+            alert("❌ الكود غير صحيح، تأكد من كتابته بشكل سليم.");
+            return;
+        }
+
+        const codeDoc = codeSnap.docs[0];
+        const codeData = codeDoc.data();
+
+        // هل الكود مشحون قبل كده؟
+        if(codeData.isUsed) {
+            alert(`⚠️ هذا الكود تم شحنه مسبقاً بواسطة: ${codeData.usedByName}`);
+            return;
+        }
+
+        // لو الكود سليم ومش مشحون، هنشحنه دلوقتي
+        const newBalance = (studentData.walletBalance || 0) + codeData.value;
+        
+        // 1. تحديث محفظة الطالب
+        await updateDoc(doc(db, "users", studentId), { walletBalance: newBalance });
+        
+        // 2. حرق الكود (تحديث حالته إنه مستخدم)
+        await updateDoc(doc(db, "charge_codes", codeDoc.id), {
+            isUsed: true,
+            usedByPhone: studentPhone,
+            usedByName: studentData.fullName,
+            usedAt: new Date().toISOString()
+        });
+
+        alert(`🎉 مبروك! تم شحن ${codeData.value} ج.م لحسابك بنجاح. رصيدك الآن: ${newBalance} ج.م`);
+        document.getElementById('redeemCodeForm').reset();
+        
+        // لو عندك كود بيحدث الرصيد في الصفحة، نادي عليه هنا، أو اعمل ريفرش للصفحة
+        setTimeout(() => { window.location.reload(); }, 1500);
+
+    } catch (error) {
+        console.error("خطأ أثناء الشحن:", error);
+        alert("حدث خطأ أثناء الاتصال بالخادم.");
+    } finally {
+        btn.innerHTML = "<i class='fas fa-bolt'></i> شحن الآن"; btn.disabled = false;
+    }
+});
