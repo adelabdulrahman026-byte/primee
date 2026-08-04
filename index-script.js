@@ -230,35 +230,69 @@ if (btnCloseNotif && notifModal) {
 // ==========================================
 // 7. تشغيل سلايدر المدرسين (Swiper.js)
 // ==========================================
-window.addEventListener('load', () => {
-    if (typeof Swiper !== 'undefined') {
-        const teacherSwiper = new Swiper('.teachers-slider', {
-            loop: true, // يلف ويرجع للأول تاني لوحده
-            grabCursor: true, // شكل الماوس يبقى إيد بتمسك
-            autoplay: {
-                delay: 2500, // بيقلب الكارت كل ثانيتين ونص
-                disableOnInteraction: false, // يكمل تقليب حتى لو المستخدم لمسه
-                pauseOnMouseEnter: true, // يقف لو المستخدم وقف عليه بالماوس عشان يقرأ
-            },
-            pagination: {
-                el: '.swiper-pagination',
-                clickable: true,
-            },
-            // بيحدد يعرض كام كارت حسب حجم الشاشة
-            breakpoints: {
-                0: {
-                    slidesPerView: 1,
-                    spaceBetween: 20,
-                },
-                768: {
-                    slidesPerView: 2,
-                    spaceBetween: 30,
-                },
-                1024: {
-                    slidesPerView: 3,
-                    spaceBetween: 30,
-                },
+// ==========================================
+// 7. جلب المدرسين من قاعدة البيانات وعرضهم
+// ==========================================
+async function loadDynamicTeachers() {
+    const teachersGrid = document.getElementById('teachersGrid');
+    if (!teachersGrid) return;
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "teachers"));
+        
+        if (querySnapshot.empty) {
+            teachersGrid.innerHTML = '<div style="text-align: center; width: 100%; color: #94a3b8; padding: 20px;">جاري انضمام نخبة من المدرسين قريباً...</div>';
+            return;
+        }
+
+        let html = '';
+        querySnapshot.forEach(doc => {
+            const t = doc.data();
+            
+            // تقسيم المراحل عشان نعملها Badges شيك
+            let stagesHtml = '';
+            if (t.stages) {
+                t.stages.split(',').forEach(s => {
+                    stagesHtml += `<span class="stage-badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; margin-left: 5px;">${s.trim()}</span>`;
+                });
             }
+
+            html += `
+            <div class="swiper-slide">
+                <div class="modern-teacher-card" style="background: #1e293b; border-radius: 15px; border: 1px solid #334155; overflow: hidden;">
+                    <div class="card-image-wrapper" style="position: relative; height: 200px; background: #0f172a;">
+                        <img src="${t.imageUrl}" alt="${t.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div class="teacher-subject-badge" style="position: absolute; top: 15px; right: 15px; background: #f59e0b; color: #fff; padding: 5px 15px; border-radius: 8px; font-weight: 900; font-size: 14px;"><i class="fas fa-book"></i> ${t.subject}</div>
+                    </div>
+                    <div class="card-info-wrapper" style="padding: 20px;">
+                        <h3 style="color: #f8fafc; margin: 0 0 10px 0; font-size: 20px; font-weight: 900;">${t.name}</h3>
+                        <div class="stages-badges" style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 5px;">
+                            ${stagesHtml}
+                        </div>
+                        <button onclick="window.location.href='login.html'" style="width: 100%; background: #3b82f6; color: #fff; border: none; padding: 12px; border-radius: 10px; font-family: 'Cairo'; font-weight: 800; cursor: pointer; transition: 0.3s;">تصفح الحصص <i class="fas fa-arrow-left"></i></button>
+                    </div>
+                </div>
+            </div>`;
         });
+
+        teachersGrid.innerHTML = html;
+
+        // تشغيل مكتبة السلايدر بعد ما العناصر اترسمت
+        if (typeof Swiper !== 'undefined') {
+            new Swiper('.teachers-slider', {
+                loop: false, // خليناها false عشان لو عدد المدرسين قليل مش هتبوظ
+                grabCursor: true,
+                autoplay: { delay: 2500, disableOnInteraction: false },
+                pagination: { el: '.swiper-pagination', clickable: true },
+                breakpoints: {
+                    0: { slidesPerView: 1, spaceBetween: 20 },
+                    768: { slidesPerView: 2, spaceBetween: 30 },
+                    1024: { slidesPerView: 3, spaceBetween: 30 }
+                }
+            });
+        }
+    } catch (e) {
+        console.error("خطأ في جلب المدرسين:", e);
     }
-});
+}
+loadDynamicTeachers();
