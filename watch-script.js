@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion,onSnapshot, doc  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -9,7 +9,6 @@ const firebaseConfig = {
     messagingSenderId: "1079254330731",
     appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e"
 };
-import { onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // طرد الطالب فوراً لو تم حظره من الأدمن
 const loggedInUserId = localStorage.getItem('loggedInUserId');
