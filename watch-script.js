@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion,onSnapshot, doc  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// تم مسح كلمة doc المتكررة
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -9,7 +10,8 @@ const firebaseConfig = {
     messagingSenderId: "1079254330731",
     appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e"
 };
-}
+// تم إزالة القوس } الزيادة اللي كان بيكسر الكود هنا
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -58,7 +60,7 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
         const securityOverlay = document.getElementById('securityOverlay');
         const securityMessage = document.getElementById('securityMessage');
 
-        // 1. نظام الحماية
+        // 1. نظام الحماية (هل اشترى الكورس؟)
         if (!myCourses.includes(courseId)) {
             if(securityOverlay) securityOverlay.style.display = 'flex';
             if(securityMessage) securityMessage.innerHTML = `يجب شراء هذه الحصة أولاً.<br><br><span style="color:#f59e0b; font-size:12px;">كود تصحيح: الكورس [${courseId}] غير موجود في حسابك.</span>`;
@@ -84,26 +86,31 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
             if(cInstructor) cInstructor.textContent = courseData.instructor || "أستاذ المادة";
             if(cDesc && courseData.description) cDesc.textContent = courseData.description;
 
-            // 2. نظام قفل الامتحان
+            // 2. نظام قفل الامتحان (تم تعديل المنطق ليتوافق مع لوحة الأدمن)
             const examOverlay = document.getElementById('examLockOverlay');
             const vidContainer = document.getElementById('videoContainer');
             
-            if (courseData.requiresExam === true && !completedExams.includes(courseId)) {
+            // لو الحصة ليها امتحان شرطي، والطالب ممتحنوش (الـ ID مش في مصفوفة الامتحانات المجتازة)
+            if (courseData.requiredExamId && !completedExams.includes(courseData.requiredExamId)) {
                 if(examOverlay) examOverlay.style.display = 'flex';
                 if(vidContainer) vidContainer.style.display = 'none';
                 
                 const startBtn = document.getElementById('startExamBtn');
                 if(startBtn) {
                     startBtn.onclick = async () => {
+                        // هنا لاحقاً هنخليه يحوله لصفحة الامتحان الحقيقية اللي برمجناها في الأدمن
                         alert("جارِ التحويل للامتحان...");
                         await updateDoc(doc(db, "users", currentStudentId), {
-                            completedExams: arrayUnion(courseId)
+                            completedExams: arrayUnion(courseData.requiredExamId) // هنا بنضيف الـ ID بتاع الامتحان مش الكورس
                         });
                         alert("نجحت! سيتم فتح الفيديو.");
                         location.reload(); 
                     };
                 }
                 return;
+            } else {
+                // لو مفيش امتحان أو الطالب اجتازه، نخفي شاشة القفل
+                if(examOverlay) examOverlay.style.display = 'none';
             }
 
             // 3. مشغل Plyr مع Vimeo
@@ -150,13 +157,26 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
         alert("حدث خطأ في تحميل الحصة، يرجى تحديث الصفحة.");
     }
 }
-// طرد الطالب فوراً لو تم حظره من الأدمن
-const loggedInUserId = localStorage.getItem('loggedInUserId');
-if (loggedInUserId) {
-    onSnapshot(doc(db, "users", loggedInUserId), (docSnap) => {
-        if (docSnap.exists() && docSnap.data().isBlocked === true) {
-            localStorage.clear();
-            alert("⚠️ تم إيقاف حسابك بواسطة الإدارة وسيتم تسجيل خروجك الآن.");
-            window.location.replace("login.html");
-        }
-    });
+
+// المراقبة اللحظية للحظر (عشان تطرده لو الأدمن عمله بلوك وهو فاتح الحصة)
+let loggedInUserId = null;
+async function setupBlockListener() {
+    const phone = localStorage.getItem('studentPhone');
+    if(!phone) return;
+    
+    // نجيب الـ ID بتاع الطالب الأول
+    const q = query(collection(db, "users"), where("studentPhone", "==", phone));
+    const snap = await getDocs(q);
+    if(!snap.empty) {
+        loggedInUserId = snap.docs[0].id;
+        
+        onSnapshot(doc(db, "users", loggedInUserId), (docSnap) => {
+            if (docSnap.exists() && docSnap.data().isBlocked === true) {
+                localStorage.clear();
+                alert("⚠️ تم إيقاف حسابك بواسطة الإدارة وسيتم تسجيل خروجك الآن.");
+                window.location.replace("login.html");
+            }
+        });
+    }
+}
+setupBlockListener();
