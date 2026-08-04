@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, query, orderBy, limit, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -17,7 +17,7 @@ const db = getFirestore(app);
 if (localStorage.getItem('adminLoggedIn') !== 'true') {
     window.location.replace('admin-login.html');
 }
-document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+document.getElementById('adminLogoutBtn')?.addEventListener('click', () => {
     localStorage.clear();
     window.location.replace('admin-login.html');
 });
@@ -62,7 +62,7 @@ function adminConfirm(msg) {
 // إعدادات الصوت والإشعارات
 // ==========================================
 const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-document.getElementById('enableSoundBtn').addEventListener('click', function() {
+document.getElementById('enableSoundBtn')?.addEventListener('click', function() {
     notificationSound.play().then(() => {
         notificationSound.pause();
         notificationSound.currentTime = 0;
@@ -80,23 +80,41 @@ function showLiveToast(studentName) {
 }
 
 // ==========================================
-// المراقبة اللحظية (الطلاب الجدد)
+// المراقبة اللحظية (الطلاب والأرباح)
 // ==========================================
 let isInitialLoad = true; 
 const usersRef = collection(db, "users");
+
 onSnapshot(query(usersRef), (snapshot) => {
+    // 1. تحديث عدد الطلاب
     document.getElementById('totalStudentsCount').textContent = snapshot.size;
 
+    let totalRev = 0;
+    const studentsArray = [];
+
+    // 2. معالجة البيانات وجمع الأرباح
+    snapshot.forEach((doc) => { 
+        const data = doc.data();
+        studentsArray.push(data);
+        
+        // لو الطالب عنده رصيد، بنجمعه على إجمالي الأرباح
+        if(data.walletBalance) {
+            totalRev += parseInt(data.walletBalance);
+        }
+    });
+
+    // عرض الأرباح في المربع فوق
+    document.getElementById('totalRevenue').textContent = totalRev + ' ج.م';
+
+    // 3. الإشعارات اللحظية
     snapshot.docChanges().forEach((change) => {
         if (change.type === "added" && !isInitialLoad) {
             notificationSound.play().catch(e => console.log(e));
             showLiveToast(change.doc.data().fullName || "طالب جديد");
         }
     });
-
-    const studentsArray = [];
-    snapshot.forEach((doc) => { studentsArray.push(doc.data()); });
     
+    // 4. تحديث جدول أحدث الطلاب
     const tableBody = document.getElementById('recentStudentsTable');
     if(tableBody) {
         tableBody.innerHTML = '';
@@ -192,12 +210,14 @@ if(btnSearchStudent) {
 
 // شحن المحفظة
 document.getElementById('btnChargeWallet')?.addEventListener('click', async () => {
-    const amount = parseInt(document.getElementById('chargeAmount').value);
+    const amountInput = document.getElementById('chargeAmount').value;
+    const amount = parseInt(amountInput);
     if(!amount || amount <= 0) return adminAlert("خطأ", "أدخل مبلغ صحيح للشحن", "error");
     if(!currentStudentId) return;
 
     try {
-        const newBalance = (currentStudentData.walletBalance || 0) + amount; 
+        const currentBalance = parseInt(currentStudentData.walletBalance) || 0;
+        const newBalance = currentBalance + amount; 
         await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
         
         currentStudentData.walletBalance = newBalance;
@@ -212,13 +232,14 @@ document.getElementById('btnChargeWallet')?.addEventListener('click', async () =
 
 // خصم من المحفظة
 document.getElementById('btnDeductWallet')?.addEventListener('click', async () => {
-    const amount = parseInt(document.getElementById('chargeAmount').value);
+    const amountInput = document.getElementById('chargeAmount').value;
+    const amount = parseInt(amountInput);
     if(!amount || amount <= 0) return adminAlert("خطأ", "أدخل مبلغ صحيح للخصم", "error");
     if(!currentStudentId) return;
 
-    const currentBalance = currentStudentData.walletBalance || 0;
+    const currentBalance = parseInt(currentStudentData.walletBalance) || 0;
     
-    // تأكيد قبل الخصم
+    // تأكيد قبل الخصم (النافذة الشيك)
     const isConfirmed = await adminConfirm(`هل أنت متأكد من خصم ${amount} ج.م من رصيد الطالب؟`);
     if(!isConfirmed) return;
 
