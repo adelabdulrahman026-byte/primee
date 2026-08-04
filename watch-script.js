@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, setDoc, arrayUnion, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -14,29 +14,18 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// جلب مفاتيح الأمان (في الخفاء)
+// جلب مفاتيح الأمان
 // ==========================================
-let SECURE_API_KEYS = null;
 async function getSecureApiKeys() {
-    if (SECURE_API_KEYS) return SECURE_API_KEYS; 
     try {
-        const docRef = doc(db, "settings", "api_keys");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            SECURE_API_KEYS = docSnap.data();
-            return SECURE_API_KEYS;
-        } else {
-            console.error("لم يتم العثور على مفاتيح الأمان!");
-            return null;
-        }
-    } catch (error) {
-        console.error("خطأ:", error);
+        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
+        if (docSnap.exists()) return docSnap.data();
         return null;
-    }
+    } catch (error) { return null; }
 }
 
 // ==========================================
-// إرسال واتساب عبر WaPilot بأمان تام
+// إرسال واتساب (WaPilot API) الرابط الأصلي
 // ==========================================
 async function sendWhatsAppToParent(parentPhone, msgText) {
     if(!parentPhone || parentPhone === "غير متوفر") return;
@@ -47,10 +36,9 @@ async function sendWhatsAppToParent(parentPhone, msgText) {
     const instanceId = keys.wapilot_instance; 
     const token = keys.wapilot_token;
     
-    // تظبيط الرقم (إضافة 2 لمصر لو مش موجودة)
     let formattedPhone = parentPhone.startsWith('0') ? '2' + parentPhone : parentPhone;
     
-    // الرابط المظبوط بتاعك
+    // الرابط اللي إنت طلبته بالظبط
     var url = "https://api.wapilot.net/api/v2/" + instanceId + "/send-message";
     
     try {
@@ -66,9 +54,7 @@ async function sendWhatsAppToParent(parentPhone, msgText) {
             })
         });
         console.log("تم إرسال إشعار الواتساب عبر WaPilot بنجاح.");
-    } catch(err) { 
-        console.error("فشل إرسال الواتساب:", err); 
-    }
+    } catch(err) { console.error("فشل إرسال الواتساب:", err); }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -106,12 +92,9 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
         const myCourses = studentData.myCourses || [];
 
         const securityOverlay = document.getElementById('securityOverlay');
-        const securityMessage = document.getElementById('securityMessage');
 
-        // 1. نظام الحماية
         if (!myCourses.includes(courseId)) {
             if(securityOverlay) securityOverlay.style.display = 'flex';
-            if(securityMessage) securityMessage.innerHTML = `يجب شراء هذه الحصة أولاً.`;
             return; 
         }
         if(securityOverlay) securityOverlay.style.display = 'none';
@@ -125,63 +108,53 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
             document.getElementById('courseTitle').textContent = courseData.title || "حصة بدون عنوان";
             document.getElementById('courseInstructor').textContent = courseData.instructor || "أستاذ المادة";
             
-            // تفعيل الـ PDF
             if(courseData.pdfUrl && courseData.pdfUrl.trim() !== "") {
                 document.getElementById('pdfSection').style.display = 'block';
                 document.getElementById('btnDownloadPdf').href = courseData.pdfUrl;
             }
 
-            // 2. فحص الامتحان
-            const examOverlay = document.getElementById('examLockOverlay');
+            // فحص الامتحان (الشاشة الكاملة)
+            const examOverlay = document.getElementById('examFullscreenOverlay');
             const examArea = document.getElementById('examContentArea');
-            const vidContainer = document.getElementById('videoContainer');
 
             if (courseData.requiredExamId) {
                 currentExamId = courseData.requiredExamId;
-                
-                // البحث في إجابات الطالب السابقة
                 const submissionId = `${currentStudentId}_${currentExamId}`;
                 const subSnap = await getDoc(doc(db, "exam_submissions", submissionId));
                 
                 let examStatus = null;
-                if(subSnap.exists()) examStatus = subSnap.data().status; // 'passed', 'failed', 'pending'
+                if(subSnap.exists()) examStatus = subSnap.data().status; 
 
                 if(examStatus === 'passed') {
-                    // ناجح: افتح الفيديو
                     examOverlay.style.display = 'none';
                     loadVideoPlayer(courseData.videoUrl);
                 } 
                 else if(examStatus === 'failed') {
-                    // راسب: بلوك
                     examOverlay.style.display = 'flex';
-                    vidContainer.style.display = 'none';
                     examArea.innerHTML = `
                         <div class="status-box">
                             <i class="fas fa-times-circle" style="color: #ef4444;"></i>
                             <h2 style="color: #f8fafc;">لقد رسبت في هذا الامتحان</h2>
-                            <p style="color: #94a3b8;">درجتك: ${subSnap.data().score}%</p>
-                            <p style="color: #cbd5e1; font-weight: 800;">الفيديو مغلق. يرجى مراجعة السكرتارية لإعادة الامتحان.</p>
+                            <p style="color: #94a3b8; font-size: 20px;">درجتك: ${subSnap.data().score}%</p>
+                            <p style="color: #cbd5e1; font-weight: 800; margin-top: 20px;">الفيديو مغلق. يرجى مراجعة السكرتارية لإعادة الامتحان.</p>
+                            <button onclick="window.location.href='student-dashboard.html'" class="btn-submit-exam" style="background:#3b82f6; width:auto; padding:10px 30px;">العودة للوحة التحكم</button>
                         </div>
                     `;
                 }
                 else if(examStatus === 'pending') {
-                    // معلق (مستني تصحيح المقالي)
                     examOverlay.style.display = 'flex';
-                    vidContainer.style.display = 'none';
                     examArea.innerHTML = `
                         <div class="status-box">
                             <i class="fas fa-hourglass-half" style="color: #f59e0b;"></i>
                             <h2 style="color: #f8fafc;">جاري تصحيح إجاباتك</h2>
-                            <p style="color: #94a3b8;">الامتحان يحتوي على أسئلة مقالية ويتم مراجعتها من قبل المدرس.</p>
-                            <p style="color: #cbd5e1; font-weight: 800;">سيتم فتح الحصة تلقائياً عند اجتيازك.</p>
+                            <p style="color: #94a3b8; font-size: 18px;">الامتحان يحتوي على أسئلة مقالية ويتم مراجعتها من قبل المدرس.</p>
+                            <p style="color: #cbd5e1; font-weight: 800; margin-top: 20px;">سيتم فتح الحصة تلقائياً عند اجتيازك.</p>
+                            <button onclick="window.location.href='student-dashboard.html'" class="btn-submit-exam" style="background:#3b82f6; width:auto; padding:10px 30px;">العودة للوحة التحكم</button>
                         </div>
                     `;
                 }
                 else {
-                    // لم يمتحن: هات الامتحان واعرضه
                     examOverlay.style.display = 'flex';
-                    vidContainer.style.display = 'none';
-                    
                     const examDoc = await getDoc(doc(db, "exams", currentExamId));
                     if(examDoc.exists()) {
                         currentExamData = examDoc.data();
@@ -194,25 +167,25 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
                     }
                 }
             } else {
-                // مفيش امتحان شرطي
                 examOverlay.style.display = 'none';
                 loadVideoPlayer(courseData.videoUrl);
             }
-
         }
-    } catch (error) { console.error("تفاصيل الخطأ:", error); }
+    } catch (error) { console.error("خطأ:", error); }
 }
 
 function renderExamForm(questions, container) {
-    let html = `<div style="text-align: center; margin-bottom: 20px;">
-                    <i class="fas fa-file-signature" style="font-size:40px; color:#f59e0b; margin-bottom:10px;"></i>
-                    <h3 style="color:#f8fafc; margin:0;">امتحان الحصة</h3>
-                </div>
-                <form id="studentExamForm" class="exam-form-container">`;
+    let html = `
+        <div class="exam-header-title">
+            <i class="fas fa-clipboard-list"></i>
+            <h2>امتحان الحصة</h2>
+            <p>يجب اجتياز الامتحان لتتمكن من مشاهدة الفيديو</p>
+        </div>
+        <form id="studentExamForm" class="exam-form-container">`;
                 
     questions.forEach((q, index) => {
         html += `<div class="exam-question">
-                    <h4 style="color:#cbd5e1; font-size:16px;">سؤال ${index + 1}: ${q.text}</h4>`;
+                    <h4 class="exam-q-text">السؤال ${index + 1}: ${q.text}</h4>`;
         if(q.imageUrl) html += `<img src="${q.imageUrl}" class="exam-q-img">`;
         
         if (q.type === 'mcq') {
@@ -220,7 +193,7 @@ function renderExamForm(questions, container) {
                 html += `<label class="mcq-option"><input type="radio" name="q_${index}" value="${optIndex}" required> ${opt}</label>`;
             });
         } else {
-            html += `<textarea class="essay-input" name="q_${index}" rows="4" placeholder="اكتب إجابتك هنا..." required></textarea>`;
+            html += `<textarea class="essay-input" name="q_${index}" rows="5" placeholder="اكتب إجابتك النموذجية هنا..." required></textarea>`;
         }
         html += `</div>`;
     });
@@ -252,13 +225,13 @@ async function submitExam(examData, student, studentId, course, submissionId) {
     });
 
     let score = mcqTotal > 0 ? Math.round((correctCount / mcqTotal) * 100) : 0;
-    let finalStatus = 'pending'; // لو فيه مقالي هيفضل معلق
+    let finalStatus = 'pending'; 
     
     if(!hasEssay) {
         finalStatus = score >= 50 ? 'passed' : 'failed';
     }
 
-    // حفظ النتيجة في الداتا بيز
+    // حفظ النتيجة وتحديث المشاهدات
     await setDoc(doc(db, "exam_submissions", submissionId), {
         studentId: studentId,
         studentName: student.fullName,
@@ -276,21 +249,16 @@ async function submitExam(examData, student, studentId, course, submissionId) {
         submittedAt: new Date().toISOString()
     });
 
-    // إرسال واتساب لولي الأمر
-    let waMsg = `مرحباً ولي أمر الطالب/ة: ${student.fullName}\n`;
-    waMsg += `قام الطالب بأداء امتحان (${examData.title}) لحصة (${course.title}).\n`;
-    
+    let waMsg = `مرحباً ولي أمر الطالب/ة: ${student.fullName}\nقام الطالب بأداء امتحان (${examData.title}) لحصة (${course.title}).\n`;
     if(finalStatus === 'passed') waMsg += `النتيجة: ناجح ✅ (الدرجة: ${score}%)\nتم فتح الحصة للطالب.`;
-    else if(finalStatus === 'failed') waMsg += `النتيجة: راسب ❌ (الدرجة: ${score}%)\nبرجاء متابعة الطالب، تم إغلاق الحصة.`;
-    else waMsg += `النتيجة: قيد المراجعة ⏳\nيحتوي الامتحان على أسئلة مقالية سيصححها المدرس قريباً.`;
+    else if(finalStatus === 'failed') waMsg += `النتيجة: راسب ❌ (الدرجة: ${score}%)\nتم إغلاق الحصة، يرجى المتابعة.`;
+    else waMsg += `النتيجة: قيد المراجعة ⏳\nيحتوي الامتحان على أسئلة مقالية سيصححها المدرس.`;
     
     await sendWhatsAppToParent(student.parentPhone, waMsg);
 
-    // تحديث الصفحة عشان تعرض النتيجة
     location.reload(); 
 }
 
-// تشغيل الفيديو 
 function loadVideoPlayer(videoUrl) {
     const vidContainer = document.getElementById('videoContainer');
     const vimeoID = extractVimeoID(videoUrl);
