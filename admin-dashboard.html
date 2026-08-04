@@ -7,8 +7,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <!-- مكتبة Tus للرفع المباشر لفيمو (Vimeo Upload Protocol) -->
+    
+    <!-- مكتبة Tus للرفع المباشر لفيمو (مهمة جداً) -->
     <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3.4.0/dist/tus.min.js"></script>
+    
     <style>
         body { margin: 0; font-family: 'Cairo', sans-serif; background: #0f172a; color: #f8fafc; display: flex; min-height: 100vh; overflow-x: hidden; }
         .admin-sidebar { width: 260px; background: #1e293b; border-left: 1px solid #334155; display: flex; flex-direction: column; position: fixed; right: 0; top: 0; height: 100vh; z-index: 100; transition: 0.3s; }
@@ -56,7 +58,6 @@
         .admin-section { display: none; }
         .admin-section.active-section { display: flex; flex-direction: column; gap: 30px; }
         
-        /* تصميم صندوق إضافة السؤال */
         .question-box { background: #0f172a; border: 1px dashed #475569; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
     </style>
 </head>
@@ -69,6 +70,7 @@
             <li><a id="navStudents" onclick="switchTab('studentsSection', this)"><i class="fas fa-users"></i> إدارة الطلاب</a></li>
             <li><a id="navCourses" onclick="switchTab('coursesSection', this)"><i class="fas fa-video"></i> إدارة الكورسات</a></li>
             <li><a id="navExams" onclick="switchTab('examsSection', this)"><i class="fas fa-file-alt"></i> إدارة الامتحانات</a></li>
+            <li><a id="navGrading" onclick="switchTab('gradingSection', this)"><i class="fas fa-marker"></i> تصحيح الامتحانات</a></li>
         </ul>
         <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
     </aside>
@@ -115,7 +117,6 @@
                         <div style="flex: 1; min-width: 250px;">
                             <h4 id="resStudentName" style="margin: 0 0 15px 0; font-size: 24px; color: #f8fafc; font-weight: 900;">-</h4>
                             <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-phone" style="width: 20px;"></i> الهاتف: <span id="resStudentPhone" style="color: #cbd5e1;">-</span></p>
-                            <!-- تمت إضافة رقم ولي الأمر هنا -->
                             <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-user-friends" style="width: 20px;"></i> ولي الأمر: <span id="resParentPhone" style="color: #cbd5e1;">-</span></p>
                             <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-graduation-cap" style="width: 20px;"></i> المرحلة: <span id="resStudentGrade" style="color: #cbd5e1;">-</span></p>
                             <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-wallet" style="width: 20px;"></i> الرصيد الحالي: <span id="resStudentWallet" style="color: #10b981; font-weight: 900; font-size: 18px;">0 ج.م</span></p>
@@ -142,7 +143,6 @@
                 
                 <form id="addCourseForm">
                     <input type="hidden" id="editingCourseId" value="">
-                    
                     <div class="form-grid">
                         <div class="form-group-admin">
                             <label>عنوان الحصة / الكورس</label>
@@ -168,15 +168,11 @@
                             <label>سعر الحصة (بالجنيه)</label>
                             <input type="number" id="coursePrice" placeholder="0 للمجاني" required>
                         </div>
-                        
-                        <!-- رفع الصورة مباشر -->
                         <div class="form-group-admin">
                             <label>صورة الغلاف (رفع من الجهاز)</label>
                             <input type="file" id="courseImageFile" accept="image/*">
                             <small id="imgStatus" style="color: #10b981; display: none;">تم اختيار الصورة ✔️</small>
                         </div>
-                        
-                        <!-- رفع الفيديو مباشر لـ Vimeo -->
                         <div class="form-group-admin">
                             <label>فيديو الحصة (رفع مباشر لـ Vimeo) 🎥</label>
                             <input type="file" id="courseVideoFile" accept="video/mp4,video/x-m4v,video/*">
@@ -185,18 +181,14 @@
                             </div>
                             <small id="videoStatus" style="color: #94a3b8;">اختر ملف الفيديو (سيتم الرفع عند الضغط على نشر)</small>
                         </div>
-
                         <div class="form-group-admin">
                             <label>رابط مذكرة PDF (اختياري)</label>
                             <input type="url" id="coursePdf" placeholder="رابط ملف الـ PDF">
                         </div>
-                        
-                        <!-- اختيار الامتحان من القائمة المنسدلة -->
                         <div class="form-group-admin">
                             <label>الامتحان الشرطي (لفتح الحصة)</label>
                             <select id="requiredExamSelect">
                                 <option value="">بدون امتحان (مفتوحة)</option>
-                                <!-- الامتحانات هتنزل هنا بالـ JS -->
                             </select>
                         </div>
                     </div>
@@ -221,7 +213,7 @@
             </div>
         </div>
 
-        <!-- 4. قسم إدارة الامتحانات (Exam Builder) -->
+        <!-- 4. قسم إدارة الامتحانات (Exam Builder المتقدم) -->
         <div id="examsSection" class="admin-section">
             <div class="admin-table-container">
                 <h3><i class="fas fa-file-signature" style="color: #3b82f6;"></i> إنشاء امتحان جديد</h3>
@@ -231,9 +223,7 @@
                         <input type="text" id="examTitle" required>
                     </div>
                     
-                    <div id="questionsContainer">
-                        <!-- الأسئلة هتتضاف هنا -->
-                    </div>
+                    <div id="questionsContainer"></div>
                     
                     <button type="button" id="btnAddQuestion" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px dashed #3b82f6; padding: 12px; border-radius: 8px; width: 100%; font-family: 'Cairo'; font-weight: 800; cursor: pointer; margin-bottom: 20px;">
                         <i class="fas fa-plus"></i> إضافة سؤال جديد
@@ -249,6 +239,34 @@
                     <thead><tr><th>اسم الامتحان</th><th>عدد الأسئلة</th><th>تاريخ الإنشاء</th><th>إجراءات</th></tr></thead>
                     <tbody id="adminExamsTable">
                         <tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب الامتحانات... ⏳</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 5. قسم تصحيح الامتحانات (للأدمن) -->
+        <div id="gradingSection" class="admin-section">
+            <div class="admin-table-container">
+                <h3><i class="fas fa-marker" style="color: #3b82f6;"></i> كشوفات وإجابات الطلاب</h3>
+                <div style="margin-bottom: 20px;">
+                    <select id="filterGradingStatus" style="padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #334155; font-family: 'Cairo';">
+                        <option value="all">عرض الكل</option>
+                        <option value="pending" selected>قيد التصحيح (المقالي)</option>
+                        <option value="failed">الراسبين (لإعادة الامتحان)</option>
+                    </select>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الطالب</th>
+                            <th>الامتحان</th>
+                            <th>الدرجة</th>
+                            <th>الحالة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminGradingTable">
+                        <tr><td colspan="5" style="text-align: center; color: #94a3b8;">جاري جلب البيانات... ⏳</td></tr>
                     </tbody>
                 </table>
             </div>
