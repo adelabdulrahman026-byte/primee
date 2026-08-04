@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الإدارة - Primee</title>
+    
+    <!-- مكتبة Tus للرفع المباشر لفيمو (فوق الـ CSS لمنع أي خطأ) -->
     <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3.4.0/dist/tus.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -68,7 +71,7 @@
             <li><a id="navStudents" onclick="switchTab('studentsSection', this)"><i class="fas fa-users"></i> إدارة الطلاب</a></li>
             <li><a id="navCourses" onclick="switchTab('coursesSection', this)"><i class="fas fa-video"></i> إدارة الكورسات</a></li>
             <li><a id="navExams" onclick="switchTab('examsSection', this)"><i class="fas fa-file-alt"></i> إدارة الامتحانات</a></li>
-            <li><a id="navGrading" onclick="switchTab('gradingSection', this)"><i class="fas fa-marker"></i> تصحيح الامتحانات</a></li>
+            <li><a id="navGrading" onclick="switchTab('gradingSection', this)"><i class="fas fa-marker"></i> سجل الامتحانات والتصحيح</a></li>
         </ul>
         <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
     </aside>
@@ -242,10 +245,10 @@
             </div>
         </div>
 
-        <!-- 5. قسم تصحيح الامتحانات (للأدمن) -->
+        <!-- 5. قسم سجل الامتحانات والتصحيح الشامل -->
         <div id="gradingSection" class="admin-section">
             <div class="admin-table-container">
-                <h3><i class="fas fa-marker" style="color: #3b82f6;"></i> كشوفات وإجابات الطلاب</h3>
+                <h3><i class="fas fa-marker" style="color: #3b82f6;"></i> سجل الامتحانات والمشاهدات</h3>
                 <div style="margin-bottom: 20px;">
                     <select id="filterGradingStatus" style="padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #334155; font-family: 'Cairo';">
                         <option value="all">عرض الكل</option>
@@ -257,14 +260,15 @@
                     <thead>
                         <tr>
                             <th>الطالب</th>
-                            <th>الامتحان</th>
+                            <th>الحصة / الامتحان</th>
                             <th>الدرجة</th>
-                            <th>الحالة</th>
+                            <th>الحالة (المشاهدة)</th>
+                            <th>وقت الحل</th>
                             <th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="adminGradingTable">
-                        <tr><td colspan="5" style="text-align: center; color: #94a3b8;">جاري جلب البيانات... ⏳</td></tr>
+                        <tr><td colspan="6" style="text-align: center; color: #94a3b8;">جاري جلب البيانات... ⏳</td></tr>
                     </tbody>
                 </table>
             </div>
