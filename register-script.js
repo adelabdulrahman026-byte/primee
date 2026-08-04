@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -13,70 +13,98 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-function showAlert(title, message) {
-    const alertTitle = document.getElementById('alertTitle');
-    const alertMessage = document.getElementById('alertMessage');
-    const alertModal = document.getElementById('alertModal');
-    
-    if(alertTitle) alertTitle.textContent = title;
-    if(alertMessage) alertMessage.textContent = message;
-    if(alertModal) alertModal.classList.add('active');
-}
-
 window.closeAlertModal = function() {
     const alertModal = document.getElementById('alertModal');
     if(alertModal) alertModal.classList.remove('active');
 };
 
-const registerForm = document.getElementById('registerForm');
+function showAlert(title, message) {
+    document.getElementById('alertTitle').textContent = title;
+    document.getElementById('alertMessage').textContent = message;
+    document.getElementById('alertModal').classList.add('active');
+}
 
+// دالة رفع الصورة لـ ImgBB
+async function uploadProfilePic(file) {
+    try {
+        const keysRef = await getDoc(doc(db, "settings", "api_keys"));
+        if(!keysRef.exists() || !keysRef.data().imgbb_token) throw new Error("مفتاح رفع الصور مفقود");
+        
+        const formData = new FormData();
+        formData.append("image", file);
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${keysRef.data().imgbb_token}`, { method: "POST", body: formData });
+        const data = await response.json();
+        if(data.success) return data.data.url;
+        else throw new Error("فشل رفع الصورة");
+    } catch(err) {
+        console.error(err);
+        return null;
+    }
+}
+
+const registerForm = document.getElementById('registerForm');
 if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        const imageFile = document.getElementById('profilePic').files[0];
+        if(!imageFile) {
+            return showAlert("تنبيه ⚠️", "الصورة الشخصية إجبارية لإتمام عملية التسجيل، برجاء رفع صورتك.");
+        }
+
         const submitBtn = document.querySelector('.btn-submit');
-        submitBtn.textContent = 'جاري التحقق... ⏳';
+        submitBtn.textContent = 'جاري التحقق ورفع الصورة... ⏳';
         submitBtn.disabled = true;
 
-        // استخراج البيانات من الفورم (تأكد إن الأيديهات دي مطابقة للي في الـ HTML بتاعك)
-        const phone = document.getElementById('registerPhone').value;
-        const fullName = document.getElementById('registerName').value;
-        const password = document.getElementById('registerPassword').value;
+        const phone = document.getElementById('studentPhone').value;
+        const parentPhone = document.getElementById('parentPhone').value;
+        const fullName = document.getElementById('fullName').value;
+        const password = document.getElementById('password').value;
+        const grade = document.getElementById('grade').value;
+        const governorate = document.getElementById('governorate').value;
+        const address = document.getElementById('address').value;
 
         try {
-            // 1. فحص هل الرقم ده موجود في الداتا بيز ولا لأ؟
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("studentPhone", "==", phone));
+            const q = query(collection(db, "users"), where("studentPhone", "==", phone));
             const querySnapshot = await getDocs(q);
 
             if (!querySnapshot.empty) {
-                // لو لقى الرقم موجود، بنوقف التسجيل ونطلع رسالة
-                showAlert("عذراً ⚠️", "رقم الهاتف ده مسجل بيه حساب قبل كده. تقدر تسجل دخول، أو استخدم رقم تاني.");
-                submitBtn.textContent = 'إنشاء الحساب';
-                submitBtn.disabled = false;
-                return; // بتوقف الدالة هنا ومبتكملش
+                showAlert("عذراً ⚠️", "رقم الهاتف ده مسجل بيه حساب قبل كده.");
+                submitBtn.textContent = 'إنشاء الحساب الآن'; submitBtn.disabled = false;
+                return; 
             }
 
-            // 2. الكود مش هينزل هنا إلا لو الرقم جديد ومش متسجل قبل كده
+            // رفع الصورة
+            const picUrl = await uploadProfilePic(imageFile);
+            if(!picUrl) {
+                showAlert("خطأ", "حدثت مشكلة أثناء رفع الصورة، جرب صورة أخرى.");
+                submitBtn.textContent = 'إنشاء الحساب الآن'; submitBtn.disabled = false;
+                return;
+            }
+
             await addDoc(collection(db, "users"), {
                 studentPhone: phone,
+                parentPhone: parentPhone,
                 fullName: fullName,
                 password: password,
+                grade: grade,
+                governorate: governorate,
+                address: address,
+                profilePic: picUrl,
                 myCourses: [],
                 completedExams: [],
-                deviceId: "", // بنسيبه فاضي عشان يتبصم أول ما يسجل دخول
+                deviceId: "", 
                 walletBalance: 0,
-                isBlocked: false
+                isBlocked: false,
+                createdAt: new Date().toISOString()
             });
 
-            showAlert("نجاح", "تم إنشاء الحساب بنجاح! سيتم تحويلك لتسجيل الدخول.");
-            setTimeout(() => { window.location.replace("login.html"); }, 2000);
+            document.getElementById('successModal').classList.add('active');
 
         } catch (error) {
-            console.error("خطأ:", error);
+            console.error(error);
             showAlert("مشكلة تقنية", "حدث خطأ أثناء الاتصال بقاعدة البيانات.");
-            submitBtn.textContent = 'إنشاء الحساب';
-            submitBtn.disabled = false;
+            submitBtn.textContent = 'إنشاء الحساب الآن'; submitBtn.disabled = false;
         }
     });
 }
