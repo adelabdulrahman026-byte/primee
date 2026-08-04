@@ -6,10 +6,26 @@
     <title>مشاهدة الحصة - Primee Academy</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- مكتبة Plyr للمشغل الاحترافي -->
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* ستايل الامتحانات جوه الفيديو */
+        .exam-lock-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 20; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; overflow-y: auto; align-items: center; justify-content: flex-start; }
+        .exam-form-container { background: #1e293b; padding: 25px; border-radius: 15px; border: 1px solid #334155; width: 100%; max-width: 650px; margin-top: 20px; }
+        .exam-question { margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px dashed #475569; text-align: right; }
+        .exam-question:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .exam-q-img { max-width: 100%; border-radius: 8px; margin-bottom: 15px; border: 1px solid #334155; }
+        .mcq-option { display: block; background: #0f172a; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #334155; cursor: pointer; transition: 0.2s; }
+        .mcq-option:hover { border-color: #3b82f6; }
+        .mcq-option input { margin-left: 10px; accent-color: #f59e0b; }
+        .essay-input { width: 100%; padding: 15px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #fff; font-family: 'Cairo'; resize: vertical; box-sizing: border-box; margin-top: 10px; }
+        .essay-input:focus { border-color: #f59e0b; outline: none; }
+        .btn-submit-exam { width: 100%; background: #10b981; color: #fff; padding: 15px; border: none; border-radius: 12px; font-size: 18px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; margin-top: 20px; }
+        
+        /* شاشات الحالات (رسوب، نجاح، انتظار) */
+        .status-box { text-align: center; margin: auto; padding: 30px; background: #1e293b; border-radius: 15px; border: 1px solid #334155; max-width: 500px; width: 90%; }
+        .status-box i { font-size: 60px; margin-bottom: 15px; }
+    </style>
 </head>
 <body class="watch-page-body" oncontextmenu="return false;">
 
@@ -22,96 +38,68 @@
         </div>
     </div>
 
-    <!-- شريط علوي مبسط لصفحة الفيديو -->
     <nav class="main-navbar" style="position: sticky; top: 0;">
-        <div class="nav-right-side">
-            <div class="nav-brand">Primee<span>.</span></div>
-        </div>
+        <div class="nav-right-side"><div class="nav-brand">Primee<span>.</span></div></div>
         <div class="nav-left-side">
             <a href="student-dashboard.html" class="btn-nav-signup" style="background: var(--input-bg); color: var(--text-main); border: 1px solid var(--input-border);"><i class="fas fa-arrow-right"></i> لوحة التحكم</a>
         </div>
     </nav>
 
     <div class="watch-container">
-        
-        <!-- العمود الأيمن (الفيديو وتفاصيله) -->
+        <!-- العمود الأيمن -->
         <div class="video-main">
-            
-            <div class="video-player-wrapper" id="vimeoWrapper">
-                <!-- العلامة المائية -->
-                <div id="studentWatermark" class="watermark-phone"></div>
+            <div class="video-player-wrapper" id="vimeoWrapper" style="position: relative; min-height: 450px; background: #000; display: flex; justify-content: center; align-items: center; border-radius: 15px; overflow: hidden; border: 1px solid #334155;">
+                <div id="studentWatermark" class="watermark-phone" style="position: absolute; top: 10px; right: 10px; color: rgba(255,255,255,0.3); z-index: 99; pointer-events: none; font-weight: 900;"></div>
                 
-                <!-- شاشة قفل الامتحان -->
+                <!-- شاشة الامتحان وتفاصيله -->
                 <div id="examLockOverlay" class="exam-lock-overlay" style="display: none;">
-                    <i class="fas fa-file-signature"></i>
-                    <h3>امتحان قبل الحصة 📝</h3>
-                    <p>لا يمكنك مشاهدة الفيديو قبل اجتياز الامتحان الخاص بهذه الحصة.</p>
-                    <button id="startExamBtn" class="btn-exam">بدء الامتحان الآن</button>
+                    <div id="examContentArea" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                        <!-- سيتم حقن الأسئلة أو شاشة النتيجة هنا من الجافاسكريبت -->
+                    </div>
                 </div>
 
-                <!-- مكان المشغل -->
-                <div id="videoContainer" class="video-placeholder">
+                <!-- المشغل -->
+                <div id="videoContainer" class="video-placeholder" style="width: 100%; height: 100%;">
                     <i class="fas fa-spinner fa-spin"></i> جاري تجهيز المشغل...
                 </div>
             </div>
 
             <!-- تفاصيل الفيديو -->
             <div class="video-details-card">
-                <h1 id="courseTitle">عنوان الحصة</h1>
-                
+                <h1 id="courseTitle">جاري التحميل...</h1>
                 <div class="video-meta">
                     <span><i class="fas fa-video"></i> حصة مسجلة</span>
                     <span><i class="fas fa-eye"></i> متاحة للمشاهدة</span>
                 </div>
-
                 <div class="video-desc">
                     <h3><i class="fas fa-info-circle"></i> عن هذه الحصة:</h3>
                     <p id="courseDescription">لا يوجد وصف متاح.</p>
                 </div>
-
+                
                 <!-- الملحقات -->
-                <div class="attachments-section">
+                <div class="attachments-section" id="pdfSection" style="display: none;">
                     <h3><i class="fas fa-folder-open"></i> ملحقات الحصة</h3>
-                    <div id="materialsList">
-                        <div class="attachment-item">
-                            <span><i class="fas fa-file-pdf" style="color: #ef4444;"></i> مذكرة الشرح (PDF)</span>
-                            <a href="#" class="btn-download"><i class="fas fa-download"></i> تحميل</a>
-                        </div>
+                    <div class="attachment-item">
+                        <span><i class="fas fa-file-pdf" style="color: #ef4444;"></i> مذكرة الشرح (PDF)</span>
+                        <a href="#" id="btnDownloadPdf" target="_blank" class="btn-download"><i class="fas fa-download"></i> تحميل</a>
                     </div>
                 </div>
             </div>
-
         </div>
 
-        <!-- العمود الأيسر (السايدبار بتاع المدرس) -->
+        <!-- العمود الأيسر -->
         <aside class="video-sidebar">
             <div class="instructor-widget" style="text-align: center;">
-                <div style="width: 80px; height: 80px; background: rgba(91,33,182,0.1); color: var(--primary-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 35px; margin: 0 auto 15px;">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                </div>
+                <div style="width: 80px; height: 80px; background: rgba(91,33,182,0.1); color: var(--primary-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 35px; margin: 0 auto 15px;"><i class="fas fa-chalkboard-teacher"></i></div>
                 <small style="color: var(--text-muted); font-weight: 800;">أستاذ المادة</small>
-                <h3 id="courseInstructor" style="color: var(--text-main); font-weight: 900; margin: 5px 0 0 0;">جاري التحميل...</h3>
+                <h3 id="courseInstructor" style="color: var(--text-main); font-weight: 900; margin: 5px 0 0 0;">...</h3>
             </div>
-            
             <hr style="border: 0; border-top: 1px dashed var(--input-border); margin: 25px 0;">
-            
-            <p style="color: var(--text-muted); font-size: 14px; text-align: center; line-height: 1.6; font-weight: 600;">
-                في حالة وجود أي مشكلة في تشغيل الفيديو أو الملحقات، يرجى التواصل مع الدعم الفني فوراً.
-            </p>
+            <p style="color: var(--text-muted); font-size: 14px; text-align: center; font-weight: 600;">في حالة وجود أي مشكلة يرجى التواصل مع الدعم الفني.</p>
         </aside>
-
     </div>
 
-    <!-- استدعاء سكريبت Plyr -->
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
     <script type="module" src="watch-script.js"></script>
-
-    <script>
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
-                e.preventDefault();
-            }
-        });
-    </script>
 </body>
 </html>
