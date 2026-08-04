@@ -46,9 +46,13 @@ async function sendWhatsAppToParent(parentPhone, msgText) {
 
     const instanceId = keys.wapilot_instance; 
     const token = keys.wapilot_token;
+    
+    // تظبيط الرقم (إضافة 2 لمصر لو مش موجودة)
     let formattedPhone = parentPhone.startsWith('0') ? '2' + parentPhone : parentPhone;
     
-    const url = `https://api.wapilot.net/api/v2/${instanceId}/send-message`;
+    // الرابط المظبوط بتاعك
+    var url = "https://api.wapilot.net/api/v2/" + instanceId + "/send-message";
+    
     try {
         await fetch(url, {
             method: "POST",
@@ -56,12 +60,16 @@ async function sendWhatsAppToParent(parentPhone, msgText) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}` 
             },
-            body: JSON.stringify({ phone: formattedPhone, message: msgText })
+            body: JSON.stringify({
+                phone: formattedPhone,
+                message: msgText
+            })
         });
-        console.log("تم إرسال إشعار الواتساب بنجاح.");
-    } catch(err) { console.error("فشل إرسال الواتساب:", err); }
+        console.log("تم إرسال إشعار الواتساب عبر WaPilot بنجاح.");
+    } catch(err) { 
+        console.error("فشل إرسال الواتساب:", err); 
+    }
 }
-
 // ==========================================
 // حماية الصفحة وتنبيهات
 // ==========================================
@@ -144,7 +152,21 @@ onSnapshot(query(usersRef), (snapshot) => {
                 <td style="color: #f59e0b;">${student.studentPhone || '-'}</td>
                 <td>${gradeAr || '-'}</td>
                 <td>${walletText}</td>
-                <td style="color: #94a3b8; font-size: 13px;">الآن</td>
+                // الكود القديم: <td style="color: #94a3b8; font-size: 13px;">الآن</td>
+            // استبدله بالجزء ده:
+            let timeText = 'غير محدد';
+            if (student.createdAt) {
+                const dateObj = new Date(student.createdAt);
+                timeText = dateObj.toLocaleDateString('ar-EG') + ' ' + dateObj.toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'});
+            }
+            
+            tr.innerHTML = `
+                <td><strong>${student.fullName || '-'}</strong></td>
+                <td style="color: #f59e0b;">${student.studentPhone || '-'}</td>
+                <td>${gradeAr || '-'}</td>
+                <td>${walletText}</td>
+                <td style="color: #94a3b8; font-size: 13px;" dir="ltr">${timeText}</td>
+            `;
             `;
             tableBody.appendChild(tr);
         });
