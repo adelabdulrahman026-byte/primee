@@ -36,7 +36,7 @@ async function getSecureApiKeys() {
 }
 
 // ==========================================
-// إرسال واتساب للأدمن (في حالة التصحيح اليدوي)
+// إرسال واتساب للأدمن (في حالة التصحيح اليدوي عبر WaPilot)
 // ==========================================
 async function sendWhatsAppToParent(parentPhone, msgText) {
     if(!parentPhone || parentPhone === "غير متوفر") return;
@@ -47,10 +47,7 @@ async function sendWhatsAppToParent(parentPhone, msgText) {
     const instanceId = keys.wapilot_instance; 
     const token = keys.wapilot_token;
     
-    // تظبيط الرقم (إضافة 2 لمصر لو مش موجودة)
     let formattedPhone = parentPhone.startsWith('0') ? '2' + parentPhone : parentPhone;
-    
-    // الرابط المظبوط بتاعك
     var url = "https://api.wapilot.net/api/v2/" + instanceId + "/send-message";
     
     try {
@@ -70,6 +67,7 @@ async function sendWhatsAppToParent(parentPhone, msgText) {
         console.error("فشل إرسال الواتساب:", err); 
     }
 }
+
 // ==========================================
 // حماية الصفحة وتنبيهات
 // ==========================================
@@ -112,7 +110,7 @@ document.getElementById('enableSoundBtn')?.addEventListener('click', function() 
 });
 
 // ==========================================
-// مراقبة الطلاب والأرباح
+// مراقبة الطلاب والأرباح (مع التواريخ الحقيقية)
 // ==========================================
 let isInitialLoad = true; 
 const usersRef = collection(db, "users");
@@ -147,13 +145,7 @@ onSnapshot(query(usersRef), (snapshot) => {
             else if(gradeAr === 'sec1') gradeAr = 'الأول الثانوي';
             else if(gradeAr === 'prep3') gradeAr = 'الثالث الإعدادي';
             
-            tr.innerHTML = `
-                <td><strong>${student.fullName || '-'}</strong></td>
-                <td style="color: #f59e0b;">${student.studentPhone || '-'}</td>
-                <td>${gradeAr || '-'}</td>
-                <td>${walletText}</td>
-                // الكود القديم: <td style="color: #94a3b8; font-size: 13px;">الآن</td>
-            // استبدله بالجزء ده:
+            // سحب التاريخ الحقيقي
             let timeText = 'غير محدد';
             if (student.createdAt) {
                 const dateObj = new Date(student.createdAt);
@@ -166,7 +158,6 @@ onSnapshot(query(usersRef), (snapshot) => {
                 <td>${gradeAr || '-'}</td>
                 <td>${walletText}</td>
                 <td style="color: #94a3b8; font-size: 13px;" dir="ltr">${timeText}</td>
-            `;
             `;
             tableBody.appendChild(tr);
         });
@@ -591,7 +582,7 @@ window.deleteExam = async function(id) {
 }
 
 // ==========================================
-// قسم تصحيح الامتحانات (Grading System)
+// قسم سجل الامتحانات والتصحيح (النسخة الشاملة)
 // ==========================================
 const submissionsRef = collection(db, "exam_submissions");
 
@@ -609,21 +600,30 @@ onSnapshot(query(submissionsRef), (snapshot) => {
         if(filter !== 'all' && sub.status !== filter) return; 
 
         let statusText = '';
-        if(sub.status === 'passed') statusText = '<span style="color:#10b981; font-weight:800;">ناجح</span>';
-        else if(sub.status === 'failed') statusText = '<span style="color:#ef4444; font-weight:800;">راسب</span>';
+        if(sub.status === 'passed') statusText = '<span style="color:#10b981; font-weight:800;">ناجح (شاهد الحصة)</span>';
+        else if(sub.status === 'failed') statusText = '<span style="color:#ef4444; font-weight:800;">راسب (لم يشاهد)</span>';
         else statusText = '<span style="color:#f59e0b; font-weight:800;">قيد المراجعة</span>';
 
-        let resetBtn = `<button onclick="resetStudentExam('${subId}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px;"><i class="fas fa-redo"></i> إعادة للراسب</button>`;
-        let gradeBtn = sub.status === 'pending' ? `<button onclick="gradeStudentExam('${subId}')" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid #10b981; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px;"><i class="fas fa-check"></i> تصحيح يدوي</button>` : '';
+        let timeText = '-';
+        if(sub.submittedAt) {
+            const d = new Date(sub.submittedAt);
+            timeText = d.toLocaleDateString('ar-EG') + '<br><small style="color:#f59e0b;">' + d.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) + '</small>';
+        }
+
+        let resetBtn = `<button onclick="resetStudentExam('${subId}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px; margin:2px;"><i class="fas fa-trash"></i> مسح النتيجة</button>`;
+        let gradeBtn = sub.status === 'pending' ? `<button onclick="gradeStudentExam('${subId}')" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid #10b981; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px; margin:2px;"><i class="fas fa-check"></i> تصحيح المقالي</button>` : '';
+        let editScoreBtn = `<button onclick="editStudentScore('${subId}', ${sub.score})" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid #3b82f6; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px; margin:2px;"><i class="fas fa-edit"></i> تعديل الدرجة</button>`;
 
         table.innerHTML += `
             <tr>
-                <td><strong>${sub.studentName}</strong><br><small style="color:#94a3b8;">${sub.studentPhone}</small></td>
-                <td>${sub.examTitle}</td>
-                <td>${sub.score}%</td>
+                <td><strong>${sub.studentName}</strong><br><small style="color:#f59e0b;">${sub.studentPhone}</small></td>
+                <td><strong>${sub.courseTitle}</strong><br><small style="color:#94a3b8;">${sub.examTitle}</small></td>
+                <td style="font-size:18px; font-weight:900; color:#fff;">${sub.score}%</td>
                 <td>${statusText}</td>
-                <td style="display:flex; gap:5px; flex-wrap:wrap;">
+                <td dir="ltr" style="font-size:13px; color:#94a3b8;">${timeText}</td>
+                <td style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center;">
                     ${gradeBtn}
+                    ${editScoreBtn}
                     ${resetBtn}
                 </td>
             </tr>
@@ -632,24 +632,20 @@ onSnapshot(query(submissionsRef), (snapshot) => {
 });
 
 document.getElementById('filterGradingStatus')?.addEventListener('change', () => {
-    // تحديث الجدول عند تغيير الفلتر
     const event = new Event('change');
 });
 
-// التصحيح اليدوي وإرسال الواتساب
 window.gradeStudentExam = async function(subId) {
     const isPassed = await adminConfirm("هل تريد نجاح الطالب في هذا الامتحان (إعطاء 100%)؟ \n(اختر نعم للنجاح، وإلغاء لترسيبه)");
     try {
         const newStatus = isPassed ? 'passed' : 'failed';
         const newScore = isPassed ? 100 : 0;
         
-        // تحديث الداتا بيز
         await updateDoc(doc(db, "exam_submissions", subId), {
             status: newStatus,
             score: newScore
         });
 
-        // جلب بيانات الطالب لإرسال رسالة واتساب
         const subSnap = await getDoc(doc(db, "exam_submissions", subId));
         if(subSnap.exists()){
             const subData = subSnap.data();
@@ -661,12 +657,34 @@ window.gradeStudentExam = async function(subId) {
     } catch (e) { console.error(e); }
 }
 
-// إعادة الامتحان
+window.editStudentScore = async function(subId, currentScore) {
+    const newScore = prompt("أدخل الدرجة الجديدة للطالب (من 0 إلى 100):", currentScore);
+    if(newScore === null || newScore === "") return; 
+    
+    const numScore = parseInt(newScore);
+    if(isNaN(numScore) || numScore < 0 || numScore > 100) {
+        return adminAlert("خطأ", "برجاء إدخال رقم صحيح بين 0 و 100", "error");
+    }
+
+    const newStatus = numScore >= 50 ? 'passed' : 'failed';
+    
+    try {
+        await updateDoc(doc(db, "exam_submissions", subId), {
+            score: numScore,
+            status: newStatus
+        });
+        adminAlert("تم التعديل", `تم تعديل درجة الطالب إلى ${numScore}% وأصبحت حالته: ${newStatus === 'passed' ? 'ناجح' : 'راسب'}`, "success");
+    } catch (e) {
+        console.error(e);
+        adminAlert("خطأ", "حدث خطأ أثناء تعديل الدرجة", "error");
+    }
+}
+
 window.resetStudentExam = async function(subId) {
     const confirm = await adminConfirm("هل أنت متأكد من مسح نتيجة الطالب ليتمكن من إعادة الامتحان؟");
     if(!confirm) return;
     try {
         await deleteDoc(doc(db, "exam_submissions", subId));
-        adminAlert("تم المسح", "تم مسح الامتحان.. يمكن للطالب الدخول للحصة وامتحانها مجدداً.", "success");
+        adminAlert("تم المسح", "تم مسح النتيجة.. يمكن للطالب الدخول للحصة وامتحانها مجدداً.", "success");
     } catch (e) { console.error(e); }
 }
