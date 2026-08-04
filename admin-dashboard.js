@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, query, where, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -22,9 +22,7 @@ document.getElementById('adminLogoutBtn')?.addEventListener('click', () => {
     window.location.replace('admin-login.html');
 });
 
-// ==========================================
-// دوال النوافذ الشيك (Alert & Confirm)
-// ==========================================
+// دوال النوافذ
 function adminAlert(title, msg, type = 'success') {
     const modal = document.getElementById('customAdminAlert');
     const icon = document.getElementById('adminAlertIcon');
@@ -58,9 +56,7 @@ function adminConfirm(msg) {
     });
 }
 
-// ==========================================
-// إعدادات الصوت والإشعارات
-// ==========================================
+// الصوت والإشعارات
 const notificationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 document.getElementById('enableSoundBtn')?.addEventListener('click', function() {
     notificationSound.play().then(() => {
@@ -79,34 +75,24 @@ function showLiveToast(studentName) {
     setTimeout(() => { toast.classList.remove('show'); }, 4000);
 }
 
-// ==========================================
-// المراقبة اللحظية (الطلاب والأرباح)
-// ==========================================
+// المراقبة اللحظية للطلاب والأرباح والكورسات
 let isInitialLoad = true; 
 const usersRef = collection(db, "users");
+const coursesRef = collection(db, "courses");
 
 onSnapshot(query(usersRef), (snapshot) => {
-    // 1. تحديث عدد الطلاب
     document.getElementById('totalStudentsCount').textContent = snapshot.size;
-
     let totalRev = 0;
     const studentsArray = [];
 
-    // 2. معالجة البيانات وجمع الأرباح
     snapshot.forEach((doc) => { 
         const data = doc.data();
         studentsArray.push(data);
-        
-        // لو الطالب عنده رصيد، بنجمعه على إجمالي الأرباح
-        if(data.walletBalance) {
-            totalRev += parseInt(data.walletBalance);
-        }
+        if(data.walletBalance) totalRev += parseInt(data.walletBalance);
     });
 
-    // عرض الأرباح في المربع فوق
     document.getElementById('totalRevenue').textContent = totalRev + ' ج.م';
 
-    // 3. الإشعارات اللحظية
     snapshot.docChanges().forEach((change) => {
         if (change.type === "added" && !isInitialLoad) {
             notificationSound.play().catch(e => console.log(e));
@@ -114,18 +100,15 @@ onSnapshot(query(usersRef), (snapshot) => {
         }
     });
     
-    // 4. تحديث جدول أحدث الطلاب
     const tableBody = document.getElementById('recentStudentsTable');
     if(tableBody) {
         tableBody.innerHTML = '';
         studentsArray.reverse().slice(0, 10).forEach(student => {
             const tr = document.createElement('tr');
             const walletText = student.walletBalance > 0 ? `<span style="color:#10b981;">${student.walletBalance} ج.م</span>` : `0 ج.م`;
-            
             let gradeAr = student.grade;
             if(gradeAr === 'sec3') gradeAr = 'الثالث الثانوي';
             else if(gradeAr === 'sec1') gradeAr = 'الأول الثانوي';
-            else if(gradeAr === 'prep3') gradeAr = 'الثالث الإعدادي';
             
             tr.innerHTML = `
                 <td><strong>${student.fullName || '-'}</strong></td>
@@ -140,17 +123,104 @@ onSnapshot(query(usersRef), (snapshot) => {
     isInitialLoad = false;
 });
 
-// ==========================================
-// 4. إدارة الطلاب (البحث، الإيداع، الخصم، الحظر)
-// ==========================================
+// جلب وعرض الكورسات في جدول الأدمن لحظياً
+onSnapshot(query(coursesRef), (snapshot) => {
+    const coursesTable = document.getElementById('adminCoursesTable');
+    if(!coursesTable) return;
+
+    if(snapshot.empty) {
+        coursesTable.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8;">لا توجد كورسات مضافة حتى الآن.</td></tr>`;
+        return;
+    }
+
+    coursesTable.innerHTML = '';
+    snapshot.forEach((docSnap) => {
+        const course = docSnap.data();
+        const courseId = docSnap.id;
+
+        let gradeAr = course.grade;
+        if(gradeAr === 'sec3') gradeAr = 'الثالث الثانوي';
+        else if(gradeAr === 'sec2') gradeAr = 'الثاني الثانوي';
+        else if(gradeAr === 'sec1') gradeAr = 'الأول الثانوي';
+
+        coursesTable.innerHTML += `
+            <tr>
+                <td><strong>${course.title}</strong></td>
+                <td>${course.instructor}</td>
+                <td>${gradeAr}</td>
+                <td style="color: #10b981; font-weight: 900;">${course.price} ج.م</td>
+                <td>
+                    <button onclick="window.deleteCourse('${courseId}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 800;"><i class="fas fa-trash"></i> حذف</button>
+                </td>
+            </tr>
+        `;
+    });
+});
+
+// نشر كورس جديد
+const addCourseForm = document.getElementById('addCourseForm');
+if(addCourseForm) {
+    addCourseForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btnSaveCourse');
+        btn.textContent = 'جاري النشر... ⏳';
+        btn.disabled = true;
+
+        const title = document.getElementById('courseTitle').value.trim();
+        const instructor = document.getElementById('courseInstructor').value.trim();
+        const grade = document.getElementById('courseGrade').value;
+        const price = parseInt(document.getElementById('coursePrice').value) || 0;
+        const image = document.getElementById('courseImage').value.trim();
+        const videoUrl = document.getElementById('courseVideo').value.trim();
+        const pdfUrl = document.getElementById('coursePdf').value.trim();
+        const requiredExamId = document.getElementById('requiredExamId').value.trim();
+
+        try {
+            await addDoc(coursesRef, {
+                title,
+                instructor,
+                grade,
+                price,
+                image,
+                videoUrl,
+                pdfUrl,
+                requiredExamId, // الحفظ لشرط الامتحان
+                createdAt: new Date().toISOString()
+            });
+
+            adminAlert("تم النشر بنجاح 🚀", "تم اضافة الحصة وإتاحتها للطلاب.", "success");
+            addCourseForm.reset();
+        } catch (error) {
+            console.error(error);
+            adminAlert("خطأ", "فشل رفع الحصة، تأكد من الاتصال.", "error");
+        } finally {
+            btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة الآن';
+            btn.disabled = false;
+        }
+    });
+}
+
+// دالة حذف الكورس (متاحة عالمياً)
+window.deleteCourse = async function(courseId) {
+    const confirmDelete = await adminConfirm("هل أنت متأكد من حذف هذه الحصة نهائياً؟");
+    if(!confirmDelete) return;
+
+    try {
+        await deleteDoc(doc(db, "courses", courseId));
+        adminAlert("تم الحذف", "تمت إزالة الحصة من المنصة بنجاح.", "success");
+    } catch (error) {
+        console.error(error);
+        adminAlert("خطأ", "فشل الحذف", "error");
+    }
+};
+
+// إدارة الطلاب (بحث، شحن، خصم، حظر) نفس الكود السابق
 let currentStudentId = null;
 let currentStudentData = null;
-
 const btnSearchStudent = document.getElementById('btnSearchStudent');
 const searchPhoneInput = document.getElementById('searchPhoneInput');
 const studentResultCard = document.getElementById('studentResultCard');
 
-// البحث
 if(btnSearchStudent) {
     btnSearchStudent.addEventListener('click', async () => {
         const phone = searchPhoneInput.value.trim();
@@ -176,7 +246,6 @@ if(btnSearchStudent) {
                 let gradeAr = currentStudentData.grade;
                 if(gradeAr === 'sec3') gradeAr = 'الثالث الثانوي';
                 document.getElementById('resStudentGrade').textContent = gradeAr || '-';
-                
                 document.getElementById('resStudentWallet').textContent = (currentStudentData.walletBalance || 0) + ' ج.م';
                 
                 const statusSpan = document.getElementById('resStudentStatus');
@@ -208,75 +277,56 @@ if(btnSearchStudent) {
     });
 }
 
-// شحن المحفظة
 document.getElementById('btnChargeWallet')?.addEventListener('click', async () => {
-    const amountInput = document.getElementById('chargeAmount').value;
-    const amount = parseInt(amountInput);
+    const amount = parseInt(document.getElementById('chargeAmount').value);
     if(!amount || amount <= 0) return adminAlert("خطأ", "أدخل مبلغ صحيح للشحن", "error");
     if(!currentStudentId) return;
 
     try {
-        const currentBalance = parseInt(currentStudentData.walletBalance) || 0;
-        const newBalance = currentBalance + amount; 
+        const newBalance = (parseInt(currentStudentData.walletBalance) || 0) + amount; 
         await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
-        
         currentStudentData.walletBalance = newBalance;
         document.getElementById('resStudentWallet').textContent = newBalance + ' ج.م';
         document.getElementById('chargeAmount').value = '';
-        
-        adminAlert("تم الشحن 💸", `تم شحن ${amount} ج.م بنجاح! الرصيد الجديد: ${newBalance} ج.م`, "success");
+        adminAlert("تم الشحن 💸", `تم شحن ${amount} ج.م بنجاح!`, "success");
     } catch(error) {
         adminAlert("خطأ", "فشل الشحن", "error");
     }
 });
 
-// خصم من المحفظة
 document.getElementById('btnDeductWallet')?.addEventListener('click', async () => {
-    const amountInput = document.getElementById('chargeAmount').value;
-    const amount = parseInt(amountInput);
+    const amount = parseInt(document.getElementById('chargeAmount').value);
     if(!amount || amount <= 0) return adminAlert("خطأ", "أدخل مبلغ صحيح للخصم", "error");
     if(!currentStudentId) return;
 
     const currentBalance = parseInt(currentStudentData.walletBalance) || 0;
-    
-    // تأكيد قبل الخصم (النافذة الشيك)
     const isConfirmed = await adminConfirm(`هل أنت متأكد من خصم ${amount} ج.م من رصيد الطالب؟`);
     if(!isConfirmed) return;
 
     try {
-        // نمنع الرصيد إنه يبقى بالسالب
         const newBalance = Math.max(0, currentBalance - amount); 
         await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
-        
         currentStudentData.walletBalance = newBalance;
         document.getElementById('resStudentWallet').textContent = newBalance + ' ج.م';
         document.getElementById('chargeAmount').value = '';
-        
-        adminAlert("تم الخصم 📉", `تم خصم ${amount} ج.م بنجاح! الرصيد المتبقي: ${newBalance} ج.م`, "success");
+        adminAlert("تم الخصم 📉", `تم خصم ${amount} ج.م بنجاح!`, "success");
     } catch(error) {
         adminAlert("خطأ", "فشل الخصم", "error");
     }
 });
 
-// الحظر / فك الحظر
 document.getElementById('btnToggleBlock')?.addEventListener('click', async () => {
     if(!currentStudentId) return;
-    
-    const isCurrentlyBlocked = currentStudentData.isBlocked || false;
-    const newBlockStatus = !isCurrentlyBlocked; 
-    
-    const confirmMsg = newBlockStatus ? 
-        "⚠️ هل أنت متأكد من حظر هذا الطالب؟ سيتم طرده من حسابه فوراً!" : 
-        "هل أنت متأكد من فك الحظر عن هذا الطالب؟";
-        
+    const newBlockStatus = !currentStudentData.isBlocked; 
+    const confirmMsg = newBlockStatus ? "⚠️ هل أنت متأكد من حظر هذا الطالب؟" : "هل أنت متأكد من فك الحظر؟";
     const isConfirmed = await adminConfirm(confirmMsg);
     if(!isConfirmed) return;
 
     try {
         await updateDoc(doc(db, "users", currentStudentId), { isBlocked: newBlockStatus });
-        adminAlert("نجاح", newBlockStatus ? "تم حظر الطالب وطرده بنجاح ⛔" : "تم فك الحظر بنجاح 🟢", "success");
-        document.getElementById('btnSearchStudent').click(); // ريفرش للكارت
+        adminAlert("نجاح", newBlockStatus ? "تم حظر الطالب بنجاح ⛔" : "تم فك الحظر 🟢", "success");
+        document.getElementById('btnSearchStudent').click();
     } catch(error) {
-        adminAlert("خطأ", "حدث خطأ أثناء تعديل الحظر", "error");
+        adminAlert("خطأ", "حدث خطأ", "error");
     }
 });
