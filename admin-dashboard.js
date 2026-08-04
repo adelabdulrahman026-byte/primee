@@ -14,29 +14,27 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// جلب مفاتيح الأمان المخفية من قاعدة البيانات
+// جلب مفاتيح الأمان
 // ==========================================
 let SECURE_API_KEYS = null;
 async function getSecureApiKeys() {
     if (SECURE_API_KEYS) return SECURE_API_KEYS; 
     try {
-        const docRef = doc(db, "settings", "api_keys");
-        const docSnap = await getDoc(docRef);
+        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
         if (docSnap.exists()) {
             SECURE_API_KEYS = docSnap.data();
             return SECURE_API_KEYS;
         } else {
-            console.error("لم يتم العثور على مفاتيح الأمان في قاعدة البيانات!");
+            console.error("مفاتيح الأمان غير موجودة!");
             return null;
         }
     } catch (error) {
-        console.error("خطأ في جلب مفاتيح الأمان:", error);
         return null;
     }
 }
 
 // ==========================================
-// إرسال واتساب للأدمن (في حالة التصحيح اليدوي عبر WaPilot)
+// إرسال واتساب (WaPilot API المعتمد)
 // ==========================================
 async function sendWhatsAppToParent(parentPhone, msgText) {
     if(!parentPhone || parentPhone === "غير متوفر") return;
@@ -110,7 +108,7 @@ document.getElementById('enableSoundBtn')?.addEventListener('click', function() 
 });
 
 // ==========================================
-// مراقبة الطلاب والأرباح (مع التواريخ الحقيقية)
+// مراقبة الطلاب والأرباح (التاريخ الحقيقي)
 // ==========================================
 let isInitialLoad = true; 
 const usersRef = collection(db, "users");
@@ -145,11 +143,12 @@ onSnapshot(query(usersRef), (snapshot) => {
             else if(gradeAr === 'sec1') gradeAr = 'الأول الثانوي';
             else if(gradeAr === 'prep3') gradeAr = 'الثالث الإعدادي';
             
-            // سحب التاريخ الحقيقي
-            let timeText = 'غير محدد';
+            let timeText = 'تاريخ قديم';
             if (student.createdAt) {
-                const dateObj = new Date(student.createdAt);
-                timeText = dateObj.toLocaleDateString('ar-EG') + ' ' + dateObj.toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'});
+                try {
+                    const d = typeof student.createdAt === 'string' ? new Date(student.createdAt) : student.createdAt.toDate();
+                    timeText = d.toLocaleDateString('ar-EG') + ' ' + d.toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'});
+                } catch(e){}
             }
             
             tr.innerHTML = `
@@ -267,14 +266,13 @@ document.getElementById('btnToggleBlock')?.addEventListener('click', async () =>
 });
 
 // ==========================================
-// إدارة الكورسات (رفع ImgBB و Vimeo + التعديل)
+// إدارة الكورسات (رفع ImgBB و Vimeo)
 // ==========================================
 const coursesRef = collection(db, "courses");
 
 async function uploadImageToImgBB(file) {
     const keys = await getSecureApiKeys(); 
     if(!keys || !keys.imgbb_token) throw new Error("مفتاح ImgBB غير موجود في قاعدة البيانات!");
-
     const formData = new FormData();
     formData.append("image", file);
     const response = await fetch(`https://api.imgbb.com/1/upload?key=${keys.imgbb_token}`, { method: "POST", body: formData });
@@ -289,7 +287,11 @@ async function uploadToVimeo(file, progressCallback) {
             const keys = await getSecureApiKeys(); 
             if(!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo غير موجود في قاعدة البيانات!");
 
-            const upload = new tus.Upload(file, {
+            // الحل السحري لمشكلة tus is not defined
+            const tusClient = window.tus;
+            if(!tusClient) throw new Error("مكتبة tus لم يتم تحميلها بشكل صحيح");
+
+            const upload = new tusClient.Upload(file, {
                 endpoint: "https://api.vimeo.com/me/videos",
                 retryDelays: [0, 3000, 5000, 10000, 20000],
                 headers: {
@@ -455,7 +457,7 @@ window.deleteCourse = async function(id) {
 };
 
 // ==========================================
-// إدارة الامتحانات (المتقدم: مقالي واختياري وصور)
+// إدارة الامتحانات (اضافة - تعديل - حذف)
 // ==========================================
 const examsRef = collection(db, "exams");
 let questionCount = 0;
@@ -509,12 +511,12 @@ document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
 
 document.getElementById('addExamForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const title = document.getElementById('examTitle').value;
     const qBoxes = document.querySelectorAll('.question-box');
     if(qBoxes.length === 0) return adminAlert("خطأ", "يجب إضافة سؤال واحد على الأقل", "error");
 
+    const editingId = document.getElementById('editingExamId').value;
     const btn = document.getElementById('btnSaveExam');
-    btn.textContent = "جاري الحفظ ورفع الصور... ⏳"; 
+    btn.textContent = editingId ? "جاري التحديث..." : "جاري الحفظ ورفع الصور..."; 
     btn.disabled = true;
 
     try {
@@ -541,84 +543,156 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
                     correctIndex: parseInt(box.querySelector('.q-correct').value) - 1
                 });
             } else {
-                questionsArray.push({
-                    type: 'essay',
-                    text: text,
-                    imageUrl: imageUrl
-                });
+                questionsArray.push({ type: 'essay', text: text, imageUrl: imageUrl });
             }
         }
-        await addDoc(examsRef, { title: title, questions: questionsArray, createdAt: new Date().toISOString() });
-        adminAlert("نجاح", "تم حفظ الامتحان بنجاح!", "success");
-        document.getElementById('addExamForm').reset();
-        document.getElementById('questionsContainer').innerHTML = '';
-        questionCount = 0;
+        
+        const examData = { title: document.getElementById('examTitle').value, questions: questionsArray };
+        
+        if(editingId) {
+            await updateDoc(doc(db, "exams", editingId), examData);
+            adminAlert("نجاح", "تم تحديث الامتحان بنجاح!", "success");
+            document.getElementById('btnCancelExamEdit').click();
+        } else {
+            examData.createdAt = new Date().toISOString();
+            await addDoc(examsRef, examData);
+            adminAlert("نجاح", "تم حفظ الامتحان بنجاح!", "success");
+            document.getElementById('addExamForm').reset();
+            document.getElementById('questionsContainer').innerHTML = '';
+            questionCount = 0;
+        }
     } catch(err) { adminAlert("خطأ", "فشل الحفظ: " + err.message, "error"); } 
     finally { btn.innerHTML = '<i class="fas fa-save"></i> حفظ الامتحان'; btn.disabled = false; }
 });
 
 onSnapshot(query(examsRef), (snapshot) => {
     const table = document.getElementById('adminExamsTable');
-    const select = document.getElementById('requiredExamSelect');
+    const selectCourse = document.getElementById('requiredExamSelect');
+    const filterGrading = document.getElementById('filterSpecificExam');
+    
     if(table) table.innerHTML = '';
-    if(select) select.innerHTML = '<option value="">بدون امتحان (مفتوحة)</option>';
+    if(selectCourse) selectCourse.innerHTML = '<option value="">بدون امتحان (مفتوحة)</option>';
+    if(filterGrading) filterGrading.innerHTML = '<option value="all">كل الامتحانات / الحصص</option>';
 
     snapshot.forEach(docSnap => {
         const exam = docSnap.data();
+        const exId = docSnap.id;
+        
         if(table) {
             table.innerHTML += `<tr>
                 <td><strong>${exam.title}</strong></td>
                 <td>${exam.questions.length} أسئلة</td>
-                <td>الآن</td>
-                <td><button onclick="deleteExam('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+                <td>تاريخ الإنشاء</td>
+                <td style="display:flex; gap:5px; justify-content:center;">
+                    <button onclick="editExam('${exId}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid #3b82f6; padding: 5px 10px; border-radius: 6px; cursor: pointer;"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteExam('${exId}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button>
+                </td>
             </tr>`;
         }
-        if(select) select.innerHTML += `<option value="${docSnap.id}">${exam.title}</option>`;
+        if(selectCourse) selectCourse.innerHTML += `<option value="${exId}">${exam.title}</option>`;
+        if(filterGrading) filterGrading.innerHTML += `<option value="${exId}">${exam.title}</option>`;
     });
 });
 
+window.editExam = async function(id) {
+    const docSnap = await getDoc(doc(db, "exams", id));
+    if(docSnap.exists()) {
+        const exam = docSnap.data();
+        document.getElementById('editingExamId').value = id;
+        document.getElementById('examFormTitle').innerHTML = `<i class="fas fa-edit" style="color:#3b82f6;"></i> تعديل: ${exam.title}`;
+        document.getElementById('examTitle').value = exam.title;
+        document.getElementById('questionsContainer').innerHTML = '';
+        questionCount = 0;
+        
+        exam.questions.forEach(q => {
+            document.getElementById('btnAddQuestion').click();
+            const box = document.getElementById(`qBox_${questionCount}`);
+            box.querySelector('.q-type').value = q.type;
+            box.querySelector('.q-text').value = q.text;
+            window.toggleQType(questionCount);
+            if(q.type === 'mcq') {
+                box.querySelector('.q-opt1').value = q.options[0];
+                box.querySelector('.q-opt2').value = q.options[1];
+                box.querySelector('.q-opt3').value = q.options[2];
+                box.querySelector('.q-opt4').value = q.options[3];
+                box.querySelector('.q-correct').value = q.correctIndex + 1;
+            }
+        });
+        document.getElementById('btnSaveExam').innerHTML = '<i class="fas fa-save"></i> تحديث الامتحان';
+        document.getElementById('btnCancelExamEdit').style.display = 'inline-block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+document.getElementById('btnCancelExamEdit')?.addEventListener('click', () => {
+    document.getElementById('editingExamId').value = "";
+    document.getElementById('examFormTitle').innerHTML = `<i class="fas fa-file-signature" style="color:#3b82f6;"></i> إنشاء امتحان جديد`;
+    document.getElementById('addExamForm').reset();
+    document.getElementById('questionsContainer').innerHTML = '';
+    questionCount = 0;
+    document.getElementById('btnSaveExam').innerHTML = '<i class="fas fa-save"></i> حفظ الامتحان';
+    document.getElementById('btnCancelExamEdit').style.display = 'none';
+});
+
 window.deleteExam = async function(id) {
-    if(await adminConfirm("هل أنت متأكد من حذف الامتحان؟")) await deleteDoc(doc(db, "exams", id));
+    const isConfirmed = await adminConfirm("هل أنت متأكد من حذف الامتحان؟");
+    if(!isConfirmed) return;
+    try {
+        await deleteDoc(doc(db, "exams", id));
+        adminAlert("تم الحذف", "تم حذف الامتحان بنجاح.", "success");
+    } catch (e) { adminAlert("خطأ", "فشل الحذف", "error"); }
 }
 
 // ==========================================
-// قسم سجل الامتحانات والتصحيح (النسخة الشاملة)
+// سجل المشاهدات والتصحيح الشامل (مع الفلترة)
 // ==========================================
 const submissionsRef = collection(db, "exam_submissions");
+let allSubmissionsData = []; 
 
 onSnapshot(query(submissionsRef), (snapshot) => {
+    allSubmissionsData = [];
+    snapshot.forEach(docSnap => {
+        allSubmissionsData.push({ id: docSnap.id, ...docSnap.data() });
+    });
+    renderGradingTable(); 
+});
+
+function renderGradingTable() {
     const table = document.getElementById('adminGradingTable');
     if(!table) return;
     
     table.innerHTML = '';
-    const filter = document.getElementById('filterGradingStatus')?.value || 'all';
+    const statusFilter = document.getElementById('filterGradingStatus')?.value || 'all';
+    const examFilter = document.getElementById('filterSpecificExam')?.value || 'all';
 
-    snapshot.forEach(docSnap => {
-        const sub = docSnap.data();
-        const subId = docSnap.id;
-        
-        if(filter !== 'all' && sub.status !== filter) return; 
+    let count = 0;
+    allSubmissionsData.forEach(sub => {
+        if(statusFilter !== 'all' && sub.status !== statusFilter) return; 
+        if(examFilter !== 'all' && sub.examId !== examFilter) return; 
 
+        count++;
         let statusText = '';
         if(sub.status === 'passed') statusText = '<span style="color:#10b981; font-weight:800;">ناجح (شاهد الحصة)</span>';
         else if(sub.status === 'failed') statusText = '<span style="color:#ef4444; font-weight:800;">راسب (لم يشاهد)</span>';
         else statusText = '<span style="color:#f59e0b; font-weight:800;">قيد المراجعة</span>';
 
-        let timeText = '-';
+        let timeText = 'غير محدد';
         if(sub.submittedAt) {
-            const d = new Date(sub.submittedAt);
-            timeText = d.toLocaleDateString('ar-EG') + '<br><small style="color:#f59e0b;">' + d.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) + '</small>';
+            try {
+                const d = new Date(sub.submittedAt);
+                timeText = d.toLocaleDateString('ar-EG') + '<br><small style="color:#f59e0b;">' + d.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) + '</small>';
+            } catch(e){}
         }
 
-        let resetBtn = `<button onclick="resetStudentExam('${subId}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px; margin:2px;"><i class="fas fa-trash"></i> مسح النتيجة</button>`;
-        let gradeBtn = sub.status === 'pending' ? `<button onclick="gradeStudentExam('${subId}')" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid #10b981; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px; margin:2px;"><i class="fas fa-check"></i> تصحيح المقالي</button>` : '';
-        let editScoreBtn = `<button onclick="editStudentScore('${subId}', ${sub.score})" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid #3b82f6; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px; margin:2px;"><i class="fas fa-edit"></i> تعديل الدرجة</button>`;
+        let resetBtn = `<button onclick="resetStudentExam('${sub.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px; margin:2px;"><i class="fas fa-trash"></i> مسح النتيجة</button>`;
+        let gradeBtn = sub.status === 'pending' ? `<button onclick="gradeStudentExam('${sub.id}')" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid #10b981; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px; margin:2px;"><i class="fas fa-check"></i> تصحيح المقالي</button>` : '';
+        let editScoreBtn = `<button onclick="editStudentScore('${sub.id}', ${sub.score || 0})" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid #3b82f6; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family:'Cairo'; font-size:12px; margin:2px;"><i class="fas fa-edit"></i> تعديل الدرجة</button>`;
 
         table.innerHTML += `
             <tr>
-                <td><strong>${sub.studentName}</strong><br><small style="color:#f59e0b;">${sub.studentPhone}</small></td>
-                <td><strong>${sub.courseTitle}</strong><br><small style="color:#94a3b8;">${sub.examTitle}</small></td>
-                <td style="font-size:18px; font-weight:900; color:#fff;">${sub.score}%</td>
+                <td><strong>${sub.studentName || '-'}</strong><br><small style="color:#f59e0b;">${sub.studentPhone || '-'}</small></td>
+                <td><strong>${sub.courseTitle || '-'}</strong><br><small style="color:#94a3b8;">${sub.examTitle || '-'}</small></td>
+                <td style="font-size:18px; font-weight:900; color:#fff;">${sub.score || 0}%</td>
                 <td>${statusText}</td>
                 <td dir="ltr" style="font-size:13px; color:#94a3b8;">${timeText}</td>
                 <td style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center;">
@@ -629,11 +703,12 @@ onSnapshot(query(submissionsRef), (snapshot) => {
             </tr>
         `;
     });
-});
+    
+    if(count === 0) table.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #94a3b8;">لا توجد بيانات مطابقة للفلتر...</td></tr>`;
+}
 
-document.getElementById('filterGradingStatus')?.addEventListener('change', () => {
-    const event = new Event('change');
-});
+document.getElementById('filterGradingStatus')?.addEventListener('change', renderGradingTable);
+document.getElementById('filterSpecificExam')?.addEventListener('change', renderGradingTable);
 
 window.gradeStudentExam = async function(subId) {
     const isPassed = await adminConfirm("هل تريد نجاح الطالب في هذا الامتحان (إعطاء 100%)؟ \n(اختر نعم للنجاح، وإلغاء لترسيبه)");
