@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dashbord- Primee</title>
+    <title>لوحة تحكم الإدارة - Primee</title>
     
-    <!-- مكتبة Tus للرفع المباشر (تم تغيير الرابط لرابط أقوى وأكثر استقراراً) -->
-    <script src="https://unpkg.com/tus-js-client@3.4.0/dist/tus.js"></script>
+    <!-- مكتبة Tus للرفع المباشر لفيمو -->
+    <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3.4.0/dist/tus.min.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -73,9 +73,8 @@
             <li><a id="navExams" onclick="switchTab('examsSection', this)"><i class="fas fa-file-alt"></i> إدارة الامتحانات</a></li>
             <li><a id="navGrading" onclick="switchTab('gradingSection', this)"><i class="fas fa-eye"></i> سجل المشاهدات والتصحيح</a></li>
             <li><a id="navTeachers" onclick="switchTab('teachersSection', this)"><i class="fas fa-chalkboard-teacher"></i> إدارة المدرسين</a></li>
-            <li><a id="navCodes" onclick="switchTab('codesSection', this)"><i class="fas fa-qrcode"></i> مصنع وتتبع الأكواد</a></li>
+            <li><a id="navCodes" onclick="switchTab('codesSection', this)"><i class="fas fa-qrcode"></i> مصنع الأكواد</a></li>
             <li><a id="navPackages" onclick="switchTab('packagesSection', this)"><i class="fas fa-boxes"></i> إدارة الباقات</a></li>
-            <li><a id="navAssistants" onclick="switchTab('assistantsSection', this)"><i class="fas fa-user-shield"></i> إدارة المساعدين</a></li>
         </ul>
         <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
     </aside>
@@ -88,7 +87,7 @@
             </div>
         </div>
 
-        <!-- 1. لوحة القيادة -->
+        <!-- الأقسام القديمة (لوحة القيادة، الطلاب، المشاهدات) -->
         <div id="dashboardSection" class="admin-section active-section">
             <div class="stats-grid">
                 <div class="stat-card">
@@ -109,7 +108,6 @@
             </div>
         </div>
 
-        <!-- 2. إدارة الطلاب -->
         <div id="studentsSection" class="admin-section">
             <div class="admin-table-container">
                 <h3><i class="fas fa-user-cog" style="color: #3b82f6;"></i> الإدارة السريعة للطلاب</h3>
@@ -145,7 +143,6 @@
         <div id="coursesSection" class="admin-section">
             <div class="admin-table-container">
                 <h3 id="courseFormTitle"><i class="fas fa-plus-circle" style="color: #f59e0b;"></i> إضافة حصة أو كورس جديد</h3>
-                
                 <form id="addCourseForm">
                     <input type="hidden" id="editingCourseId" value="">
                     <div class="form-grid">
@@ -155,7 +152,10 @@
                         </div>
                         <div class="form-group-admin">
                             <label>اسم المدرس</label>
-                            <select id="courseInstructor" required><option value="" disabled selected>جاري تحميل المدرسين...</option></select>
+                            <!-- تم تعديل المدرس ليصبح قائمة منسدلة تسحب البيانات -->
+                            <select id="courseInstructor" required>
+                                <option value="" disabled selected>جاري تحميل المدرسين...</option>
+                            </select>
                         </div>
                         <div class="form-group-admin">
                             <label>المرحلة الدراسية</label>
@@ -197,28 +197,22 @@
                             </select>
                         </div>
                     </div>
-                    
                     <div style="display: flex; gap: 15px;">
                         <button type="submit" id="btnSaveCourse" style="flex: 1; background: #f59e0b; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; transition: 0.3s;"><i class="fas fa-cloud-upload-alt"></i> نشر الحصة</button>
                         <button type="button" id="btnCancelEdit" style="display: none; background: #334155; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">إلغاء التعديل</button>
                     </div>
                 </form>
             </div>
-
             <div class="admin-table-container" style="margin-top: 20px;">
                 <h3>الحصص والكورسات المتاحة على المنصة 📚</h3>
                 <table>
-                    <thead>
-                        <tr><th>العنوان</th><th>المدرس</th><th>المرحلة</th><th>الامتحان المطلوب</th><th>إجراءات</th></tr>
-                    </thead>
-                    <tbody id="adminCoursesTable">
-                        <tr><td colspan="5" style="text-align: center; color: #94a3b8;">جاري جلب الكورسات... ⏳</td></tr>
-                    </tbody>
+                    <thead><tr><th>العنوان</th><th>المدرس</th><th>المرحلة</th><th>الامتحان المطلوب</th><th>إجراءات</th></tr></thead>
+                    <tbody id="adminCoursesTable"><tr><td colspan="5" style="text-align: center; color: #94a3b8;">جاري جلب الكورسات... ⏳</td></tr></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- 4. قسم إدارة الامتحانات (Exam Builder المتقدم) -->
+        <!-- 4. قسم إدارة الامتحانات -->
         <div id="examsSection" class="admin-section">
             <div class="admin-table-container">
                 <h3 id="examFormTitle"><i class="fas fa-file-signature" style="color: #3b82f6;"></i> إنشاء/تعديل امتحان</h3>
@@ -228,24 +222,20 @@
                         <label>اسم الامتحان (مثال: امتحان الباب الأول)</label>
                         <input type="text" id="examTitle" required>
                     </div>
-                    
                     <div id="questionsContainer"></div>
-                    
                     <button type="button" id="btnAddQuestion" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px dashed #3b82f6; padding: 12px; border-radius: 8px; width: 100%; font-family: 'Cairo'; font-weight: 800; cursor: pointer; margin-bottom: 20px;">
                         <i class="fas fa-plus"></i> إضافة سؤال جديد
                     </button>
-                    
                     <div style="display: flex; gap: 15px;">
                         <button type="submit" id="btnSaveExam" style="background: #10b981; color: #fff; border: none; padding: 15px 30px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; flex: 1;"><i class="fas fa-save"></i> حفظ الامتحان</button>
                         <button type="button" id="btnCancelExamEdit" style="display: none; background: #334155; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">إلغاء التعديل</button>
                     </div>
                 </form>
             </div>
-
             <div class="admin-table-container" style="margin-top: 20px;">
-                <h3>الامتحانات المتوفرة 📝</h3>
+                <h3>الامتحانات المتوفرة والنتائج 📝</h3>
                 <table>
-                    <thead><tr><th>اسم الامتحان</th><th>عدد الأسئلة</th><th>تاريخ الإنشاء</th><th>إجراءات</th></tr></thead>
+                    <thead><tr><th>اسم الامتحان</th><th>الأسئلة</th><th>الطلاب المُمتحنين</th><th>إجراءات / نتائج</th></tr></thead>
                     <tbody id="adminExamsTable">
                         <tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب الامتحانات... ⏳</td></tr>
                     </tbody>
@@ -253,12 +243,11 @@
             </div>
         </div>
 
-        <!-- 5. قسم سجل الامتحانات والتصحيح الشامل (المشاهدات) -->
+        <!-- 5. سجل المشاهدات والتصحيح -->
         <div id="gradingSection" class="admin-section">
             <div class="admin-table-container">
                 <h3><i class="fas fa-eye" style="color: #3b82f6;"></i> سجل المشاهدات والتصحيح</h3>
                 <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-                    
                     <div class="form-group-admin" style="flex: 1; min-width: 200px;">
                         <label>فلتر بالحالة:</label>
                         <select id="filterGradingStatus">
@@ -268,33 +257,21 @@
                             <option value="pending" selected>قيد التصحيح (المقالي)</option>
                         </select>
                     </div>
-                    
                     <div class="form-group-admin" style="flex: 1; min-width: 200px;">
                         <label>فلتر بامتحان/حصة معينة:</label>
                         <select id="filterSpecificExam">
                             <option value="all">كل الامتحانات / الحصص</option>
                         </select>
                     </div>
-
                 </div>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>الطالب</th>
-                            <th>الحصة / الامتحان</th>
-                            <th>الدرجة</th>
-                            <th>الحالة (المشاهدة)</th>
-                            <th>وقت الحل</th>
-                            <th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminGradingTable">
-                        <tr><td colspan="6" style="text-align: center; color: #94a3b8;">جاري جلب البيانات... ⏳</td></tr>
-                    </tbody>
+                    <thead><tr><th>الطالب</th><th>الحصة / الامتحان</th><th>الدرجة</th><th>الحالة (المشاهدة)</th><th>وقت الحل</th><th>إجراءات</th></tr></thead>
+                    <tbody id="adminGradingTable"><tr><td colspan="6" style="text-align: center; color: #94a3b8;">جاري جلب البيانات... ⏳</td></tr></tbody>
                 </table>
             </div>
         </div>
-<!-- 6. قسم إدارة المدرسين -->
+
+        <!-- 6. قسم إدارة المدرسين -->
         <div id="teachersSection" class="admin-section">
             <div class="admin-table-container">
                 <h3><i class="fas fa-chalkboard-teacher" style="color: #3b82f6;"></i> إضافة مدرس جديد</h3>
@@ -309,8 +286,23 @@
                             <input type="text" id="teacherSubject" placeholder="مثال: فيزياء، لغات..." required>
                         </div>
                         <div class="form-group-admin">
-                            <label>المراحل (مفصول بينها بفاصلة)</label>
-                            <input type="text" id="teacherStages" placeholder="إعدادي, ثانوي" required>
+                            <label>المراحل الدراسية</label>
+                            <!-- تم تحويلها لـ Multiple Select -->
+                            <select id="teacherStages" multiple style="height: 120px;" required>
+                                <option value="الأول الابتدائي">الأول الابتدائي</option>
+                                <option value="الثاني الابتدائي">الثاني الابتدائي</option>
+                                <option value="الثالث الابتدائي">الثالث الابتدائي</option>
+                                <option value="الرابع الابتدائي">الرابع الابتدائي</option>
+                                <option value="الخامس الابتدائي">الخامس الابتدائي</option>
+                                <option value="السادس الابتدائي">السادس الابتدائي</option>
+                                <option value="الأول الإعدادي">الأول الإعدادي</option>
+                                <option value="الثاني الإعدادي">الثاني الإعدادي</option>
+                                <option value="الثالث الإعدادي">الثالث الإعدادي</option>
+                                <option value="الأول الثانوي">الأول الثانوي</option>
+                                <option value="الثاني الثانوي">الثاني الثانوي</option>
+                                <option value="الثالث الثانوي">الثالث الثانوي</option>
+                            </select>
+                            <small style="color: #94a3b8;">اضغط Ctrl (أو Command) لاختيار أكثر من مرحلة.</small>
                         </div>
                         <div class="form-group-admin">
                             <label>صورة المدرس</label>
@@ -320,7 +312,6 @@
                     <button type="submit" id="btnSaveTeacher" style="background: #f59e0b; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i> إضافة المدرس</button>
                 </form>
             </div>
-
             <div class="admin-table-container" style="margin-top: 20px;">
                 <h3>المدرسين المسجلين بالمنصة</h3>
                 <table>
@@ -357,16 +348,17 @@
                             </select>
                         </div>
                     </div>
-                    <button type="submit" id="btnGenerateCodes" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-cogs"></i> توليد الأكواد الآن</button>
+                    <button type="submit" id="btnGenerateCodes" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-cogs"></i> توليد وتحميل إكسيل للأكواد</button>
                 </form>
             </div>
 
             <div class="admin-table-container" style="margin-top: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 15px;">
                     <h3 style="margin: 0; border: none; padding: 0;">تتبع الأكواد (سجل الشحن)</h3>
-                    <button id="btnExportCodes" style="background: #3b82f6; color: #fff; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 800; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-file-excel"></i> تحميل كـ Excel (CSV)</button>
+                    <button id="btnExportAllCodes" style="background: #3b82f6; color: #fff; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 800; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-file-excel"></i> تحميل الجدول كـ Excel</button>
                 </div>
                 <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                    <!-- الفلترة الخاصة بالأكواد -->
                     <input type="text" id="searchCodeInput" placeholder="ابحث بكود أو مندوب..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';">
                     <select id="filterCodeStatus" style="padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';">
                         <option value="all">كل الأكواد</option>
@@ -382,6 +374,7 @@
                 </table>
             </div>
         </div>
+
         <!-- 8. قسم إدارة الباقات -->
         <div id="packagesSection" class="admin-section">
             <div class="admin-table-container">
@@ -425,43 +418,6 @@
             </div>
         </div>
 
-        <!-- 9. قسم إدارة المساعدين (الصلاحيات) -->
-        <div id="assistantsSection" class="admin-section">
-            <div class="admin-table-container">
-                <h3><i class="fas fa-user-shield" style="color: #10b981;"></i> إضافة حساب مساعد (سكرتير مدرس)</h3>
-                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">هذا الحساب سيتمكن فقط من رؤية بيانات وتصحيح امتحانات المدرس الذي تحدده له.</p>
-                <form id="addAssistantForm">
-                    <div class="form-grid">
-                        <div class="form-group-admin">
-                            <label>اسم المساعد</label>
-                            <input type="text" id="astName" placeholder="مثال: محمد السكرتير" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>اسم المستخدم (للدخول)</label>
-                            <input type="text" id="astUsername" placeholder="مثال: user123" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>كلمة المرور</label>
-                            <input type="text" id="astPassword" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>صلاحية المدرس (يتابع شغل مين؟)</label>
-                            <select id="astTeacher" required>
-                                <option value="" disabled selected>جاري تحميل المدرسين...</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit" id="btnSaveAssistant" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%;"><i class="fas fa-check"></i> إنشاء حساب المساعد</button>
-                </form>
-            </div>
-            <div class="admin-table-container" style="margin-top: 20px;">
-                <h3>المساعدين المسجلين</h3>
-                <table>
-                    <thead><tr><th>المساعد</th><th>اسم الدخول</th><th>مساعد للأستاذ</th><th>إجراءات</th></tr></thead>
-                    <tbody id="adminAssistantsTable"><tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب البيانات...</td></tr></tbody>
-                </table>
-            </div>
-        </div>
     </main>
 
     <!-- النوافذ المنبثقة -->
