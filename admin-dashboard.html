@@ -223,7 +223,7 @@
             <div class="admin-table-container" style="margin-top: 20px;">
                 <h3>الحصص والكورسات المتاحة على المنصة 📚</h3>
                 <table>
-                    <thead><tr><th>العنوان</th><th>المدرس</th><th>المرحلة</th><th>الامتحان المطلوب</th><th>إجراءات</th></tr></thead>
+                    <thead><tr><th>العنوان</th><th>المدرس</th><th>المرحلة</th><th>الامتحان المطلوب</th><th>المشاهدات</th><th>إجراءات</th></tr></thead>
                     <tbody id="adminCoursesTable"><tr><td colspan="5" style="text-align: center; color: #94a3b8;">جاري جلب الكورسات... ⏳</td></tr></tbody>
                 </table>
             </div>
@@ -439,7 +439,7 @@
             <div class="admin-table-container" style="margin-top: 20px;">
                 <h3>الباقات المتاحة للطلاب</h3>
                 <table>
-                    <thead><tr><th>الباقة</th><th>المرحلة</th><th>السعر</th><th>إجراءات</th></tr></thead>
+                    <thead><tr><th>الباقة</th><th>المرحلة</th><th>السعر</th><th>المشاهدات</th><th>إجراءات</th></tr></thead>
                     <tbody id="adminPackagesTable"><tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب الباقات...</td></tr></tbody>
                 </table>
             </div>
@@ -450,6 +450,7 @@
             <div class="admin-table-container">
                 <h3><i class="fas fa-user-shield" style="color: #10b981;"></i> إضافة حساب مساعد (سكرتير مدرس)</h3>
                 <form id="addAssistantForm">
+                    <input type="hidden" id="editingAssistantId" value="">
                     <div class="form-grid">
                         <div class="form-group-admin">
                             <label>اسم المساعد</label>
