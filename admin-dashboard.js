@@ -291,32 +291,90 @@ async function uploadImageToImgBB(file) {
 }
 
 async function uploadToVimeo(file, progressCallback) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const keys = await getSecureApiKeys(); 
-            if(!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo غير موجود في قاعدة البيانات!");
+    const keys = await getSecureApiKeys();
 
-            // رفع الفيديو المباشر بمكتبة tus
-            const upload = new tus.Upload(file, {
-                endpoint: "https://api.vimeo.com/me/videos",
-                retryDelays: [0, 3000, 5000, 10000, 20000],
-                headers: {
-                    Authorization: `Bearer ${keys.vimeo_token}`, 
-                    Accept: "application/vnd.vimeo.*+json;version=3.4"
-                },
-                uploadSize: file.size,
-                onError: function(error) { reject(error); },
-                onProgress: function(bytesUploaded, bytesTotal) {
-                    const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-                    progressCallback(percentage);
-                },
-                onSuccess: function() {
-                    const videoId = upload.url.split('/').pop();
-                    resolve(`https://player.vimeo.com/video/${videoId}`);
-                }
-            });
-            upload.start();
-        } catch (error) { reject(error); }
+    if (!keys || !keys.vimeo_token) {
+        throw new Error("مفتاح Vimeo غير موجود");
+    }
+
+    // إنشاء عملية رفع جديدة في Vimeo
+    const createResponse = await fetch("https://api.vimeo.com/me/videos", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${keys.vimeo_token}`,
+            "Content-Type": "application/json",
+            Accept: "application/vnd.vimeo.*+json;version=3.4"
+        },
+        body: JSON.stringify({
+            upload: {
+                approach: "tus",
+                size: file.size.toString()
+            }
+        })
+    });
+
+    if (!createResponse.ok) {
+        const txt = await createResponse.text();
+        throw new Error(txt);
+    }
+
+    const video = await createResponse.json();
+
+    return new Promise((resolve, reject) => {
+
+        const upload = new tus.Upload(file, {
+
+            uploadUrl: video.upload.upload_link,
+
+            retryDelays: [0,3000,5000,10000,20000],
+
+            headers: {
+                Authorization: `Bearer ${keys.vimeo_token}`
+            },
+
+            metadata: {
+                filename: file.name,
+                filetype: file.type
+            },
+
+            onError(error){
+                reject(error);
+            },
+
+            onProgress(bytesUploaded, bytesTotal){
+
+                const percentage =
+                ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+
+                progressCallback(percentage);
+            },
+
+            async onSuccess(){
+
+                // نشر الفيديو بعد انتهاء الرفع
+                await fetch(video.uri,{
+                    method:"PATCH",
+                    headers:{
+                        Authorization:`Bearer ${keys.vimeo_token}`,
+                        "Content-Type":"application/json"
+                    },
+                    body:JSON.stringify({
+                        privacy:{
+                            view:"disable"
+                        }
+                    })
+                });
+
+                resolve(
+                    "https://player.vimeo.com/video/" +
+                    video.uri.split("/").pop()
+                );
+            }
+
+        });
+
+        upload.start();
+
     });
 }
 
