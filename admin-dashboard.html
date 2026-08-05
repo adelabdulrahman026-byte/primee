@@ -74,6 +74,8 @@
             <li><a id="navGrading" onclick="switchTab('gradingSection', this)"><i class="fas fa-eye"></i> سجل المشاهدات والتصحيح</a></li>
             <li><a id="navTeachers" onclick="switchTab('teachersSection', this)"><i class="fas fa-chalkboard-teacher"></i> إدارة المدرسين</a></li>
             <li><a id="navCodes" onclick="switchTab('codesSection', this)"><i class="fas fa-qrcode"></i> مصنع وتتبع الأكواد</a></li>
+            <li><a id="navPackages" onclick="switchTab('packagesSection', this)"><i class="fas fa-boxes"></i> إدارة الباقات</a></li>
+            <li><a id="navAssistants" onclick="switchTab('assistantsSection', this)"><i class="fas fa-user-shield"></i> إدارة المساعدين</a></li>
         </ul>
         <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
     </aside>
@@ -377,6 +379,86 @@
                     <tbody id="adminCodesTable">
                         <tr><td colspan="6" style="text-align: center; color: #94a3b8;">جاري جلب الأكواد...</td></tr>
                     </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- 8. قسم إدارة الباقات -->
+        <div id="packagesSection" class="admin-section">
+            <div class="admin-table-container">
+                <h3><i class="fas fa-boxes" style="color: #3b82f6;"></i> إضافة باقة جديدة</h3>
+                <form id="addPackageForm">
+                    <div class="form-grid">
+                        <div class="form-group-admin">
+                            <label>اسم الباقة</label>
+                            <input type="text" id="pkgName" placeholder="مثال: باقة التميز" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>المرحلة الدراسية</label>
+                            <input type="text" id="pkgGrade" placeholder="مثال: المرحلة الثانوية" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>السعر القديم (قبل الخصم)</label>
+                            <input type="number" id="pkgOldPrice" placeholder="مثال: 500" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>السعر الجديد (بعد الخصم)</label>
+                            <input type="number" id="pkgNewPrice" placeholder="مثال: 400" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>تفاصيل الباقة (مفصول بفاصلة)</label>
+                            <input type="text" id="pkgFeatures" placeholder="مثال: 3 مدرسين, مراجعات مجانية" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>صورة الباقة (غلاف)</label>
+                            <input type="file" id="pkgImage" accept="image/*" required>
+                        </div>
+                    </div>
+                    <button type="submit" id="btnSavePackage" style="background: #f59e0b; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%;"><i class="fas fa-plus"></i> نشر الباقة في الموقع</button>
+                </form>
+            </div>
+            <div class="admin-table-container" style="margin-top: 20px;">
+                <h3>الباقات المتاحة للطلاب</h3>
+                <table>
+                    <thead><tr><th>الباقة</th><th>المرحلة</th><th>السعر</th><th>إجراءات</th></tr></thead>
+                    <tbody id="adminPackagesTable"><tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب الباقات...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 9. قسم إدارة المساعدين (الصلاحيات) -->
+        <div id="assistantsSection" class="admin-section">
+            <div class="admin-table-container">
+                <h3><i class="fas fa-user-shield" style="color: #10b981;"></i> إضافة حساب مساعد (سكرتير مدرس)</h3>
+                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">هذا الحساب سيتمكن فقط من رؤية بيانات وتصحيح امتحانات المدرس الذي تحدده له.</p>
+                <form id="addAssistantForm">
+                    <div class="form-grid">
+                        <div class="form-group-admin">
+                            <label>اسم المساعد</label>
+                            <input type="text" id="astName" placeholder="مثال: محمد السكرتير" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>اسم المستخدم (للدخول)</label>
+                            <input type="text" id="astUsername" placeholder="مثال: user123" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>كلمة المرور</label>
+                            <input type="text" id="astPassword" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>صلاحية المدرس (يتابع شغل مين؟)</label>
+                            <select id="astTeacher" required>
+                                <option value="" disabled selected>جاري تحميل المدرسين...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" id="btnSaveAssistant" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%;"><i class="fas fa-check"></i> إنشاء حساب المساعد</button>
+                </form>
+            </div>
+            <div class="admin-table-container" style="margin-top: 20px;">
+                <h3>المساعدين المسجلين</h3>
+                <table>
+                    <thead><tr><th>المساعد</th><th>اسم الدخول</th><th>مساعد للأستاذ</th><th>إجراءات</th></tr></thead>
+                    <tbody id="adminAssistantsTable"><tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب البيانات...</td></tr></tbody>
                 </table>
             </div>
         </div>
