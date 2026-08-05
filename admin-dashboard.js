@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import * as tus from "https://cdn.skypack.dev/tus-js-client";
+
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
     authDomain: "academy-444b6.firebaseapp.com",
@@ -14,65 +14,40 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// جلب مفاتيح الأمان
-// ==========================================
-let SECURE_API_KEYS = null;
-async function getSecureApiKeys() {
-    if (SECURE_API_KEYS) return SECURE_API_KEYS; 
-    try {
-        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
-        if (docSnap.exists()) {
-            SECURE_API_KEYS = docSnap.data();
-            return SECURE_API_KEYS;
-        }
-    } catch (e) {} return null;
-}
-
-// ==========================================
-// واتساب WaPilot
-// ==========================================
-// ==========================================
-// إرسال واتساب (WaPilot API المعتمد)
-// ==========================================
-async function sendWhatsAppToParent(parentPhone, msgText) {
-    if(!parentPhone || parentPhone === "غير متوفر") return;
-    
-    const keys = await getSecureApiKeys();
-    if (!keys || !keys.wapilot_instance || !keys.wapilot_token) return;
-
-    const instanceId = keys.wapilot_instance; 
-    const token = keys.wapilot_token;
-    
-    // تظبيط الرقم وإضافة @c.us زي ما الـ API بيطلب
-    let formattedPhone = parentPhone.startsWith('0') ? '2' + parentPhone : parentPhone;
-    let chatId = formattedPhone + "@c.us";
-    
-    var url = "https://api.wapilot.net/api/v2/" + instanceId + "/send-message";
-    
-    try {
-        await fetch(url, {
-            method: "POST",
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
-            },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: msgText
-            })
-        });
-        console.log("تم إرسال إشعار الواتساب عبر WaPilot بنجاح.");
-    } catch(err) { 
-        console.error("فشل إرسال الواتساب:", err); 
-    }
-}
-
-// ==========================================
-// حماية الصفحة والتنبيهات
+// حماية الصفحة وتطبيق الصلاحيات للمساعدين
 // ==========================================
 if (localStorage.getItem('adminLoggedIn') !== 'true') window.location.replace('admin-login.html');
-document.getElementById('adminLogoutBtn')?.addEventListener('click', () => { localStorage.clear(); window.location.replace('admin-login.html'); });
 
+document.getElementById('adminLogoutBtn')?.addEventListener('click', () => { 
+    localStorage.clear(); 
+    window.location.replace('admin-login.html'); 
+});
+
+const ROLE = localStorage.getItem('role');
+const AST_TEACHER = localStorage.getItem('astTeacher');
+
+// تطبيق الصلاحيات على القائمة الجانبية
+function applyPermissions() {
+    if (ROLE === 'assistant') {
+        const perms = JSON.parse(localStorage.getItem('astPerms') || "[]");
+        
+        if(!perms.includes('students')) document.getElementById('navStudents').style.display = 'none';
+        if(!perms.includes('courses')) document.getElementById('navCourses').style.display = 'none';
+        if(!perms.includes('exams')) document.getElementById('navExams').style.display = 'none';
+        if(!perms.includes('grading')) document.getElementById('navGrading').style.display = 'none';
+        if(!perms.includes('codes')) document.getElementById('navCodes').style.display = 'none';
+        
+        // دي حاجات خاصة بالمدير بس بتختفي دايماً للمساعد
+        document.getElementById('navTeachers').style.display = 'none';
+        document.getElementById('navPackages').style.display = 'none';
+        document.getElementById('navAssistants').style.display = 'none';
+    }
+}
+applyPermissions();
+
+// ==========================================
+// التنبيهات والصوت
+// ==========================================
 function adminAlert(title, msg, type = 'success') {
     const modal = document.getElementById('customAdminAlert');
     if(!modal) return;
@@ -82,6 +57,7 @@ function adminAlert(title, msg, type = 'success') {
     icon.innerHTML = type === 'success' ? '<i class="fas fa-check-circle" style="color: #10b981;"></i>' : '<i class="fas fa-times-circle" style="color: #ef4444;"></i>';
     modal.classList.add('active');
 }
+
 function adminConfirm(msg) {
     return new Promise((resolve) => {
         const modal = document.getElementById('customAdminConfirm');
@@ -92,6 +68,7 @@ function adminConfirm(msg) {
         document.getElementById('btnConfirmNo').onclick = () => { modal.classList.remove('active'); resolve(false); };
     });
 }
+
 function showLiveToast(msg) {
     const toast = document.getElementById('liveToast');
     if(!toast) return;
@@ -109,7 +86,40 @@ document.getElementById('enableSoundBtn')?.addEventListener('click', function() 
 });
 
 // ==========================================
-// 1. مراقبة الطلاب والأرباح (التاريخ الحقيقي)
+// جلب مفاتيح الأمان والواتساب
+// ==========================================
+let SECURE_API_KEYS = null;
+async function getSecureApiKeys() {
+    if (SECURE_API_KEYS) return SECURE_API_KEYS; 
+    try {
+        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
+        if (docSnap.exists()) { SECURE_API_KEYS = docSnap.data(); return SECURE_API_KEYS; }
+    } catch (e) {} return null;
+}
+
+async function sendWhatsAppToParent(parentPhone, msgText) {
+    if(!parentPhone || parentPhone === "غير متوفر") return;
+    const keys = await getSecureApiKeys();
+    if (!keys || !keys.wapilot_instance || !keys.wapilot_token) return;
+
+    const instanceId = keys.wapilot_instance; 
+    const token = keys.wapilot_token;
+    
+    let formattedPhone = parentPhone.startsWith('0') ? '2' + parentPhone : parentPhone;
+    let chatId = formattedPhone + "@c.us";
+    var url = "https://api.wapilot.net/api/v2/" + instanceId + "/send-message";
+    
+    try {
+        await fetch(url, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ chat_id: chatId, text: msgText })
+        });
+    } catch(err) { console.error("فشل إرسال الواتساب:", err); }
+}
+
+// ==========================================
+// 1. مراقبة الطلاب والأرباح
 // ==========================================
 let isInitialLoad = true; 
 const usersRef = collection(db, "users");
@@ -138,7 +148,7 @@ onSnapshot(query(usersRef), (snapshot) => {
         tableBody.innerHTML = '';
         studentsArray.reverse().slice(0, 10).forEach(student => {
             const tr = document.createElement('tr');
-            let timeText = 'غير محدد';
+            let timeText = '-';
             if (student.createdAt) {
                 try {
                     const d = new Date(student.createdAt);
@@ -163,6 +173,7 @@ onSnapshot(query(usersRef), (snapshot) => {
 // ==========================================
 let currentStudentId = null;
 let currentStudentData = null;
+
 document.getElementById('btnSearchStudent')?.addEventListener('click', async () => {
     const phone = document.getElementById('searchPhoneInput').value.trim();
     if(!phone) return adminAlert("خطأ", "أدخل رقم الهاتف!", "error");
@@ -194,8 +205,7 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
             }
             document.getElementById('studentResultCard').style.display = 'block';
         }
-    } catch(error) { console.error(error); } 
-    finally { document.getElementById('btnSearchStudent').innerHTML = '<i class="fas fa-search"></i> بحث'; }
+    } catch(error) {} finally { document.getElementById('btnSearchStudent').innerHTML = '<i class="fas fa-search"></i> بحث'; }
 });
 
 document.getElementById('btnChargeWallet')?.addEventListener('click', async () => {
@@ -231,6 +241,13 @@ document.getElementById('btnDeductWallet')?.addEventListener('click', async () =
 // ==========================================
 const teachersRef = collection(db, "teachers");
 
+window.deleteTeacher = async function(id) {
+    if(await adminConfirm("هل أنت متأكد من مسح هذا المدرس نهائياً؟")) {
+        try { await deleteDoc(doc(db, "teachers", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
+        catch(e) { adminAlert("خطأ", "فشل المسح", "error"); }
+    }
+};
+
 document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnSaveTeacher');
@@ -239,7 +256,6 @@ document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) 
     try {
         const selectStages = document.getElementById('teacherStages');
         const selectedStages = Array.from(selectStages.selectedOptions).map(opt => opt.value).join(', ');
-
         const imageFile = document.getElementById('teacherImage').files[0];
         let imageUrl = await uploadImageToImgBB(imageFile);
 
@@ -269,7 +285,7 @@ onSnapshot(query(teachersRef), (snapshot) => {
                 <td><img src="${t.imageUrl}" style="width:30px; height:30px; border-radius:50%; margin-left:10px; vertical-align:middle;"><strong>${t.name}</strong></td>
                 <td>${t.subject}</td>
                 <td>${t.stages}</td>
-                <td><button onclick="deleteDoc(doc(db, 'teachers', '${docSnap.id}'))" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
+                <td><button onclick="deleteTeacher('${docSnap.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
             </tr>`;
         }
         if(selectInstructor) selectInstructor.innerHTML += `<option value="${t.name}">${t.name} (${t.subject})</option>`;
@@ -281,6 +297,13 @@ onSnapshot(query(teachersRef), (snapshot) => {
 // ==========================================
 const coursesRef = collection(db, "courses");
 
+window.deleteCourse = async function(id) {
+    if(await adminConfirm("تأكيد حذف الحصة؟")) {
+        try { await deleteDoc(doc(db, "courses", id)); adminAlert("تم", "تمت إزالة الحصة.", "success"); } 
+        catch (e) { adminAlert("خطأ", "فشل الحذف", "error"); }
+    }
+};
+
 async function uploadImageToImgBB(file) {
     const keys = await getSecureApiKeys(); 
     if(!keys || !keys.imgbb_token) throw new Error("مفتاح ImgBB مفقود");
@@ -291,90 +314,27 @@ async function uploadImageToImgBB(file) {
 }
 
 async function uploadToVimeo(file, progressCallback) {
-    const keys = await getSecureApiKeys();
+    return new Promise(async (resolve, reject) => {
+        try {
+            const keys = await getSecureApiKeys(); 
+            if(!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo مفقود");
 
-    if (!keys || !keys.vimeo_token) {
-        throw new Error("مفتاح Vimeo غير موجود");
-    }
-
-    // إنشاء عملية رفع جديدة في Vimeo
-    const createResponse = await fetch("https://api.vimeo.com/me/videos", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${keys.vimeo_token}`,
-            "Content-Type": "application/json",
-            Accept: "application/vnd.vimeo.*+json;version=3.4"
-        },
-        body: JSON.stringify({
-            upload: {
-                approach: "tus",
-                size: file.size.toString()
-            }
-        })
-    });
-
-    if (!createResponse.ok) {
-        const txt = await createResponse.text();
-        throw new Error(txt);
-    }
-
-    const video = await createResponse.json();
-
-    return new Promise((resolve, reject) => {
-
-        const upload = new tus.Upload(file, {
-
-            uploadUrl: video.upload.upload_link,
-
-            retryDelays: [0,3000,5000,10000,20000],
-
-            headers: {
-                Authorization: `Bearer ${keys.vimeo_token}`
-            },
-
-            metadata: {
-                filename: file.name,
-                filetype: file.type
-            },
-
-            onError(error){
-                reject(error);
-            },
-
-            onProgress(bytesUploaded, bytesTotal){
-
-                const percentage =
-                ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-
-                progressCallback(percentage);
-            },
-
-            async onSuccess(){
-
-                // نشر الفيديو بعد انتهاء الرفع
-                await fetch(video.uri,{
-                    method:"PATCH",
-                    headers:{
-                        Authorization:`Bearer ${keys.vimeo_token}`,
-                        "Content-Type":"application/json"
-                    },
-                    body:JSON.stringify({
-                        privacy:{
-                            view:"disable"
-                        }
-                    })
-                });
-
-                resolve(
-                    "https://player.vimeo.com/video/" +
-                    video.uri.split("/").pop()
-                );
+            if (typeof window.tus === 'undefined') {
+                const tusModule = await import("https://cdn.skypack.dev/tus-js-client");
+                window.tus = tusModule;
             }
 
-        });
-
-        upload.start();
-
+            const upload = new window.tus.Upload(file, {
+                endpoint: "https://api.vimeo.com/me/videos",
+                retryDelays: [0, 3000, 5000, 10000, 20000],
+                headers: { Authorization: `Bearer ${keys.vimeo_token}`, Accept: "application/vnd.vimeo.*+json;version=3.4" },
+                uploadSize: file.size,
+                onError: (err) => reject(err),
+                onProgress: (up, tot) => progressCallback(((up/tot)*100).toFixed(2)),
+                onSuccess: () => resolve(`https://player.vimeo.com/video/${upload.url.split('/').pop()}`)
+            });
+            upload.start();
+        } catch(e) { reject(e); }
     });
 }
 
@@ -387,25 +347,24 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
 
     try {
         let imageUrl = null;
-        let uploadedVideoUrls = []; // مصفوفة لحفظ لينكات فيمو
+        let uploadedVideoUrls = []; 
         
         const imageFile = document.getElementById('courseImageFile').files[0];
-        const videoFiles = document.getElementById('courseVideoFiles').files; // كل الفيديوهات
+        const videoFiles = document.getElementById('courseVideoFiles')?.files; 
 
         if(imageFile) imageUrl = await uploadImageToImgBB(imageFile);
 
-        // لو فيه فيديوهات مرفوعة، هنلف عليهم ونرفعهم واحد واحد لفيمو
-        if(videoFiles.length > 0) {
+        // رفع الفيديوهات المتعددة من الجهاز
+        if(videoFiles && videoFiles.length > 0) {
             document.getElementById('videoProgressContainer').style.display = 'block';
             for (let i = 0; i < videoFiles.length; i++) {
-                document.getElementById('videoStatus').textContent = `جاري رفع الفيديو (${i + 1} من ${videoFiles.length})... يرجى عدم الإغلاق`;
-                
+                document.getElementById('videoStatus').textContent = `جاري الرفع (${i + 1}/${videoFiles.length}).. يرجى الانتظار`;
                 let vUrl = await uploadToVimeo(videoFiles[i], (p) => {
                     document.getElementById('videoProgressBar').style.width = p + '%';
                 });
                 uploadedVideoUrls.push(vUrl);
             }
-            document.getElementById('videoStatus').textContent = `تم رفع جميع الفيديوهات بنجاح ✔️`;
+            document.getElementById('videoStatus').textContent = `تم الرفع بنجاح ✔️`;
         }
 
         const courseData = {
@@ -415,11 +374,13 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
             price: parseInt(document.getElementById('coursePrice').value) || 0,
             requiredExamId: document.getElementById('requiredExamSelect').value,
             pdfUrl: document.getElementById('coursePdf').value.trim(),
-            videos: uploadedVideoUrls // حفظنا كل الفيديوهات هنا
+            videos: uploadedVideoUrls 
         };
         if(imageUrl) courseData.image = imageUrl;
 
         if(editingId) {
+            // لو بنعدل ومش رافعين فيديوهات جديدة، متسمحش القديم
+            if(uploadedVideoUrls.length === 0) delete courseData.videos; 
             await updateDoc(doc(db, "courses", editingId), courseData);
             document.getElementById('btnCancelEdit').click();
         } else {
@@ -428,7 +389,7 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
             await addDoc(coursesRef, courseData);
             document.getElementById('addCourseForm').reset();
         }
-        adminAlert("تم", "تم حفظ الحصة والفيديوهات بنجاح", "success");
+        adminAlert("تم", "تم حفظ الحصة بنجاح", "success");
     } catch(err) { adminAlert("خطأ", err.message, "error"); }
     finally { 
         btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة'; 
@@ -436,11 +397,16 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
         document.getElementById('videoProgressContainer').style.display = 'none'; 
     }
 });
+
 onSnapshot(query(coursesRef), (snapshot) => {
     const table = document.getElementById('adminCoursesTable');
     if(!table) return; table.innerHTML = '';
     snapshot.forEach(docSnap => {
         const c = docSnap.data();
+        
+        // لو الحساب مساعد، نخفي حصص المدرسين التانيين
+        if (ROLE === 'assistant' && AST_TEACHER && c.instructor !== AST_TEACHER) return;
+
         table.innerHTML += `<tr>
             <td><strong>${c.title}</strong></td>
             <td>${c.instructor}</td>
@@ -448,7 +414,7 @@ onSnapshot(query(coursesRef), (snapshot) => {
             <td>${c.requiredExamId ? '<span style="color:#ef4444;">مقفول</span>' : '<span style="color:#10b981;">مفتوح</span>'}</td>
             <td>
                 <button onclick="editCourse('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none; padding: 5px; border-radius: 5px; cursor: pointer;"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteDoc(doc(db, 'courses', '${docSnap.id}'))" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 5px; border-radius: 5px; cursor: pointer;"><i class="fas fa-trash"></i></button>
+                <button onclick="deleteCourse('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 5px; border-radius: 5px; cursor: pointer;"><i class="fas fa-trash"></i></button>
             </td>
         </tr>`;
     });
@@ -483,12 +449,14 @@ document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
 const examsRef = collection(db, "exams");
 let questionCount = 0;
 let allSubmissionsForExams = [];
+window.currentExamsData = [];
 
-// جلب كل الإجابات مرة واحدة لسرعة الإحصائيات
-onSnapshot(query(collection(db, "exam_submissions")), (snap) => {
-    allSubmissionsForExams = [];
-    snap.forEach(d => allSubmissionsForExams.push(d.data()));
-});
+window.deleteExam = async function(id) {
+    if(await adminConfirm("تأكيد حذف الامتحان نهائياً؟")) {
+        try { await deleteDoc(doc(db, "exams", id)); adminAlert("تم", "تم مسح الامتحان", "success"); } 
+        catch(e) { adminAlert("خطأ", "فشل الحذف", "error"); }
+    }
+};
 
 window.toggleQType = function(id) {
     const type = document.getElementById(`qType_${id}`).value;
@@ -545,36 +513,47 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
     } catch(e) {} finally { btn.innerHTML = '<i class="fas fa-save"></i> حفظ'; btn.disabled = false; }
 });
 
-onSnapshot(query(examsRef), (snapshot) => {
+function renderExamsTable() {
     const table = document.getElementById('adminExamsTable');
+    if(!table) return; table.innerHTML = '';
+    
+    window.currentExamsData.forEach(ex => {
+        const studentsCount = allSubmissionsForExams.filter(s => s.examId === ex.id).length;
+        table.innerHTML += `<tr>
+            <td><strong>${ex.title}</strong></td>
+            <td>${ex.questions ? ex.questions.length : 0}</td>
+            <td style="color:#10b981; font-weight:900;">${studentsCount} طالب</td>
+            <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="downloadExamExcel('${ex.id}', '${ex.title}')" style="background:#3b82f6; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل النتيجة إكسيل"><i class="fas fa-file-excel"></i></button>
+                <button onclick="notifyParentsForExam('${ex.id}', '${ex.title}', this)" style="background:#10b981; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="إرسال واتساب للأهالي"><i class="fab fa-whatsapp"></i></button>
+                <button onclick="editExam('${ex.id}')" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteExam('${ex.id}')" style="background:rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>`;
+    });
+}
+
+// دمج البيانات لضمان عدم اختفاء الطلاب
+onSnapshot(query(collection(db, "exam_submissions")), (snap) => {
+    allSubmissionsForExams = [];
+    snap.forEach(d => allSubmissionsForExams.push(d.data()));
+    renderExamsTable(); 
+});
+
+onSnapshot(query(collection(db, "exams")), (snap) => {
+    window.currentExamsData = [];
     const select = document.getElementById('requiredExamSelect');
     const filter = document.getElementById('filterSpecificExam');
-    if(table) table.innerHTML = '';
     if(select) select.innerHTML = '<option value="">بدون امتحان</option>';
     if(filter) filter.innerHTML = '<option value="all">كل الامتحانات</option>';
-
-    snapshot.forEach(docSnap => {
-        const ex = docSnap.data(); const exId = docSnap.id;
-        
-        // حساب عدد الطلاب اللي امتحنوا
-        const studentsCount = allSubmissionsForExams.filter(s => s.examId === exId).length;
-
-        if(table) {
-            table.innerHTML += `<tr>
-                <td><strong>${ex.title}</strong></td>
-                <td>${ex.questions.length}</td>
-                <td style="color:#10b981; font-weight:900;">${studentsCount} طالب</td>
-                <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
-                    <button onclick="downloadExamExcel('${exId}', '${ex.title}')" style="background:#3b82f6; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل النتيجة إكسيل"><i class="fas fa-file-excel"></i></button>
-                    <button onclick="notifyParentsForExam('${exId}', '${ex.title}')" style="background:#10b981; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="إرسال واتساب للأهالي"><i class="fab fa-whatsapp"></i></button>
-                    <button onclick="editExam('${exId}')" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                    <button onclick="deleteDoc(doc(db,'exams','${exId}'))" style="background:rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>`;
-        }
-        if(select) select.innerHTML += `<option value="${exId}">${ex.title}</option>`;
-        if(filter) filter.innerHTML += `<option value="${exId}">${ex.title}</option>`;
+    
+    snap.forEach(docSnap => {
+        const ex = {id: docSnap.id, ...docSnap.data()};
+        window.currentExamsData.push(ex);
+        if(select) select.innerHTML += `<option value="${ex.id}">${ex.title}</option>`;
+        if(filter) filter.innerHTML += `<option value="${ex.id}">${ex.title}</option>`;
     });
+    renderExamsTable(); 
 });
 
 window.editExam = async function(id) {
@@ -596,11 +575,9 @@ window.editExam = async function(id) {
 }
 document.getElementById('btnCancelExamEdit')?.addEventListener('click', () => { document.getElementById('editingExamId').value=""; document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; document.getElementById('btnCancelExamEdit').style.display='none'; });
 
-// تحميل الإكسيل للامتحان الواحد
 window.downloadExamExcel = function(examId, examTitle) {
     const students = allSubmissionsForExams.filter(s => s.examId === examId);
     if(students.length === 0) return adminAlert("عذراً", "لا يوجد طلاب امتحنوا هذا الامتحان بعد.", "error");
-    
     let csv = "\uFEFFاسم الطالب,الدرجة,الحالة,هاتف الطالب,هاتف ولي الأمر\n";
     students.forEach(s => {
         let status = s.status === 'passed' ? 'ناجح' : (s.status === 'failed' ? 'راسب' : 'قيد المراجعة');
@@ -611,40 +588,32 @@ window.downloadExamExcel = function(examId, examTitle) {
     link.download = `نتيجة_${examTitle}.csv`; link.click();
 };
 
-// إرسال واتساب مجمع لنتيجة امتحان واحد
 window.notifyParentsForExam = async function(examId, examTitle, btnElement) {
     const students = allSubmissionsForExams.filter(s => s.examId === examId);
-    if(students.length === 0) return adminAlert("عذراً", "لا يوجد طلاب لإرسال النتائج لهم.", "error");
+    if(students.length === 0) return adminAlert("عذراً", "لا يوجد طلاب.", "error");
     
-    if(!await adminConfirm(`سيتم إرسال رسائل لـ ${students.length} ولي أمر. هل تريد المتابعة؟`)) return;
+    if(!await adminConfirm(`سيتم الإرسال لـ ${students.length} ولي أمر. المتابعة؟`)) return;
     
     const originalText = btnElement.innerHTML;
     btnElement.disabled = true;
-    
-    // دالة التأخير الزمني (Delay)
     const sleep = ms => new Promise(r => setTimeout(r, ms));
 
     for (let i = 0; i < students.length; i++) {
         const s = students[i];
-        btnElement.innerHTML = `<i class="fas fa-spinner fa-spin"></i> إرسال ${i + 1} من ${students.length}`;
-        
+        btnElement.innerHTML = `<i class="fas fa-spinner fa-spin"></i> إرسال ${i + 1}/${students.length}`;
         let statusAr = s.status === 'passed' ? 'ناجح ✅' : (s.status === 'failed' ? 'راسب ❌' : 'قيد المراجعة ⏳');
-        let msg = `مرحباً ولي أمر الطالب/ة: ${s.studentName}\nنود إعلامكم بنتيجة امتحان (${examTitle}) مع الأستاذ (${s.instructor}).\nالدرجة: ${s.score}%\nالحالة: ${statusAr}\nمع تحيات المنصة.`;
-        
+        let msg = `مرحباً ولي أمر الطالب/ة: ${s.studentName}\nنتيجة امتحان (${examTitle}):\nالدرجة: ${s.score}%\nالحالة: ${statusAr}\nمنصة Primee Academy.`;
         await sendWhatsAppToParent(s.parentPhone, msg);
-        
-        // تأخير زمني 4 ثواني بين كل رسالة والتانية عشان الواتس ميتقفلش
         if (i < students.length - 1) await sleep(4000); 
     }
-    
     btnElement.innerHTML = originalText;
     btnElement.disabled = false;
-    adminAlert("تم", "تم إرسال جميع الرسائل بنجاح.", "success");
+    adminAlert("تم", "تم الإرسال بنجاح.", "success");
 };
 
 
 // ==========================================
-// 6. سجل المشاهدات والتصحيح (النسخة الثابتة)
+// 6. سجل المشاهدات والتصحيح
 // ==========================================
 let allGradingSubmissions = [];
 
@@ -666,6 +635,9 @@ function renderGradingTable() {
     let count = 0;
 
     allGradingSubmissions.forEach(sub => {
+        // فلتر المساعد: ميشوفش غير كورسات الأستاذ بتاعه
+        if (ROLE === 'assistant' && AST_TEACHER && sub.instructor !== AST_TEACHER) return;
+
         if(sFilter !== 'all' && sub.status !== sFilter) return; 
         if(eFilter !== 'all' && sub.examId !== eFilter) return; 
         
@@ -692,12 +664,11 @@ function renderGradingTable() {
 document.getElementById('filterGradingStatus')?.addEventListener('change', renderGradingTable);
 document.getElementById('filterSpecificExam')?.addEventListener('change', renderGradingTable);
 window.gradeStudentExam = async function(id) {
-    const isPassed = await adminConfirm("هل تريد إعطائه 100% ونجاحه؟");
-    if(!isPassed) return;
+    if(!await adminConfirm("إعطاء الطالب 100% ونجاحه؟")) return;
     try { await updateDoc(doc(db,"exam_submissions",id), {status:'passed', score:100}); } catch(e){}
 }
 window.editStudentScore = async function(id, cur) {
-    const n = prompt("أدخل الدرجة (0-100):", cur);
+    const n = prompt("الدرجة (0-100):", cur);
     if(!n) return;
     const num = parseInt(n);
     if(num>=0 && num<=100) { await updateDoc(doc(db,"exam_submissions",id), {score:num, status: num>=50?'passed':'failed'}); }
@@ -709,7 +680,13 @@ window.editStudentScore = async function(id, cur) {
 const codesRef = collection(db, "charge_codes");
 let allCodesData = [];
 
-// توليد كود أرقام فقط (مثال: 4582-1934-7850)
+window.deleteCode = async function(id) {
+    if(await adminConfirm("تأكيد حذف الكود؟")) {
+        try { await deleteDoc(doc(db, "charge_codes", id)); adminAlert("تم", "تم حذف الكود", "success"); } 
+        catch(e) {}
+    }
+};
+
 function generateNumericCode() {
     return Math.floor(1000 + Math.random() * 9000) + '-' + Math.floor(1000 + Math.random() * 9000) + '-' + Math.floor(1000 + Math.random() * 9000);
 }
@@ -726,23 +703,22 @@ document.getElementById('generateCodesForm')?.addEventListener('submit', async (
 
     try {
         const batchDate = new Date().toISOString();
-        let csv = "\uFEFFالكود,القيمة,المندوب,النوع\n"; // عشان الإكسيل الفوري
+        let csv = "\uFEFFالكود,القيمة,المندوب,النوع\n";
 
         for (let i = 0; i < count; i++) {
             const uniqueCode = generateNumericCode();
-            csv += `${uniqueCode},${price},${delegate},${type}\n`; // إضافة لملف الإكسيل
+            csv += `${uniqueCode},${price},${delegate},${type}\n`; 
             await addDoc(codesRef, {
                 code: uniqueCode, value: price, delegate: delegate, type: type,
                 isUsed: false, usedByPhone: null, usedByName: null, usedAt: null, createdAt: batchDate
             });
         }
         
-        // التحميل الفوري للإكسيل
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
         link.download = `أكواد_${delegate}_${count}كود.csv`; link.click();
 
-        adminAlert("تمت العملية", "تم التوليد وتحميل الإكسيل بنجاح", "success");
+        adminAlert("تم", "تم التوليد وتحميل الإكسيل", "success");
         document.getElementById('generateCodesForm').reset();
     } catch(err) {} finally { btn.innerHTML = "<i class='fas fa-cogs'></i> توليد وتحميل إكسيل"; btn.disabled = false; }
 });
@@ -772,7 +748,7 @@ function renderCodesTable() {
             <td>${c.delegate}</td>
             <td>${stText}</td>
             <td>${tText}</td>
-            <td><button onclick="deleteDoc(doc(db,'charge_codes','${c.id}'))" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
+            <td><button onclick="deleteCode('${c.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
         </tr>`;
     });
 }
@@ -784,28 +760,39 @@ document.getElementById('btnExportAllCodes')?.addEventListener('click', () => {
     allCodesData.forEach(c => csv += `${c.code},${c.value},${c.delegate},${c.isUsed?'مستخدم':'جديد'},${c.usedByName||'-'},${c.usedByPhone||'-'}\n`);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-    link.download = `سجل_الأكواد_الكامل.csv`; link.click();
+    link.download = `سجل_الأكواد.csv`; link.click();
 });
 
 // ==========================================
-// 8. إدارة الباقات (Packages)
-// ==========================================
-// ==========================================
-// 8. إدارة الباقات (Packages)
+// 8. إدارة الباقات (Packages) متعدد الفيديوهات
 // ==========================================
 const packagesRef = collection(db, "packages");
 
 document.getElementById('addPackageForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnSavePackage');
-    btn.innerHTML = "جاري رفع الباقة... ⏳"; btn.disabled = true;
+    btn.innerHTML = "جاري الرفع... ⏳"; btn.disabled = true;
 
     try {
-        const imageFile = document.getElementById('pkgImage').files[0];
-        let imageUrl = await uploadImageToImgBB(imageFile); 
+        let imageUrl = null;
+        let uploadedVideoUrls = []; 
         
-        // جلب الفيديوهات الإضافية وتحويلها لمصفوفة
-        const extraVideos = document.getElementById('pkgVideos').value.split('\n').filter(v => v.trim() !== '');
+        const imageFile = document.getElementById('pkgImage').files[0];
+        const videoFiles = document.getElementById('pkgVideoFiles')?.files; 
+
+        if(imageFile) imageUrl = await uploadImageToImgBB(imageFile);
+
+        if(videoFiles && videoFiles.length > 0) {
+            document.getElementById('pkgVideoProgressContainer').style.display = 'block';
+            for (let i = 0; i < videoFiles.length; i++) {
+                document.getElementById('pkgVideoStatus').textContent = `جاري الرفع (${i + 1}/${videoFiles.length}).. يرجى الانتظار`;
+                let vUrl = await uploadToVimeo(videoFiles[i], (p) => {
+                    document.getElementById('pkgVideoProgressBar').style.width = p + '%';
+                });
+                uploadedVideoUrls.push(vUrl);
+            }
+            document.getElementById('pkgVideoStatus').textContent = `تم الرفع بنجاح ✔️`;
+        }
 
         await addDoc(packagesRef, {
             name: document.getElementById('pkgName').value,
@@ -813,13 +800,17 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
             oldPrice: document.getElementById('pkgOldPrice').value,
             newPrice: document.getElementById('pkgNewPrice').value,
             features: document.getElementById('pkgFeatures').value.split(','),
-            extraVideos: extraVideos, // الفيديوهات المتعددة
+            videos: uploadedVideoUrls, // مصفوفة الفيديوهات المرفوعة
             imageUrl: imageUrl,
             createdAt: new Date().toISOString()
         });
         adminAlert("تم", "تم إضافة الباقة بنجاح", "success");
         document.getElementById('addPackageForm').reset();
-    } catch(err) {} finally { btn.innerHTML = "<i class='fas fa-plus'></i> نشر الباقة"; btn.disabled = false; }
+    } catch(err) {} finally { 
+        btn.innerHTML = "<i class='fas fa-plus'></i> نشر الباقة"; 
+        btn.disabled = false;
+        document.getElementById('pkgVideoProgressContainer').style.display = 'none';
+    }
 });
 
 onSnapshot(query(packagesRef), (snapshot) => {
@@ -831,7 +822,7 @@ onSnapshot(query(packagesRef), (snapshot) => {
             <td><img src="${pkg.imageUrl}" style="width:40px; border-radius:8px; vertical-align:middle;"> <strong>${pkg.name}</strong></td>
             <td>${pkg.grade}</td>
             <td><span style="text-decoration:line-through; color:#ef4444; font-size:12px;">${pkg.oldPrice}</span> <strong style="color:#10b981;">${pkg.newPrice} ج.م</strong></td>
-            <td><button onclick="deleteDoc(doc(db, 'packages', '${docSnap.id}'))" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+            <td><button onclick="deletePackage('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
         </tr>`;
     });
 });
@@ -847,7 +838,6 @@ document.getElementById('addAssistantForm')?.addEventListener('submit', async (e
     btn.innerHTML = "جاري الحفظ... ⏳"; btn.disabled = true;
 
     try {
-        // جمع الصلاحيات المتعلم عليها
         const perms = [];
         document.querySelectorAll('.ast-perm:checked').forEach(cb => perms.push(cb.value));
 
@@ -856,7 +846,7 @@ document.getElementById('addAssistantForm')?.addEventListener('submit', async (e
             username: document.getElementById('astUsername').value,
             password: document.getElementById('astPassword').value,
             targetTeacher: document.getElementById('astTeacher').value, 
-            permissions: perms, // مصفوفة الصلاحيات
+            permissions: perms, 
             role: "assistant",
             createdAt: new Date().toISOString()
         });
@@ -875,12 +865,11 @@ onSnapshot(query(assistantsRef), (snapshot) => {
             <td><strong>${ast.name}</strong></td>
             <td style="color:#f59e0b; font-family:monospace;">${ast.username}</td>
             <td><span style="background:rgba(59,130,246,0.1); color:#3b82f6; padding:3px 8px; border-radius:5px;">${ast.targetTeacher}</span></td>
-            <td><button onclick="deleteDoc(doc(db, 'assistants', '${docSnap.id}'))" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+            <td><button onclick="deleteAssistant('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
         </tr>`;
     });
 });
 
-// حقن أسماء المدرسين في قائمة المساعدين
 onSnapshot(query(collection(db, "teachers")), (snapshot) => {
     const select = document.getElementById('astTeacher');
     if(select) {
@@ -890,36 +879,3 @@ onSnapshot(query(collection(db, "teachers")), (snapshot) => {
         });
     }
 });
-
-// دالة مسح الامتحان الإضافية اللي طلبتها
-window.deleteExam = async function(id) {
-    if(await adminConfirm("هل أنت متأكد من حذف هذا الامتحان نهائياً؟")) {
-        try {
-            await deleteDoc(doc(db, "exams", id));
-            adminAlert("تم الحذف", "تم مسح الامتحان بنجاح", "success");
-        } catch(e) { adminAlert("خطأ", "فشل الحذف", "error"); }
-    }
-};
-// ==========================================
-// دوال الحذف الشاملة (مرتبطة بالـ Window)
-// ==========================================
-window.deleteTeacher = async function(id) {
-    if(await adminConfirm("هل أنت متأكد من مسح هذا المدرس نهائياً؟")) {
-        try { await deleteDoc(doc(db, "teachers", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
-        catch(e) { adminAlert("خطأ", "فشل المسح", "error"); }
-    }
-};
-
-window.deletePackage = async function(id) {
-    if(await adminConfirm("هل أنت متأكد من مسح هذه الباقة؟")) {
-        try { await deleteDoc(doc(db, "packages", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
-        catch(e) { adminAlert("خطأ", "فشل المسح", "error"); }
-    }
-};
-
-window.deleteAssistant = async function(id) {
-    if(await adminConfirm("هل أنت متأكد من مسح حساب هذا المساعد؟")) {
-        try { await deleteDoc(doc(db, "assistants", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
-        catch(e) { adminAlert("خطأ", "فشل المسح", "error"); }
-    }
-};
