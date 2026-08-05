@@ -599,20 +599,34 @@ window.downloadExamExcel = function(examId, examTitle) {
 };
 
 // إرسال واتساب مجمع لنتيجة امتحان واحد
-window.notifyParentsForExam = async function(examId, examTitle) {
+window.notifyParentsForExam = async function(examId, examTitle, btnElement) {
     const students = allSubmissionsForExams.filter(s => s.examId === examId);
     if(students.length === 0) return adminAlert("عذراً", "لا يوجد طلاب لإرسال النتائج لهم.", "error");
     
-    if(!await adminConfirm(`سيتم إرسال نتيجة هذا الامتحان لـ ${students.length} ولي أمر. هل تريد المتابعة؟`)) return;
+    if(!await adminConfirm(`سيتم إرسال رسائل لـ ${students.length} ولي أمر. هل تريد المتابعة؟`)) return;
     
-    showLiveToast("بدأ إرسال الرسائل.. يرجى عدم إغلاق الصفحة");
+    const originalText = btnElement.innerHTML;
+    btnElement.disabled = true;
+    
+    // دالة التأخير الزمني (Delay)
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
     for (let i = 0; i < students.length; i++) {
         const s = students[i];
+        btnElement.innerHTML = `<i class="fas fa-spinner fa-spin"></i> إرسال ${i + 1} من ${students.length}`;
+        
         let statusAr = s.status === 'passed' ? 'ناجح ✅' : (s.status === 'failed' ? 'راسب ❌' : 'قيد المراجعة ⏳');
-        let msg = `مرحباً ولي أمر الطالب/ة: ${s.studentName}\nنود إعلامكم بنتيجة امتحان (${examTitle}) مع المدرس (${s.instructor}).\nالدرجة: ${s.score}%\nالحالة: ${statusAr}\nمع تحيات Primee Academy.`;
+        let msg = `مرحباً ولي أمر الطالب/ة: ${s.studentName}\nنود إعلامكم بنتيجة امتحان (${examTitle}) مع الأستاذ (${s.instructor}).\nالدرجة: ${s.score}%\nالحالة: ${statusAr}\nمع تحيات المنصة.`;
+        
         await sendWhatsAppToParent(s.parentPhone, msg);
+        
+        // تأخير زمني 4 ثواني بين كل رسالة والتانية عشان الواتس ميتقفلش
+        if (i < students.length - 1) await sleep(4000); 
     }
-    adminAlert("تم", "تم إرسال الرسائل لأولياء الأمور بنجاح.", "success");
+    
+    btnElement.innerHTML = originalText;
+    btnElement.disabled = false;
+    adminAlert("تم", "تم إرسال جميع الرسائل بنجاح.", "success");
 };
 
 
@@ -747,6 +761,9 @@ document.getElementById('btnExportAllCodes')?.addEventListener('click', () => {
 // ==========================================
 // 8. إدارة الباقات (Packages)
 // ==========================================
+// ==========================================
+// 8. إدارة الباقات (Packages)
+// ==========================================
 const packagesRef = collection(db, "packages");
 
 document.getElementById('addPackageForm')?.addEventListener('submit', async (e) => {
@@ -757,6 +774,9 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
     try {
         const imageFile = document.getElementById('pkgImage').files[0];
         let imageUrl = await uploadImageToImgBB(imageFile); 
+        
+        // جلب الفيديوهات الإضافية وتحويلها لمصفوفة
+        const extraVideos = document.getElementById('pkgVideos').value.split('\n').filter(v => v.trim() !== '');
 
         await addDoc(packagesRef, {
             name: document.getElementById('pkgName').value,
@@ -764,10 +784,11 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
             oldPrice: document.getElementById('pkgOldPrice').value,
             newPrice: document.getElementById('pkgNewPrice').value,
             features: document.getElementById('pkgFeatures').value.split(','),
+            extraVideos: extraVideos, // الفيديوهات المتعددة
             imageUrl: imageUrl,
             createdAt: new Date().toISOString()
         });
-        adminAlert("تم", "تم إضافة الباقة للموقع بنجاح", "success");
+        adminAlert("تم", "تم إضافة الباقة بنجاح", "success");
         document.getElementById('addPackageForm').reset();
     } catch(err) {} finally { btn.innerHTML = "<i class='fas fa-plus'></i> نشر الباقة"; btn.disabled = false; }
 });
@@ -785,3 +806,68 @@ onSnapshot(query(packagesRef), (snapshot) => {
         </tr>`;
     });
 });
+
+// ==========================================
+// 9. إدارة المساعدين والصلاحيات
+// ==========================================
+const assistantsRef = collection(db, "assistants");
+
+document.getElementById('addAssistantForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveAssistant');
+    btn.innerHTML = "جاري الحفظ... ⏳"; btn.disabled = true;
+
+    try {
+        // جمع الصلاحيات المتعلم عليها
+        const perms = [];
+        document.querySelectorAll('.ast-perm:checked').forEach(cb => perms.push(cb.value));
+
+        await addDoc(assistantsRef, {
+            name: document.getElementById('astName').value,
+            username: document.getElementById('astUsername').value,
+            password: document.getElementById('astPassword').value,
+            targetTeacher: document.getElementById('astTeacher').value, 
+            permissions: perms, // مصفوفة الصلاحيات
+            role: "assistant",
+            createdAt: new Date().toISOString()
+        });
+        adminAlert("تم", "تم إضافة المساعد بنجاح", "success");
+        document.getElementById('addAssistantForm').reset();
+    } catch(err) { adminAlert("خطأ", "فشل الإضافة", "error"); }
+    finally { btn.innerHTML = "<i class='fas fa-check'></i> إنشاء حساب المساعد"; btn.disabled = false; }
+});
+
+onSnapshot(query(assistantsRef), (snapshot) => {
+    const table = document.getElementById('adminAssistantsTable');
+    if(!table) return; table.innerHTML = '';
+    snapshot.forEach(docSnap => {
+        const ast = docSnap.data();
+        table.innerHTML += `<tr>
+            <td><strong>${ast.name}</strong></td>
+            <td style="color:#f59e0b; font-family:monospace;">${ast.username}</td>
+            <td><span style="background:rgba(59,130,246,0.1); color:#3b82f6; padding:3px 8px; border-radius:5px;">${ast.targetTeacher}</span></td>
+            <td><button onclick="deleteDoc(doc(db, 'assistants', '${docSnap.id}'))" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+    });
+});
+
+// حقن أسماء المدرسين في قائمة المساعدين
+onSnapshot(query(collection(db, "teachers")), (snapshot) => {
+    const select = document.getElementById('astTeacher');
+    if(select) {
+        select.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
+        snapshot.forEach(docSnap => {
+            select.innerHTML += `<option value="${docSnap.data().name}">${docSnap.data().name}</option>`;
+        });
+    }
+});
+
+// دالة مسح الامتحان الإضافية اللي طلبتها
+window.deleteExam = async function(id) {
+    if(await adminConfirm("هل أنت متأكد من حذف هذا الامتحان نهائياً؟")) {
+        try {
+            await deleteDoc(doc(db, "exams", id));
+            adminAlert("تم الحذف", "تم مسح الامتحان بنجاح", "success");
+        } catch(e) { adminAlert("خطأ", "فشل الحذف", "error"); }
+    }
+};
