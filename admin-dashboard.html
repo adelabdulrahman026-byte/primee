@@ -27,12 +27,15 @@
         .admin-main { flex: 1; margin-right: 260px; padding: 30px; display: flex; flex-direction: column; gap: 30px; }
         .admin-header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 20px 30px; border-radius: 20px; border: 1px solid #334155; }
         .admin-header h2 { margin: 0; font-size: 22px; font-weight: 800; color: #f8fafc; }
-        .admin-sidebar { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3b82f6 #1e293b; transition: 0.3s right; }
-        .admin-sidebar::-webkit-scrollbar { width: 6px; }
+        
+        /* سكرول القائمة الجانبية */
+        .admin-sidebar { overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #3b82f6 #1e293b; }
+        .admin-sidebar::-webkit-scrollbar { width: 5px; }
         .admin-sidebar::-webkit-scrollbar-thumb { background-color: #3b82f6; border-radius: 10px; }
         .admin-sidebar.closed { right: -260px; }
         .admin-main { transition: 0.3s margin-right; }
         .admin-main.expanded { margin-right: 0; }
+        
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
         .stat-card { background: #1e293b; padding: 25px; border-radius: 20px; border: 1px solid #334155; display: flex; align-items: center; gap: 20px; }
         .stat-icon { width: 60px; height: 60px; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 26px; }
@@ -49,9 +52,9 @@
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px; }
         .form-group-admin { display: flex; flex-direction: column; gap: 8px; text-align: right; }
         .form-group-admin label { color: #cbd5e1; font-weight: 700; font-size: 14px; }
-        .form-group-admin input, .form-group-admin select { padding: 14px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-size: 15px; }
+        .form-group-admin input, .form-group-admin select, .form-group-admin textarea { padding: 14px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-size: 15px; }
         .form-group-admin input[type="file"] { padding: 10px; background: #1e293b; }
-        .form-group-admin input:focus, .form-group-admin select:focus { border-color: #f59e0b; outline: none; }
+        .form-group-admin input:focus, .form-group-admin select:focus, .form-group-admin textarea:focus { border-color: #f59e0b; outline: none; }
 
         .toast-notification { position: fixed; bottom: -100px; left: 30px; background: #10b981; color: #fff; padding: 15px 25px; border-radius: 15px; font-weight: 800; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 15px; transition: 0.5s; z-index: 9999; }
         .toast-notification.show { bottom: 30px; }
@@ -91,13 +94,12 @@
                 <button id="toggleSidebarBtn" style="background: none; border: none; color: #f8fafc; font-size: 24px; cursor: pointer;"><i class="fas fa-bars"></i></button>
                 <h2>مرحباً بك يا مدير النظام 👋</h2>
             </div>
-            <!-- زرار تفعيل الصوت هنا زي ما هو -->
             <div style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 10px 20px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; gap: 10px; cursor: pointer;" id="enableSoundBtn">
                 <i class="fas fa-volume-up"></i> تفعيل صوت الإشعارات
             </div>
         </div>
 
-        <!-- الأقسام القديمة (لوحة القيادة، الطلاب، المشاهدات) -->
+        <!-- 1. لوحة القيادة -->
         <div id="dashboardSection" class="admin-section active-section">
             <div class="stats-grid">
                 <div class="stat-card">
@@ -118,6 +120,7 @@
             </div>
         </div>
 
+        <!-- 2. إدارة الطلاب -->
         <div id="studentsSection" class="admin-section">
             <div class="admin-table-container">
                 <h3><i class="fas fa-user-cog" style="color: #3b82f6;"></i> الإدارة السريعة للطلاب</h3>
@@ -162,7 +165,6 @@
                         </div>
                         <div class="form-group-admin">
                             <label>اسم المدرس</label>
-                            <!-- تم تعديل المدرس ليصبح قائمة منسدلة تسحب البيانات -->
                             <select id="courseInstructor" required>
                                 <option value="" disabled selected>جاري تحميل المدرسين...</option>
                             </select>
@@ -189,22 +191,18 @@
                             <input type="file" id="courseImageFile" accept="image/*">
                             <small id="imgStatus" style="color: #10b981; display: none;">تم اختيار الصورة ✔️</small>
                         </div>
-                        <div class="form-group-admin">
-                            <label>فيديو الحصة (رفع مباشر لـ Vimeo) 🎥</label>
-                            <input type="file" id="courseVideoFile" accept="video/mp4,video/x-m4v,video/*">
-                            <div class="progress-bar-container" id="videoProgressContainer" style="display:none; width: 100%; background: #334155; border-radius: 8px; height: 10px; margin-top: 5px; overflow: hidden;">
-                                <div id="videoProgressBar" style="width: 0%; height: 100%; background: #f59e0b; transition: 0.2s;"></div>
+
+                        <!-- تعديل رفع الفيديوهات المتعددة للكورسات -->
+                        <div class="form-group-admin" style="grid-column: 1 / -1;">
+                            <label>فيديوهات الحصة (يمكنك اختيار أكثر من فيديو للرفع معاً) 🎥</label>
+                            <input type="file" id="courseVideoFiles" accept="video/mp4,video/x-m4v,video/*" multiple style="background: rgba(59, 130, 246, 0.1); border: 2px dashed #3b82f6; padding: 20px; text-align: center; cursor: pointer;">
+                            
+                            <div class="progress-bar-container" id="videoProgressContainer" style="display:none; width: 100%; background: #334155; border-radius: 8px; height: 15px; margin-top: 10px; overflow: hidden;">
+                                <div id="videoProgressBar" style="width: 0%; height: 100%; background: #10b981; transition: 0.2s;"></div>
                             </div>
-                            <small id="videoStatus" style="color: #94a3b8;">اختر ملف الفيديو (سيتم الرفع عند الضغط على نشر)</small>
-<div class="form-group-admin" style="grid-column: 1 / -1;">
-    <label>فيديوهات الحصة (يمكنك اختيار أكثر من فيديو للرفع معاً) 🎥</label>
-    <input type="file" id="courseVideoFiles" accept="video/mp4,video/x-m4v,video/*" multiple style="background: rgba(59, 130, 246, 0.1); border: 2px dashed #3b82f6; padding: 20px; text-align: center; cursor: pointer;">
-    
-    <div class="progress-bar-container" id="videoProgressContainer" style="display:none; width: 100%; background: #334155; border-radius: 8px; height: 15px; margin-top: 10px; overflow: hidden;">
-        <div id="videoProgressBar" style="width: 0%; height: 100%; background: #10b981; transition: 0.2s;"></div>
-    </div>
-    <small id="videoStatus" style="color: #f59e0b; font-weight: 800; display: block; margin-top: 5px;">اختر الفيديوهات (سيتم رفعها بالتتابع عند الضغط على نشر)</small>
-</div>
+                            <small id="videoStatus" style="color: #f59e0b; font-weight: 800; display: block; margin-top: 5px;">اختر الفيديوهات (سيتم رفعها بالتتابع عند الضغط على نشر)</small>
+                        </div>
+
                         <div class="form-group-admin">
                             <label>رابط مذكرة PDF (اختياري)</label>
                             <input type="url" id="coursePdf" placeholder="رابط ملف الـ PDF">
@@ -306,7 +304,6 @@
                         </div>
                         <div class="form-group-admin">
                             <label>المراحل الدراسية</label>
-                            <!-- تم تحويلها لـ Multiple Select -->
                             <select id="teacherStages" multiple style="height: 120px;" required>
                                 <option value="الأول الابتدائي">الأول الابتدائي</option>
                                 <option value="الثاني الابتدائي">الثاني الابتدائي</option>
@@ -377,7 +374,6 @@
                     <button id="btnExportAllCodes" style="background: #3b82f6; color: #fff; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 800; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-file-excel"></i> تحميل الجدول كـ Excel</button>
                 </div>
                 <div style="margin-bottom: 15px; display: flex; gap: 10px;">
-                    <!-- الفلترة الخاصة بالأكواد -->
                     <input type="text" id="searchCodeInput" placeholder="ابحث بكود أو مندوب..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';">
                     <select id="filterCodeStatus" style="padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';">
                         <option value="all">كل الأكواد</option>
@@ -424,19 +420,22 @@
                             <label>صورة الباقة (غلاف)</label>
                             <input type="file" id="pkgImage" accept="image/*" required>
                         </div>
+                        
+                        <!-- تعديل رفع الفيديوهات المتعددة للباقات -->
+                        <div class="form-group-admin" style="grid-column: 1 / -1;">
+                            <label>فيديوهات الباقة (يمكنك اختيار أكثر من فيديو للرفع معاً) 🎥</label>
+                            <input type="file" id="pkgVideoFiles" accept="video/mp4,video/x-m4v,video/*" multiple style="background: rgba(59, 130, 246, 0.1); border: 2px dashed #3b82f6; padding: 20px; text-align: center; cursor: pointer;">
+                            
+                            <div class="progress-bar-container" id="pkgVideoProgressContainer" style="display:none; width: 100%; background: #334155; border-radius: 8px; height: 15px; margin-top: 10px; overflow: hidden;">
+                                <div id="pkgVideoProgressBar" style="width: 0%; height: 100%; background: #10b981; transition: 0.2s;"></div>
+                            </div>
+                            <small id="pkgVideoStatus" style="color: #f59e0b; font-weight: 800; display: block; margin-top: 5px;">اختر الفيديوهات (سيتم رفعها بالتتابع عند الضغط على نشر)</small>
+                        </div>
+
                     </div>
                     <button type="submit" id="btnSavePackage" style="background: #f59e0b; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%;"><i class="fas fa-plus"></i> نشر الباقة في الموقع</button>
                 </form>
             </div>
- <div class="form-group-admin" style="grid-column: 1 / -1;">
-    <label>فيديوهات الحصة (يمكنك اختيار أكثر من فيديو للرفع معاً) 🎥</label>
-    <input type="file" id="courseVideoFiles" accept="video/mp4,video/x-m4v,video/*" multiple style="background: rgba(59, 130, 246, 0.1); border: 2px dashed #3b82f6; padding: 20px; text-align: center; cursor: pointer;">
-    
-    <div class="progress-bar-container" id="videoProgressContainer" style="display:none; width: 100%; background: #334155; border-radius: 8px; height: 15px; margin-top: 10px; overflow: hidden;">
-        <div id="videoProgressBar" style="width: 0%; height: 100%; background: #10b981; transition: 0.2s;"></div>
-    </div>
-    <small id="videoStatus" style="color: #f59e0b; font-weight: 800; display: block; margin-top: 5px;">اختر الفيديوهات (سيتم رفعها بالتتابع عند الضغط على نشر)</small>
-</div>
             <div class="admin-table-container" style="margin-top: 20px;">
                 <h3>الباقات المتاحة للطلاب</h3>
                 <table>
@@ -446,7 +445,7 @@
             </div>
         </div>
 
-        <!-- قسم إدارة المساعدين (الصلاحيات) -->
+        <!-- 9. قسم إدارة المساعدين (الصلاحيات) -->
         <div id="assistantsSection" class="admin-section">
             <div class="admin-table-container">
                 <h3><i class="fas fa-user-shield" style="color: #10b981;"></i> إضافة حساب مساعد (سكرتير مدرس)</h3>
@@ -464,22 +463,25 @@
                             <label>كلمة المرور</label>
                             <input type="text" id="astPassword" required>
                         </div>
-                        <div class="form-group-admin" style="grid-column: 1 / -1;">
-    <label>صلاحيات المساعد (علم على اللي يقدر يشوفه ويديره)</label>
-    <div style="display: flex; gap: 15px; flex-wrap: wrap; background: #0f172a; padding: 15px; border-radius: 12px; border: 1px solid #334155;">
-        <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="students"> إدارة الطلاب</label>
-        <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="courses"> إدارة الكورسات</label>
-        <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="exams"> إدارة الامتحانات</label>
-        <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="grading"> المشاهدات والتصحيح</label>
-        <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="codes"> مصنع الأكواد</label>
-    </div>
-</div>
                         <div class="form-group-admin">
                             <label>صلاحية المدرس (يتابع شغل مين؟)</label>
                             <select id="astTeacher" required>
                                 <option value="" disabled selected>جاري تحميل المدرسين...</option>
                             </select>
                         </div>
+                        
+                        <!-- الصلاحيات (Checkboxes) -->
+                        <div class="form-group-admin" style="grid-column: 1 / -1;">
+                            <label>صلاحيات المساعد (علم على اللي يقدر يشوفه ويديره)</label>
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap; background: #0f172a; padding: 15px; border-radius: 12px; border: 1px solid #334155;">
+                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="students"> إدارة الطلاب</label>
+                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="courses"> إدارة الكورسات</label>
+                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="exams"> إدارة الامتحانات</label>
+                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="grading"> المشاهدات والتصحيح</label>
+                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="codes"> مصنع الأكواد</label>
+                            </div>
+                        </div>
+
                     </div>
                     <button type="submit" id="btnSaveAssistant" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%;"><i class="fas fa-check"></i> إنشاء حساب المساعد</button>
                 </form>
@@ -492,6 +494,7 @@
                 </table>
             </div>
         </div>
+
     </main>
 
     <!-- النوافذ المنبثقة -->
@@ -519,6 +522,11 @@
     </div>
 
     <script>
+        document.getElementById('toggleSidebarBtn')?.addEventListener('click', () => {
+            document.querySelector('.admin-sidebar').classList.toggle('closed');
+            document.querySelector('.admin-main').classList.toggle('expanded');
+        });
+
         function switchTab(sectionId, element) {
             document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active-section'));
             document.querySelectorAll('.admin-nav li a').forEach(a => a.classList.remove('active'));
@@ -529,3 +537,4 @@
     <script type="module" src="admin-dashboard.js"></script>
 </body>
 </html>
+هجرب دول واشوف في حاجه ولا لا وهبعتلك js
