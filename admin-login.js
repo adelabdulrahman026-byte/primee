@@ -13,6 +13,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// دالة التنبيهات (لو معندكش دالة showAlert في الـ HTML، دي هتشغل الـ Alert العادي كبديل آمن)
+function showAlert(title, message) {
+    if (typeof window.showAlert === 'function') {
+        window.showAlert(title, message);
+    } else {
+        alert(title + "\n" + message);
+    }
+}
+
 const adminLoginForm = document.getElementById('adminLoginForm');
 
 if(adminLoginForm) {
@@ -27,34 +36,50 @@ if(adminLoginForm) {
         const password = document.getElementById('adminPassword').value;
 
         try {
-            // بنبحث في جدول الـ admins 
+            // 1. الفحص الأول: نبحث في جدول الـ (admins) الأساسي 
             const adminsRef = collection(db, "admins");
-            const q = query(adminsRef, where("username", "==", username), where("password", "==", password));
-            const querySnapshot = await getDocs(q);
+            const qAdmin = query(adminsRef, where("username", "==", username), where("password", "==", password));
+            const querySnapshot = await getDocs(qAdmin);
 
-            if (querySnapshot.empty) {
-                // مفيش أدمن بالبيانات دي
-                showAlert("مرفوض ⛔", "بيانات الدخول غير صحيحة أو ليس لديك صلاحية.");
-                submitBtn.textContent = 'تسجيل الدخول';
-                submitBtn.disabled = false;
-                return;
+            if (!querySnapshot.empty) {
+                // ده الأدمن الكبير (المدير)
+                const adminDoc = querySnapshot.docs[0];
+                localStorage.setItem('adminLoggedIn', 'true');
+                localStorage.setItem('adminId', adminDoc.id);
+                localStorage.setItem('role', 'superadmin'); // نديله الصلاحية الكاملة
+
+                submitBtn.textContent = 'دخول كمدير نظام ✔️';
+                submitBtn.style.background = '#10b981';
+                setTimeout(() => { window.location.replace("admin-dashboard.html"); }, 1000);
+                return; // نوقف الكود هنا
             }
 
-            // لو البيانات صح
-            const adminDoc = querySnapshot.docs[0];
-            const adminId = adminDoc.id;
+            // 2. الفحص الثاني: لو مش مدير، نبحث في جدول المساعدين (assistants)
+            const astRef = collection(db, "assistants");
+            const qAst = query(astRef, where("username", "==", username), where("password", "==", password));
+            const astSnapshot = await getDocs(qAst);
 
-            // بنخزن في المتصفح إن الأدمن ده دخل
-            localStorage.setItem('adminLoggedIn', 'true');
-            localStorage.setItem('adminId', adminId);
+            if (!astSnapshot.empty) {
+                // ده مساعد (سكرتير)
+                const astDoc = astSnapshot.docs[0];
+                const astData = astDoc.data();
 
-            submitBtn.textContent = 'تم تسجيل الدخول ✔️';
-            submitBtn.style.background = '#10b981';
-            
-            // تحويل للوحة التحكم بتاعة الأدمن
-            setTimeout(() => {
-                window.location.replace("admin-dashboard.html");
-            }, 1000);
+                localStorage.setItem('adminLoggedIn', 'true');
+                localStorage.setItem('adminId', astDoc.id);
+                localStorage.setItem('role', 'assistant'); // نديله صلاحية مساعد
+                localStorage.setItem('astTeacher', astData.targetTeacher || ""); // المدرس التابع ليه
+                localStorage.setItem('astPerms', JSON.stringify(astData.permissions || [])); // الصلاحيات اللي اخترناها
+
+                submitBtn.textContent = 'دخول كمساعد ✔️';
+                submitBtn.style.background = '#3b82f6'; // لون أزرق لتمييز المساعد
+                setTimeout(() => { window.location.replace("admin-dashboard.html"); }, 1000);
+                return; // نوقف الكود هنا
+            }
+
+            // 3. لو ملقاهوش لا مدير ولا مساعد
+            showAlert("مرفوض ⛔", "بيانات الدخول غير صحيحة أو ليس لديك صلاحية.");
+            submitBtn.textContent = 'تسجيل الدخول';
+            submitBtn.disabled = false;
 
         } catch (error) {
             console.error(error);
