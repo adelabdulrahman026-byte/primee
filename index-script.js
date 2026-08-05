@@ -296,3 +296,50 @@ async function loadDynamicTeachers() {
     }
 }
 loadDynamicTeachers();
+// ==========================================
+// 8. جلب الباقات الديناميكية
+// ==========================================
+async function loadDynamicPackages() {
+    const packagesGrid = document.querySelector('.packages-grid');
+    if (!packagesGrid) return;
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "packages"));
+        if (querySnapshot.empty) {
+            packagesGrid.innerHTML = '<div style="text-align: center; width: 100%; color: #94a3b8; padding: 20px;">لا توجد باقات متاحة حالياً.</div>';
+            return;
+        }
+
+        let html = '';
+        querySnapshot.forEach(docSnap => {
+            const pkg = docSnap.data();
+            
+            let featuresHtml = '';
+            if (pkg.features) {
+                pkg.features.forEach(f => {
+                    featuresHtml += `<li><i class="fas fa-check-circle"></i> ${f.trim()}</li>`;
+                });
+            }
+
+            html += `
+            <div class="package-card" style="background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 25px; overflow: hidden; position: relative;">
+                <div style="height: 150px; background: url('${pkg.imageUrl}') center/cover; margin: -25px -25px 20px -25px; border-bottom: 2px solid #f59e0b;"></div>
+                <div class="package-header">
+                    <span class="package-badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 900;">🔥 خصم خاص</span>
+                    <h3 style="color: #f8fafc; font-size: 22px; margin: 15px 0 5px 0;">${pkg.name}</h3>
+                    <p style="color: #94a3b8; font-size: 14px; margin: 0;">${pkg.grade}</p>
+                </div>
+                <ul class="package-features" style="list-style: none; padding: 0; margin: 20px 0; color: #cbd5e1; display: flex; flex-direction: column; gap: 10px;">
+                    ${featuresHtml}
+                </ul>
+                <div class="package-price" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-top: 1px dashed #475569; padding-top: 20px;">
+                    <span class="old-price" style="text-decoration: line-through; color: #ef4444; font-weight: 800;">${pkg.oldPrice} ج.م</span>
+                    <span class="new-price" style="font-size: 26px; font-weight: 900; color: #10b981;">${pkg.newPrice} ج.م</span>
+                </div>
+                <button onclick="window.location.href='login.html'" class="btn-package-subscribe" style="width: 100%; background: #3b82f6; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; margin-top: 20px; cursor: pointer; transition: 0.3s;">اشترك الآن</button>
+            </div>`;
+        });
+        packagesGrid.innerHTML = html;
+    } catch (e) { console.error("خطأ في جلب الباقات:", e); }
+}
+loadDynamicPackages();
