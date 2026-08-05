@@ -197,6 +197,10 @@
                             </div>
                             <small id="videoStatus" style="color: #94a3b8;">اختر ملف الفيديو (سيتم الرفع عند الضغط على نشر)</small>
                         </div>
+                        <div class="form-group-admin" style="grid-column: 1 / -1;">
+    <label>روابط فيديوهات إضافية (اختياري - ضع كل رابط في سطر منفصل)</label>
+    <textarea id="courseExtraVideos" rows="3" placeholder="https://vimeo.com/123456789&#10;https://youtube.com/..." style="padding: 14px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';"></textarea>
+</div>
                         <div class="form-group-admin">
                             <label>رابط مذكرة PDF (اختياري)</label>
                             <input type="url" id="coursePdf" placeholder="رابط ملف الـ PDF">
@@ -420,6 +424,10 @@
                     <button type="submit" id="btnSavePackage" style="background: #f59e0b; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%;"><i class="fas fa-plus"></i> نشر الباقة في الموقع</button>
                 </form>
             </div>
+            <div class="form-group-admin" style="grid-column: 1 / -1;">
+    <label>روابط فيديوهات الباقة (إجباري - ضع كل رابط في سطر منفصل)</label>
+    <textarea id="pkgVideos" rows="3" placeholder="https://vimeo.com/123456789&#10;https://youtube.com/..." style="padding: 14px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';" required></textarea>
+</div>
             <div class="admin-table-container" style="margin-top: 20px;">
                 <h3>الباقات المتاحة للطلاب</h3>
                 <table>
@@ -447,6 +455,16 @@
                             <label>كلمة المرور</label>
                             <input type="text" id="astPassword" required>
                         </div>
+                        <div class="form-group-admin" style="grid-column: 1 / -1;">
+    <label>صلاحيات المساعد (علم على اللي يقدر يشوفه ويديره)</label>
+    <div style="display: flex; gap: 15px; flex-wrap: wrap; background: #0f172a; padding: 15px; border-radius: 12px; border: 1px solid #334155;">
+        <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="students"> إدارة الطلاب</label>
+        <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="courses"> إدارة الكورسات</label>
+        <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="exams"> إدارة الامتحانات</label>
+        <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="grading"> المشاهدات والتصحيح</label>
+        <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="codes"> مصنع الأكواد</label>
+    </div>
+</div>
                         <div class="form-group-admin">
                             <label>صلاحية المدرس (يتابع شغل مين؟)</label>
                             <select id="astTeacher" required>
