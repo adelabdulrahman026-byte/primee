@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 | الصفحة غير متوفرة</title>
+
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Cairo',sans-serif;
+        }
+
+        body{
+            background:linear-gradient(135deg,#0f172a,#1e293b);
+            color:#fff;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            min-height:100vh;
+            overflow:hidden;
+        }
+
+        .container{
+            width:90%;
+            max-width:650px;
+            text-align:center;
+            background:rgba(255,255,255,.05);
+            backdrop-filter:blur(15px);
+            border:1px solid rgba(255,255,255,.08);
+            border-radius:25px;
+            padding:40px;
+            box-shadow:0 20px 50px rgba(0,0,0,.35);
+        }
+
+        lottie-player{
+            width:320px;
+            height:320px;
+            margin:auto;
+        }
+
+        h1{
+            font-size:65px;
+            font-weight:800;
+            margin-top:-20px;
+        }
+
+        h2{
+            margin-top:10px;
+            font-size:30px;
+            font-weight:700;
+        }
+
+        p{
+            margin-top:15px;
+            color:#d1d5db;
+            line-height:1.9;
+            font-size:18px;
+        }
+
+        .buttons{
+            margin-top:35px;
+            display:flex;
+            justify-content:center;
+            gap:15px;
+            flex-wrap:wrap;
+        }
+
+        .btn{
+            text-decoration:none;
+            padding:14px 35px;
+            border-radius:12px;
+            transition:.3s;
+            font-weight:700;
+        }
+
+        .home{
+            background:#ffffff;
+            color:#111827;
+        }
+
+        .home:hover{
+            transform:translateY(-3px);
+        }
+
+        .back{
+            border:1px solid rgba(255,255,255,.3);
+            color:white;
+        }
+
+        .back:hover{
+            background:white;
+            color:#111827;
+        }
+
+        .code{
+            margin-top:20px;
+            color:#64748b;
+            font-size:90px;
+            font-weight:800;
+            opacity:.15;
+            letter-spacing:10px;
+        }
+
+        @media(max-width:600px){
+
+            h1{
+                font-size:45px;
+            }
+
+            h2{
+                font-size:24px;
+            }
+
+            p{
+                font-size:16px;
+            }
+
+            lottie-player{
+                width:240px;
+                height:240px;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <lottie-player
+        src="https://assets7.lottiefiles.com/packages/lf20_kcsr6fcp.json"
+        background="transparent"
+        speed="1"
+        loop
+        autoplay>
+    </lottie-player>
+
+    <h1>404</h1>
+
+    <h2>الصفحة غير متوفرة</h2>
+
+    <p>
+        عذرًا، يبدو أن الصفحة التي تحاول الوصول إليها غير موجودة أو ربما تم نقلها أو حذفها.
+    </p>
+
+    <div class="buttons">
+        <a href="/" class="btn home">العودة للرئيسية</a>
+        <a href="javascript:history.back()" class="btn back">الرجوع للخلف</a>
+    </div>
+
+    <div class="code">404</div>
+
+</div>
+
+</body>
+</html>
