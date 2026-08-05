@@ -31,23 +31,40 @@ async function getSecureApiKeys() {
 // ==========================================
 // واتساب WaPilot
 // ==========================================
+// ==========================================
+// إرسال واتساب (WaPilot API المعتمد)
+// ==========================================
 async function sendWhatsAppToParent(parentPhone, msgText) {
     if(!parentPhone || parentPhone === "غير متوفر") return;
+    
     const keys = await getSecureApiKeys();
     if (!keys || !keys.wapilot_instance || !keys.wapilot_token) return;
 
     const instanceId = keys.wapilot_instance; 
     const token = keys.wapilot_token;
+    
+    // تظبيط الرقم وإضافة @c.us زي ما الـ API بيطلب
     let formattedPhone = parentPhone.startsWith('0') ? '2' + parentPhone : parentPhone;
+    let chatId = formattedPhone + "@c.us";
+    
     var url = "https://api.wapilot.net/api/v2/" + instanceId + "/send-message";
     
     try {
         await fetch(url, {
             method: "POST",
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ phone: formattedPhone, message: msgText })
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: msgText
+            })
         });
-    } catch(err) { console.error("فشل إرسال الواتساب:", err); }
+        console.log("تم إرسال إشعار الواتساب عبر WaPilot بنجاح.");
+    } catch(err) { 
+        console.error("فشل إرسال الواتساب:", err); 
+    }
 }
 
 // ==========================================
@@ -277,20 +294,29 @@ async function uploadToVimeo(file, progressCallback) {
     return new Promise(async (resolve, reject) => {
         try {
             const keys = await getSecureApiKeys(); 
-            if(!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo مفقود");
-            if(typeof window.tus === 'undefined') throw new Error("مكتبة tus غير محملة");
+            if(!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo غير موجود في قاعدة البيانات!");
 
-            const upload = new window.tus.Upload(file, {
+            // الاعتماد المباشر على مكتبة tus
+            const upload = new tus.Upload(file, {
                 endpoint: "https://api.vimeo.com/me/videos",
                 retryDelays: [0, 3000, 5000, 10000, 20000],
-                headers: { Authorization: `Bearer ${keys.vimeo_token}`, Accept: "application/vnd.vimeo.*+json;version=3.4" },
+                headers: {
+                    Authorization: `Bearer ${keys.vimeo_token}`, 
+                    Accept: "application/vnd.vimeo.*+json;version=3.4"
+                },
                 uploadSize: file.size,
-                onError: (err) => reject(err),
-                onProgress: (up, tot) => progressCallback(((up/tot)*100).toFixed(2)),
-                onSuccess: () => resolve(`https://player.vimeo.com/video/${upload.url.split('/').pop()}`)
+                onError: function(error) { reject(error); },
+                onProgress: function(bytesUploaded, bytesTotal) {
+                    const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+                    progressCallback(percentage);
+                },
+                onSuccess: function() {
+                    const videoId = upload.url.split('/').pop();
+                    resolve(`https://player.vimeo.com/video/${videoId}`);
+                }
             });
             upload.start();
-        } catch(e) { reject(e); }
+        } catch (error) { reject(error); }
     });
 }
 
