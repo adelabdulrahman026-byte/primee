@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+import * as tus from "https://cdn.skypack.dev/tus-js-client";
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
     authDomain: "academy-444b6.firebaseapp.com",
@@ -296,7 +296,7 @@ async function uploadToVimeo(file, progressCallback) {
             const keys = await getSecureApiKeys(); 
             if(!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo غير موجود في قاعدة البيانات!");
 
-            // الاعتماد المباشر على مكتبة tus
+            // رفع الفيديو المباشر بمكتبة tus
             const upload = new tus.Upload(file, {
                 endpoint: "https://api.vimeo.com/me/videos",
                 retryDelays: [0, 3000, 5000, 10000, 20000],
