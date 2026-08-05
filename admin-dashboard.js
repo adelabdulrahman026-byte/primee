@@ -382,20 +382,30 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
     e.preventDefault();
     const btn = document.getElementById('btnSaveCourse');
     const editingId = document.getElementById('editingCourseId').value;
-    btn.textContent = editingId ? 'جاري التعديل...' : 'جاري الرفع...'; btn.disabled = true;
+    btn.textContent = editingId ? 'جاري التعديل...' : 'جاري الرفع والنشر... ⏳'; 
+    btn.disabled = true;
 
     try {
-        let imageUrl = null, videoUrl = null;
+        let imageUrl = null;
+        let uploadedVideoUrls = []; // مصفوفة لحفظ لينكات فيمو
+        
         const imageFile = document.getElementById('courseImageFile').files[0];
-        const videoFile = document.getElementById('courseVideoFile').files[0];
+        const videoFiles = document.getElementById('courseVideoFiles').files; // كل الفيديوهات
 
         if(imageFile) imageUrl = await uploadImageToImgBB(imageFile);
-        if(videoFile) {
+
+        // لو فيه فيديوهات مرفوعة، هنلف عليهم ونرفعهم واحد واحد لفيمو
+        if(videoFiles.length > 0) {
             document.getElementById('videoProgressContainer').style.display = 'block';
-            videoUrl = await uploadToVimeo(videoFile, (p) => {
-                document.getElementById('videoProgressBar').style.width = p + '%';
-                document.getElementById('videoStatus').textContent = `الرفع: ${p}%`;
-            });
+            for (let i = 0; i < videoFiles.length; i++) {
+                document.getElementById('videoStatus').textContent = `جاري رفع الفيديو (${i + 1} من ${videoFiles.length})... يرجى عدم الإغلاق`;
+                
+                let vUrl = await uploadToVimeo(videoFiles[i], (p) => {
+                    document.getElementById('videoProgressBar').style.width = p + '%';
+                });
+                uploadedVideoUrls.push(vUrl);
+            }
+            document.getElementById('videoStatus').textContent = `تم رفع جميع الفيديوهات بنجاح ✔️`;
         }
 
         const courseData = {
@@ -404,25 +414,28 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
             grade: document.getElementById('courseGrade').value,
             price: parseInt(document.getElementById('coursePrice').value) || 0,
             requiredExamId: document.getElementById('requiredExamSelect').value,
-            pdfUrl: document.getElementById('coursePdf').value.trim()
+            pdfUrl: document.getElementById('coursePdf').value.trim(),
+            videos: uploadedVideoUrls // حفظنا كل الفيديوهات هنا
         };
         if(imageUrl) courseData.image = imageUrl;
-        if(videoUrl) courseData.videoUrl = videoUrl;
 
         if(editingId) {
             await updateDoc(doc(db, "courses", editingId), courseData);
             document.getElementById('btnCancelEdit').click();
         } else {
-            if(!imageUrl || !videoUrl) throw new Error("يجب رفع صورة وفيديو");
+            if(!imageUrl || uploadedVideoUrls.length === 0) throw new Error("يجب رفع صورة وفيديو واحد على الأقل");
             courseData.createdAt = new Date().toISOString();
             await addDoc(coursesRef, courseData);
             document.getElementById('addCourseForm').reset();
         }
-        adminAlert("تم", "تم حفظ الحصة بنجاح", "success");
+        adminAlert("تم", "تم حفظ الحصة والفيديوهات بنجاح", "success");
     } catch(err) { adminAlert("خطأ", err.message, "error"); }
-    finally { btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة'; btn.disabled = false; document.getElementById('videoProgressContainer').style.display = 'none'; }
+    finally { 
+        btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة'; 
+        btn.disabled = false; 
+        document.getElementById('videoProgressContainer').style.display = 'none'; 
+    }
 });
-
 onSnapshot(query(coursesRef), (snapshot) => {
     const table = document.getElementById('adminCoursesTable');
     if(!table) return; table.innerHTML = '';
@@ -631,37 +644,53 @@ window.notifyParentsForExam = async function(examId, examTitle, btnElement) {
 
 
 // ==========================================
-// 6. سجل المشاهدات والتصحيح
+// 6. سجل المشاهدات والتصحيح (النسخة الثابتة)
 // ==========================================
+let allGradingSubmissions = [];
+
 onSnapshot(query(collection(db, "exam_submissions")), (snapshot) => {
+    allGradingSubmissions = [];
+    snapshot.forEach(docSnap => {
+        allGradingSubmissions.push({id: docSnap.id, ...docSnap.data()});
+    });
+    renderGradingTable();
+});
+
+function renderGradingTable() {
     const table = document.getElementById('adminGradingTable');
-    if(!table) return; table.innerHTML = '';
+    if(!table) return; 
+    table.innerHTML = '';
+    
     const sFilter = document.getElementById('filterGradingStatus')?.value || 'all';
     const eFilter = document.getElementById('filterSpecificExam')?.value || 'all';
     let count = 0;
-    snapshot.forEach(docSnap => {
-        const sub = {id: docSnap.id, ...docSnap.data()};
+
+    allGradingSubmissions.forEach(sub => {
         if(sFilter !== 'all' && sub.status !== sFilter) return; 
         if(eFilter !== 'all' && sub.examId !== eFilter) return; 
+        
         count++;
-        let stText = sub.status==='passed' ? '<span style="color:#10b981;">ناجح (شاهد)</span>' : (sub.status==='failed' ? '<span style="color:#ef4444;">راسب (لم يشاهد)</span>' : '<span style="color:#f59e0b;">مراجعة</span>');
+        let stText = sub.status === 'passed' ? '<span style="color:#10b981;">ناجح (شاهد)</span>' : (sub.status === 'failed' ? '<span style="color:#ef4444;">راسب (لم يشاهد)</span>' : '<span style="color:#f59e0b;">مراجعة مقالي</span>');
         let tText = sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('ar-EG') : '-';
+        
         table.innerHTML += `<tr>
-            <td><strong>${sub.studentName}</strong><br><small>${sub.studentPhone}</small></td>
-            <td><strong>${sub.courseTitle}</strong><br><small>${sub.examTitle}</small></td>
-            <td style="font-weight:900;">${sub.score}%</td>
+            <td><strong>${sub.studentName}</strong><br><small style="color:#f59e0b;">${sub.studentPhone}</small></td>
+            <td><strong>${sub.courseTitle}</strong><br><small style="color:#94a3b8;">${sub.examTitle}</small></td>
+            <td style="font-weight:900; font-size: 18px;">${sub.score}%</td>
             <td>${stText}</td>
-            <td dir="ltr" style="font-size:12px;">${tText}</td>
-            <td>
-                ${sub.status === 'pending' ? `<button onclick="gradeStudentExam('${sub.id}')" style="background:#10b981; color:#fff; border:none; padding:5px; border-radius:5px;"><i class="fas fa-check"></i></button>` : ''}
-                <button onclick="editStudentScore('${sub.id}', ${sub.score})" style="background:#3b82f6; color:#fff; border:none; padding:5px; border-radius:5px;"><i class="fas fa-edit"></i></button>
+            <td dir="ltr" style="font-size:12px; color:#94a3b8;">${tText}</td>
+            <td style="display:flex; gap:5px; justify-content:center;">
+                ${sub.status === 'pending' ? `<button onclick="gradeStudentExam('${sub.id}')" style="background:#10b981; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;"><i class="fas fa-check"></i> تصحيح</button>` : ''}
+                <button onclick="editStudentScore('${sub.id}', ${sub.score})" style="background:#3b82f6; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;"><i class="fas fa-edit"></i> تعديل</button>
             </td>
         </tr>`;
     });
-    if(count===0) table.innerHTML=`<tr><td colspan="6" style="text-align:center;">لا توجد بيانات</td></tr>`;
-});
-document.getElementById('filterGradingStatus')?.addEventListener('change', () => { const ev=new Event('change'); });
+    
+    if(count === 0) table.innerHTML=`<tr><td colspan="6" style="text-align:center; color:#94a3b8;">لا توجد بيانات مطابقة للفلتر...</td></tr>`;
+}
 
+document.getElementById('filterGradingStatus')?.addEventListener('change', renderGradingTable);
+document.getElementById('filterSpecificExam')?.addEventListener('change', renderGradingTable);
 window.gradeStudentExam = async function(id) {
     const isPassed = await adminConfirm("هل تريد إعطائه 100% ونجاحه؟");
     if(!isPassed) return;
@@ -869,5 +898,28 @@ window.deleteExam = async function(id) {
             await deleteDoc(doc(db, "exams", id));
             adminAlert("تم الحذف", "تم مسح الامتحان بنجاح", "success");
         } catch(e) { adminAlert("خطأ", "فشل الحذف", "error"); }
+    }
+};
+// ==========================================
+// دوال الحذف الشاملة (مرتبطة بالـ Window)
+// ==========================================
+window.deleteTeacher = async function(id) {
+    if(await adminConfirm("هل أنت متأكد من مسح هذا المدرس نهائياً؟")) {
+        try { await deleteDoc(doc(db, "teachers", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
+        catch(e) { adminAlert("خطأ", "فشل المسح", "error"); }
+    }
+};
+
+window.deletePackage = async function(id) {
+    if(await adminConfirm("هل أنت متأكد من مسح هذه الباقة؟")) {
+        try { await deleteDoc(doc(db, "packages", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
+        catch(e) { adminAlert("خطأ", "فشل المسح", "error"); }
+    }
+};
+
+window.deleteAssistant = async function(id) {
+    if(await adminConfirm("هل أنت متأكد من مسح حساب هذا المساعد؟")) {
+        try { await deleteDoc(doc(db, "assistants", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
+        catch(e) { adminAlert("خطأ", "فشل المسح", "error"); }
     }
 };
