@@ -27,7 +27,12 @@
         .admin-main { flex: 1; margin-right: 260px; padding: 30px; display: flex; flex-direction: column; gap: 30px; }
         .admin-header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 20px 30px; border-radius: 20px; border: 1px solid #334155; }
         .admin-header h2 { margin: 0; font-size: 22px; font-weight: 800; color: #f8fafc; }
-        
+        .admin-sidebar { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3b82f6 #1e293b; transition: 0.3s right; }
+        .admin-sidebar::-webkit-scrollbar { width: 6px; }
+        .admin-sidebar::-webkit-scrollbar-thumb { background-color: #3b82f6; border-radius: 10px; }
+        .admin-sidebar.closed { right: -260px; }
+        .admin-main { transition: 0.3s margin-right; }
+        .admin-main.expanded { margin-right: 0; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
         .stat-card { background: #1e293b; padding: 25px; border-radius: 20px; border: 1px solid #334155; display: flex; align-items: center; gap: 20px; }
         .stat-icon { width: 60px; height: 60px; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 26px; }
@@ -75,13 +80,18 @@
             <li><a id="navTeachers" onclick="switchTab('teachersSection', this)"><i class="fas fa-chalkboard-teacher"></i> إدارة المدرسين</a></li>
             <li><a id="navCodes" onclick="switchTab('codesSection', this)"><i class="fas fa-qrcode"></i> مصنع الأكواد</a></li>
             <li><a id="navPackages" onclick="switchTab('packagesSection', this)"><i class="fas fa-boxes"></i> إدارة الباقات</a></li>
+            <li><a id="navAssistants" onclick="switchTab('assistantsSection', this)"><i class="fas fa-user-shield"></i> إدارة المساعدين</a></li>
         </ul>
         <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
     </aside>
 
     <main class="admin-main">
-        <div class="admin-header">
-            <h2>مرحباً بك يا مدير النظام 👋</h2>
+      <div class="admin-header">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <button id="toggleSidebarBtn" style="background: none; border: none; color: #f8fafc; font-size: 24px; cursor: pointer;"><i class="fas fa-bars"></i></button>
+                <h2>مرحباً بك يا مدير النظام 👋</h2>
+            </div>
+            <!-- زرار تفعيل الصوت هنا زي ما هو -->
             <div style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 10px 20px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; gap: 10px; cursor: pointer;" id="enableSoundBtn">
                 <i class="fas fa-volume-up"></i> تفعيل صوت الإشعارات
             </div>
@@ -161,6 +171,7 @@
                             <label>المرحلة الدراسية</label>
                             <select id="courseGrade" required>
                                 <option value="" disabled selected>اختر المرحلة</option>
+                                <option value="ed1">السادس الابتدائي</option>
                                 <option value="prep1">الأول الإعدادي</option>
                                 <option value="prep2">الثاني الإعدادي</option>
                                 <option value="prep3">الثالث الإعدادي</option>
@@ -418,6 +429,42 @@
             </div>
         </div>
 
+        <!-- قسم إدارة المساعدين (الصلاحيات) -->
+        <div id="assistantsSection" class="admin-section">
+            <div class="admin-table-container">
+                <h3><i class="fas fa-user-shield" style="color: #10b981;"></i> إضافة حساب مساعد (سكرتير مدرس)</h3>
+                <form id="addAssistantForm">
+                    <div class="form-grid">
+                        <div class="form-group-admin">
+                            <label>اسم المساعد</label>
+                            <input type="text" id="astName" placeholder="مثال: محمد السكرتير" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>اسم المستخدم (للدخول)</label>
+                            <input type="text" id="astUsername" placeholder="مثال: user123" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>كلمة المرور</label>
+                            <input type="text" id="astPassword" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>صلاحية المدرس (يتابع شغل مين؟)</label>
+                            <select id="astTeacher" required>
+                                <option value="" disabled selected>جاري تحميل المدرسين...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" id="btnSaveAssistant" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%;"><i class="fas fa-check"></i> إنشاء حساب المساعد</button>
+                </form>
+            </div>
+            <div class="admin-table-container" style="margin-top: 20px;">
+                <h3>المساعدين المسجلين</h3>
+                <table>
+                    <thead><tr><th>المساعد</th><th>اسم الدخول</th><th>مساعد للأستاذ</th><th>إجراءات</th></tr></thead>
+                    <tbody id="adminAssistantsTable"><tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب البيانات...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
     </main>
 
     <!-- النوافذ المنبثقة -->
