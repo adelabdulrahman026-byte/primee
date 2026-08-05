@@ -196,10 +196,14 @@
                                 <div id="videoProgressBar" style="width: 0%; height: 100%; background: #f59e0b; transition: 0.2s;"></div>
                             </div>
                             <small id="videoStatus" style="color: #94a3b8;">اختر ملف الفيديو (سيتم الرفع عند الضغط على نشر)</small>
-                        </div>
-                        <div class="form-group-admin" style="grid-column: 1 / -1;">
-    <label>روابط فيديوهات إضافية (اختياري - ضع كل رابط في سطر منفصل)</label>
-    <textarea id="courseExtraVideos" rows="3" placeholder="https://vimeo.com/123456789&#10;https://youtube.com/..." style="padding: 14px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';"></textarea>
+<div class="form-group-admin" style="grid-column: 1 / -1;">
+    <label>فيديوهات الحصة (يمكنك اختيار أكثر من فيديو للرفع معاً) 🎥</label>
+    <input type="file" id="courseVideoFiles" accept="video/mp4,video/x-m4v,video/*" multiple style="background: rgba(59, 130, 246, 0.1); border: 2px dashed #3b82f6; padding: 20px; text-align: center; cursor: pointer;">
+    
+    <div class="progress-bar-container" id="videoProgressContainer" style="display:none; width: 100%; background: #334155; border-radius: 8px; height: 15px; margin-top: 10px; overflow: hidden;">
+        <div id="videoProgressBar" style="width: 0%; height: 100%; background: #10b981; transition: 0.2s;"></div>
+    </div>
+    <small id="videoStatus" style="color: #f59e0b; font-weight: 800; display: block; margin-top: 5px;">اختر الفيديوهات (سيتم رفعها بالتتابع عند الضغط على نشر)</small>
 </div>
                         <div class="form-group-admin">
                             <label>رابط مذكرة PDF (اختياري)</label>
@@ -424,9 +428,14 @@
                     <button type="submit" id="btnSavePackage" style="background: #f59e0b; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%;"><i class="fas fa-plus"></i> نشر الباقة في الموقع</button>
                 </form>
             </div>
-            <div class="form-group-admin" style="grid-column: 1 / -1;">
-    <label>روابط فيديوهات الباقة (إجباري - ضع كل رابط في سطر منفصل)</label>
-    <textarea id="pkgVideos" rows="3" placeholder="https://vimeo.com/123456789&#10;https://youtube.com/..." style="padding: 14px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';" required></textarea>
+ <div class="form-group-admin" style="grid-column: 1 / -1;">
+    <label>فيديوهات الحصة (يمكنك اختيار أكثر من فيديو للرفع معاً) 🎥</label>
+    <input type="file" id="courseVideoFiles" accept="video/mp4,video/x-m4v,video/*" multiple style="background: rgba(59, 130, 246, 0.1); border: 2px dashed #3b82f6; padding: 20px; text-align: center; cursor: pointer;">
+    
+    <div class="progress-bar-container" id="videoProgressContainer" style="display:none; width: 100%; background: #334155; border-radius: 8px; height: 15px; margin-top: 10px; overflow: hidden;">
+        <div id="videoProgressBar" style="width: 0%; height: 100%; background: #10b981; transition: 0.2s;"></div>
+    </div>
+    <small id="videoStatus" style="color: #f59e0b; font-weight: 800; display: block; margin-top: 5px;">اختر الفيديوهات (سيتم رفعها بالتتابع عند الضغط على نشر)</small>
 </div>
             <div class="admin-table-container" style="margin-top: 20px;">
                 <h3>الباقات المتاحة للطلاب</h3>
