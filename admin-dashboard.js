@@ -982,3 +982,98 @@ document.getElementById('btnExportCodes')?.addEventListener('click', () => {
     link.click();
     document.body.removeChild(link);
 });
+// ==========================================
+// إدارة الباقات (Packages)
+// ==========================================
+const packagesRef = collection(db, "packages");
+
+document.getElementById('addPackageForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSavePackage');
+    btn.innerHTML = "جاري رفع الباقة... ⏳"; btn.disabled = true;
+
+    try {
+        const imageFile = document.getElementById('pkgImage').files[0];
+        let imageUrl = await uploadImageToImgBB(imageFile); // بنستخدم نفس دالتك للرفع
+
+        const pkgData = {
+            name: document.getElementById('pkgName').value,
+            grade: document.getElementById('pkgGrade').value,
+            oldPrice: document.getElementById('pkgOldPrice').value,
+            newPrice: document.getElementById('pkgNewPrice').value,
+            features: document.getElementById('pkgFeatures').value.split(','),
+            imageUrl: imageUrl,
+            createdAt: new Date().toISOString()
+        };
+
+        await addDoc(packagesRef, pkgData);
+        adminAlert("تم", "تم إضافة الباقة للموقع بنجاح", "success");
+        document.getElementById('addPackageForm').reset();
+    } catch(err) { adminAlert("خطأ", "فشل الرفع", "error"); }
+    finally { btn.innerHTML = "<i class='fas fa-plus'></i> نشر الباقة في الموقع"; btn.disabled = false; }
+});
+
+onSnapshot(query(packagesRef), (snapshot) => {
+    const table = document.getElementById('adminPackagesTable');
+    if(!table) return;
+    table.innerHTML = '';
+    snapshot.forEach(docSnap => {
+        const pkg = docSnap.data();
+        table.innerHTML += `<tr>
+            <td><img src="${pkg.imageUrl}" style="width:40px; border-radius:8px; vertical-align:middle; margin-left:10px;"> <strong>${pkg.name}</strong></td>
+            <td>${pkg.grade}</td>
+            <td><span style="text-decoration:line-through; color:#ef4444; font-size:12px;">${pkg.oldPrice}</span> <strong style="color:#10b981;">${pkg.newPrice} ج.م</strong></td>
+            <td><button onclick="deleteDoc(doc(db, 'packages', '${docSnap.id}'))" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+    });
+});
+
+// ==========================================
+// إدارة المساعدين والصلاحيات
+// ==========================================
+const assistantsRef = collection(db, "assistants");
+
+document.getElementById('addAssistantForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveAssistant');
+    btn.innerHTML = "جاري الحفظ... ⏳"; btn.disabled = true;
+
+    try {
+        await addDoc(assistantsRef, {
+            name: document.getElementById('astName').value,
+            username: document.getElementById('astUsername').value,
+            password: document.getElementById('astPassword').value,
+            targetTeacher: document.getElementById('astTeacher').value, // المدرس اللي هو تبعه
+            role: "assistant"
+        });
+        adminAlert("تم", "تم إضافة المساعد بنجاح", "success");
+        document.getElementById('addAssistantForm').reset();
+    } catch(err) { adminAlert("خطأ", "فشل الإضافة", "error"); }
+    finally { btn.innerHTML = "<i class='fas fa-check'></i> إنشاء حساب المساعد"; btn.disabled = false; }
+});
+
+onSnapshot(query(assistantsRef), (snapshot) => {
+    const table = document.getElementById('adminAssistantsTable');
+    if(!table) return;
+    table.innerHTML = '';
+    snapshot.forEach(docSnap => {
+        const ast = docSnap.data();
+        table.innerHTML += `<tr>
+            <td><strong>${ast.name}</strong></td>
+            <td style="color:#f59e0b; font-family:monospace;">${ast.username}</td>
+            <td><span style="background:rgba(59,130,246,0.1); color:#3b82f6; padding:3px 8px; border-radius:5px;">${ast.targetTeacher}</span></td>
+            <td><button onclick="deleteDoc(doc(db, 'assistants', '${docSnap.id}'))" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+    });
+});
+
+// حقن أسماء المدرسين في قائمة المساعدين
+onSnapshot(query(collection(db, "teachers")), (snapshot) => {
+    const select = document.getElementById('astTeacher');
+    if(select) {
+        select.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
+        snapshot.forEach(docSnap => {
+            select.innerHTML += `<option value="${docSnap.data().name}">${docSnap.data().name}</option>`;
+        });
+    }
+});
