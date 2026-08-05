@@ -27,6 +27,9 @@ async function getSecureApiKeys() {
 // ==========================================
 // إرسال واتساب (WaPilot API) الرابط الأصلي
 // ==========================================
+// ==========================================
+// إرسال واتساب (WaPilot API المعتمد)
+// ==========================================
 async function sendWhatsAppToParent(parentPhone, msgText) {
     if(!parentPhone || parentPhone === "غير متوفر") return;
     
@@ -36,9 +39,10 @@ async function sendWhatsAppToParent(parentPhone, msgText) {
     const instanceId = keys.wapilot_instance; 
     const token = keys.wapilot_token;
     
+    // تظبيط الرقم وإضافة @c.us زي ما الـ API بيطلب
     let formattedPhone = parentPhone.startsWith('0') ? '2' + parentPhone : parentPhone;
+    let chatId = formattedPhone + "@c.us";
     
-    // الرابط اللي إنت طلبته بالظبط
     var url = "https://api.wapilot.net/api/v2/" + instanceId + "/send-message";
     
     try {
@@ -49,12 +53,14 @@ async function sendWhatsAppToParent(parentPhone, msgText) {
                 'Authorization': `Bearer ${token}` 
             },
             body: JSON.stringify({
-                phone: formattedPhone,
-                message: msgText
+                chat_id: chatId,
+                text: msgText
             })
         });
         console.log("تم إرسال إشعار الواتساب عبر WaPilot بنجاح.");
-    } catch(err) { console.error("فشل إرسال الواتساب:", err); }
+    } catch(err) { 
+        console.error("فشل إرسال الواتساب:", err); 
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
