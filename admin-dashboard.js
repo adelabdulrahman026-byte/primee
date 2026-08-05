@@ -120,15 +120,14 @@ async function sendWhatsAppToParent(parentPhone, msgText) {
 }
 
 // ==========================================
-// 1. مراقبة الطلاب والأرباح (مفلترة)
+// 1. مراقبة الطلاب والأرباح (مفلترة للمساعدين)
 // ==========================================
 let allStudentsData = [];
-let teacherCourseIds = []; // لحفظ حصص المدرس الخاص بالمساعد
+let teacherCourseIds = []; 
 
 function renderDashboardStats() {
     let filteredStudents = allStudentsData;
     
-    // لو مساعد، يشوف بس الطلاب اللي اشتروا كورسات أستاذه
     if (ROLE === 'assistant' && AST_TEACHER) {
         filteredStudents = allStudentsData.filter(s => {
             const myC = s.myCourses || [];
@@ -211,6 +210,34 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
             document.getElementById('studentResultCard').style.display = 'block';
         }
     } catch(error) {} finally { document.getElementById('btnSearchStudent').innerHTML = '<i class="fas fa-search"></i> بحث'; }
+});
+
+document.getElementById('btnChargeWallet')?.addEventListener('click', async () => {
+    const amount = parseInt(document.getElementById('chargeAmount').value);
+    if(!amount || amount <= 0) return adminAlert("خطأ", "أدخل مبلغ صحيح", "error");
+    try {
+        const newBalance = (parseInt(currentStudentData.walletBalance) || 0) + amount; 
+        await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
+        currentStudentData.walletBalance = newBalance;
+        document.getElementById('resStudentWallet').textContent = newBalance + ' ج.م';
+        document.getElementById('chargeAmount').value = '';
+        adminAlert("تم", "تم الشحن بنجاح", "success");
+    } catch(e) {}
+});
+
+document.getElementById('btnDeductWallet')?.addEventListener('click', async () => {
+    const amount = parseInt(document.getElementById('chargeAmount').value);
+    if(!amount || amount <= 0) return adminAlert("خطأ", "أدخل مبلغ صحيح", "error");
+    const currentBalance = parseInt(currentStudentData.walletBalance) || 0;
+    if(!await adminConfirm(`تأكيد خصم ${amount}؟`)) return;
+    try {
+        const newBalance = Math.max(0, currentBalance - amount); 
+        await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
+        currentStudentData.walletBalance = newBalance;
+        document.getElementById('resStudentWallet').textContent = newBalance + ' ج.م';
+        document.getElementById('chargeAmount').value = '';
+        adminAlert("تم", "تم الخصم بنجاح", "success");
+    } catch(e) {}
 });
 
 // ==========================================
@@ -321,25 +348,92 @@ async function uploadImageToImgBB(file) {
 }
 
 async function uploadToVimeo(file, progressCallback) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const keys = await getSecureApiKeys(); 
-            if(!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo مفقود");
+    const keys = await getSecureApiKeys();
 
-            const upload = new tus.Upload(file, {
-                endpoint: "https://api.vimeo.com/me/videos",
-                retryDelays: [0, 3000, 5000, 10000, 20000],
-                headers: { Authorization: `Bearer ${keys.vimeo_token}`, Accept: "application/vnd.vimeo.*+json;version=3.4" },
-                uploadSize: file.size,
-                onError: (err) => reject(err),
-                onProgress: (up, tot) => progressCallback(((up/tot)*100).toFixed(2)),
-                onSuccess: () => resolve(`https://player.vimeo.com/video/${upload.url.split('/').pop()}`)
-            });
-            upload.start();
-        } catch(e) { reject(e); }
+    if (!keys || !keys.vimeo_token) {
+        throw new Error("مفتاح Vimeo غير موجود");
+    }
+
+    // إنشاء عملية رفع جديدة في Vimeo
+    const createResponse = await fetch("https://api.vimeo.com/me/videos", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${keys.vimeo_token}`,
+            "Content-Type": "application/json",
+            Accept: "application/vnd.vimeo.*+json;version=3.4"
+        },
+        body: JSON.stringify({
+            upload: {
+                approach: "tus",
+                size: file.size.toString()
+            }
+        })
+    });
+
+    if (!createResponse.ok) {
+        const txt = await createResponse.text();
+        throw new Error(txt);
+    }
+
+    const video = await createResponse.json();
+
+    return new Promise((resolve, reject) => {
+
+        const upload = new tus.Upload(file, {
+
+            uploadUrl: video.upload.upload_link,
+
+            retryDelays: [0,3000,5000,10000,20000],
+
+            headers: {
+                Authorization: `Bearer ${keys.vimeo_token}`
+            },
+
+            metadata: {
+                filename: file.name,
+                filetype: file.type
+            },
+
+            onError(error){
+                reject(error);
+            },
+
+            onProgress(bytesUploaded, bytesTotal){
+
+                const percentage =
+                ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+
+                progressCallback(percentage);
+            },
+
+            async onSuccess(){
+
+                // نشر الفيديو بعد انتهاء الرفع
+                await fetch(video.uri,{
+                    method:"PATCH",
+                    headers:{
+                        Authorization:`Bearer ${keys.vimeo_token}`,
+                        "Content-Type":"application/json"
+                    },
+                    body:JSON.stringify({
+                        privacy:{
+                            view:"disable"
+                        }
+                    })
+                });
+
+                resolve(
+                    "https://player.vimeo.com/video/" +
+                    video.uri.split("/").pop()
+                );
+            }
+
+        });
+
+        upload.start();
+
     });
 }
-
 document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnSaveCourse');
@@ -349,10 +443,11 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
 
     try {
         let imageUrl = null;
-        let uploadedVideoUrls = []; 
+        let newVideosArray = []; 
         
         const imageFile = document.getElementById('courseImageFile').files[0];
         const videoFiles = document.getElementById('courseVideoFiles')?.files; 
+        const selectedExamId = document.getElementById('requiredExamSelect').value;
 
         if(imageFile) imageUrl = await uploadImageToImgBB(imageFile);
 
@@ -363,7 +458,7 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
                 let vUrl = await uploadToVimeo(videoFiles[i], (p) => {
                     document.getElementById('videoProgressBar').style.width = p + '%';
                 });
-                uploadedVideoUrls.push(vUrl);
+                newVideosArray.push({ url: vUrl, requiredExamId: selectedExamId });
             }
             document.getElementById('videoStatus').textContent = `تم الرفع بنجاح ✔️`;
         }
@@ -373,17 +468,20 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
             instructor: document.getElementById('courseInstructor').value,
             grade: document.getElementById('courseGrade').value,
             price: parseInt(document.getElementById('coursePrice').value) || 0,
-            requiredExamId: document.getElementById('requiredExamSelect').value,
-            pdfUrl: document.getElementById('coursePdf').value.trim()
+            pdfUrl: document.getElementById('coursePdf').value.trim(),
+            maxViews: parseInt(document.getElementById('courseMaxViews').value) || 0
         };
         if(imageUrl) courseData.image = imageUrl;
-        if(uploadedVideoUrls.length > 0) courseData.videos = uploadedVideoUrls;
 
         if(editingId) {
+            const existingDoc = await getDoc(doc(db, "courses", editingId));
+            let currentVideos = existingDoc.data().videos || [];
+            courseData.videos = [...currentVideos, ...newVideosArray];
             await updateDoc(doc(db, "courses", editingId), courseData);
             document.getElementById('btnCancelEdit').click();
         } else {
-            if(!imageUrl || uploadedVideoUrls.length === 0) throw new Error("يجب رفع صورة وفيديو واحد على الأقل");
+            if(!imageUrl && newVideosArray.length === 0) throw new Error("يجب رفع صورة وفيديو");
+            courseData.videos = newVideosArray;
             courseData.createdAt = new Date().toISOString();
             courseData.views = 0;
             await addDoc(coursesRef, courseData);
@@ -401,16 +499,15 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
 onSnapshot(query(coursesRef), (snapshot) => {
     const table = document.getElementById('adminCoursesTable');
     if(!table) return; table.innerHTML = '';
-    teacherCourseIds = []; // تصفير مصفوفة كورسات المدرس
+    teacherCourseIds = [];
 
     snapshot.forEach(docSnap => {
         const c = docSnap.data();
-        // تجميع الكورسات الخاصة بالمساعد
         if (ROLE === 'assistant' && AST_TEACHER) {
             if (c.instructor === AST_TEACHER) teacherCourseIds.push(docSnap.id);
-            else return; // إخفاء باقي الكورسات
+            else return;
         } else {
-            teacherCourseIds.push(docSnap.id); // لو مدير، يجمع كله
+            teacherCourseIds.push(docSnap.id);
         }
 
         table.innerHTML += `<tr>
@@ -418,13 +515,14 @@ onSnapshot(query(coursesRef), (snapshot) => {
             <td>${c.instructor}</td>
             <td>${c.grade}</td>
             <td><span style="color:#f59e0b; font-weight:900;">${c.views || 0} مشاهدة</span></td>
+            <td>${c.videos && c.videos.some(v=>v.requiredExamId) ? '<span style="color:#ef4444;">مقفول بامتحان</span>' : '<span style="color:#10b981;">مفتوح</span>'}</td>
             <td style="display:flex; gap:5px; justify-content:center;">
-                <button onclick="editCourse('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer;"><i class="fas fa-edit"></i></button>
+                <button onclick="editCourse('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer;" title="تعديل وإضافة فيديو"><i class="fas fa-edit"></i> <i class="fas fa-plus"></i></button>
                 <button onclick="deleteCourse('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer;"><i class="fas fa-trash"></i></button>
             </td>
         </tr>`;
     });
-    renderDashboardStats(); // تحديث إحصائيات لوحة القيادة بناءً على الكورسات الجديدة
+    renderDashboardStats();
 });
 
 window.editCourse = async function(id) {
@@ -437,10 +535,10 @@ window.editCourse = async function(id) {
         document.getElementById('courseGrade').value = c.grade || '';
         document.getElementById('coursePrice').value = c.price || 0;
         document.getElementById('coursePdf').value = c.pdfUrl || '';
-        document.getElementById('requiredExamSelect').value = c.requiredExamId || "";
-        document.getElementById('btnSaveCourse').innerHTML = 'حفظ التعديلات';
+        document.getElementById('courseMaxViews').value = c.maxViews || 0;
+        document.getElementById('btnSaveCourse').innerHTML = 'حفظ التعديلات وإضافة فيديو';
         document.getElementById('btnCancelEdit').style.display = 'block';
-        window.scrollTo({top:0});
+        window.scrollTo({top: document.getElementById('addCourseForm').offsetTop - 50, behavior: 'smooth'});
     }
 }
 document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
@@ -540,7 +638,6 @@ function renderExamsTable() {
     });
 }
 
-// دمج البيانات لضمان عدم اختفاء الطلاب مع الريفريش
 onSnapshot(query(collection(db, "exam_submissions")), (snap) => {
     allSubmissionsForExams = [];
     snap.forEach(d => allSubmissionsForExams.push(d.data()));
@@ -551,14 +648,18 @@ onSnapshot(query(examsRef), (snap) => {
     window.currentExamsData = [];
     const select = document.getElementById('requiredExamSelect');
     const filter = document.getElementById('filterSpecificExam');
+    const pkgExamSelect = document.getElementById('pkgExamSelect');
+    
     if(select) select.innerHTML = '<option value="">بدون امتحان</option>';
     if(filter) filter.innerHTML = '<option value="all">كل الامتحانات</option>';
+    if(pkgExamSelect) pkgExamSelect.innerHTML = '<option value="">بدون امتحان</option>';
     
     snap.forEach(docSnap => {
         const ex = {id: docSnap.id, ...docSnap.data()};
         window.currentExamsData.push(ex);
         if(select) select.innerHTML += `<option value="${ex.id}">${ex.title}</option>`;
         if(filter) filter.innerHTML += `<option value="${ex.id}">${ex.title}</option>`;
+        if(pkgExamSelect) pkgExamSelect.innerHTML += `<option value="${ex.id}">${ex.title}</option>`;
     });
     renderExamsTable(); 
 });
@@ -769,30 +870,59 @@ document.getElementById('btnExportAllCodes')?.addEventListener('click', () => {
 });
 
 // ==========================================
-// 8. إدارة الباقات (Packages)
+// 8. إدارة الباقات (تحديث وإضافة فيديوهات)
 // ==========================================
 const packagesRef = collection(db, "packages");
 
 window.deletePackage = async function(id) {
-    if(await adminConfirm("تأكيد حذف الباقة؟")) {
+    if(await adminConfirm("تأكيد حذف الباقة نهائياً؟")) {
         try { await deleteDoc(doc(db, "packages", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
         catch(e) { adminAlert("خطأ", "فشل المسح", "error"); }
     }
 };
 
+window.editPackage = async function(id) {
+    const docSnap = await getDoc(doc(db, "packages", id));
+    if(docSnap.exists()) {
+        const p = docSnap.data();
+        document.getElementById('editingPkgId').value = id;
+        document.getElementById('pkgName').value = p.name || '';
+        document.getElementById('pkgGrade').value = p.grade || '';
+        document.getElementById('pkgOldPrice').value = p.oldPrice || '';
+        document.getElementById('pkgNewPrice').value = p.newPrice || '';
+        document.getElementById('pkgFeatures').value = p.features ? p.features.join(',') : '';
+        document.getElementById('pkgMaxViews').value = p.maxViews || 0;
+        
+        document.getElementById('btnSavePackage').innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات وإضافة المحتوى';
+        document.getElementById('btnCancelPkgEdit').style.display = 'block';
+        window.scrollTo({top: document.getElementById('addPackageForm').offsetTop - 50, behavior: 'smooth'});
+    }
+};
+
+document.getElementById('btnCancelPkgEdit')?.addEventListener('click', () => {
+    document.getElementById('editingPkgId').value = "";
+    document.getElementById('addPackageForm').reset();
+    document.getElementById('btnSavePackage').innerHTML = '<i class="fas fa-plus"></i> حفظ ونشر الباقة';
+    document.getElementById('btnCancelPkgEdit').style.display = 'none';
+});
+
 document.getElementById('addPackageForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnSavePackage');
-    btn.innerHTML = "جاري الرفع... ⏳"; btn.disabled = true;
+    const editingId = document.getElementById('editingPkgId').value;
+    btn.innerHTML = editingId ? "جاري التحديث والرفع... ⏳" : "جاري إنشاء الباقة... ⏳"; 
+    btn.disabled = true;
 
     try {
         let imageUrl = null;
-        let uploadedVideoUrls = []; 
+        let newVideosArray = []; 
         const imageFile = document.getElementById('pkgImage').files[0];
         const videoFiles = document.getElementById('pkgVideoFiles')?.files; 
+        const selectedExamId = document.getElementById('pkgExamSelect').value;
 
         if(imageFile) imageUrl = await uploadImageToImgBB(imageFile);
 
+        // رفع الفيديوهات الجديدة وتحويلها لـ Objects (فيديو + امتحانه)
         if(videoFiles && videoFiles.length > 0) {
             document.getElementById('pkgVideoProgressContainer').style.display = 'block';
             for (let i = 0; i < videoFiles.length; i++) {
@@ -800,26 +930,43 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
                 let vUrl = await uploadToVimeo(videoFiles[i], (p) => {
                     document.getElementById('pkgVideoProgressBar').style.width = p + '%';
                 });
-                uploadedVideoUrls.push(vUrl);
+                newVideosArray.push({ url: vUrl, requiredExamId: selectedExamId });
             }
             document.getElementById('pkgVideoStatus').textContent = `تم الرفع بنجاح ✔️`;
         }
 
-        await addDoc(packagesRef, {
+        const pkgData = {
             name: document.getElementById('pkgName').value,
             grade: document.getElementById('pkgGrade').value,
-            oldPrice: document.getElementById('pkgOldPrice').value,
-            newPrice: document.getElementById('pkgNewPrice').value,
+            oldPrice: parseInt(document.getElementById('pkgOldPrice').value) || 0,
+            newPrice: parseInt(document.getElementById('pkgNewPrice').value) || 0,
             features: document.getElementById('pkgFeatures').value.split(','),
-            videos: uploadedVideoUrls,
-            imageUrl: imageUrl,
-            createdAt: new Date().toISOString(),
-            views: 0
-        });
-        adminAlert("تم", "تم إضافة الباقة بنجاح", "success");
-        document.getElementById('addPackageForm').reset();
-    } catch(err) {} finally { 
-        btn.innerHTML = "<i class='fas fa-plus'></i> نشر الباقة"; 
+            maxViews: parseInt(document.getElementById('pkgMaxViews').value) || 0
+        };
+        if(imageUrl) pkgData.imageUrl = imageUrl;
+
+        if (editingId) {
+            // دمج القديم مع الجديد عند التعديل
+            const existingDoc = await getDoc(doc(db, "packages", editingId));
+            let currentVideos = existingDoc.data().videos || [];
+            pkgData.videos = [...currentVideos, ...newVideosArray];
+            
+            await updateDoc(doc(db, "packages", editingId), pkgData);
+            document.getElementById('btnCancelPkgEdit').click();
+            adminAlert("تم", "تم التحديث وإضافة الفيديوهات بنجاح", "success");
+        } else {
+            if(!imageUrl && !editingId) throw new Error("يجب رفع صورة غلاف للباقة الجديدة");
+            pkgData.videos = newVideosArray;
+            pkgData.createdAt = new Date().toISOString();
+            pkgData.views = 0;
+            await addDoc(packagesRef, pkgData);
+            document.getElementById('addPackageForm').reset();
+            adminAlert("تم", "تم إنشاء الباقة بنجاح", "success");
+        }
+    } catch(err) { 
+        adminAlert("خطأ", err.message, "error"); 
+    } finally { 
+        btn.innerHTML = "<i class='fas fa-plus'></i> حفظ ونشر الباقة"; 
         btn.disabled = false;
         document.getElementById('pkgVideoProgressContainer').style.display = 'none';
     }
@@ -835,7 +982,10 @@ onSnapshot(query(packagesRef), (snapshot) => {
             <td>${pkg.grade}</td>
             <td><span style="color:#f59e0b; font-weight:900;">${pkg.views || 0} مشاهدة</span></td>
             <td><span style="text-decoration:line-through; color:#ef4444; font-size:12px;">${pkg.oldPrice}</span> <strong style="color:#10b981;">${pkg.newPrice} ج.م</strong></td>
-            <td><button onclick="deletePackage('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button></td>
+            <td style="display:flex; gap:5px; justify-content:center;">
+                <button onclick="editPackage('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="إضافة محتوى / تعديل"><i class="fas fa-edit"></i> <i class="fas fa-plus"></i></button>
+                <button onclick="deletePackage('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button>
+            </td>
         </tr>`;
     });
 });
