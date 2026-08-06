@@ -289,7 +289,48 @@
             <p class="dev-credit">Developed with <i class="fas fa-heart" style="color: #ef4444;"></i> by <a href="https://wa.me/201093139047" target="_blank">Abdulrahman Adel</a></p>
         </div>
     </div>
+<!-- 1. نافذة اختيار المرحلة (تظهر أول ما تدوس تصفح الحصص) -->
+    <div id="stageSelectionModal" class="custom-modal-overlay">
+        <div class="custom-modal-content" style="max-width: 600px;">
+            <h3 style="color: #f8fafc; font-size: 24px; margin-bottom: 10px;">اختر المرحلة الدراسية 📚</h3>
+            <p style="color: #94a3b8; margin-bottom: 25px;">علشان نعرضلك حصص الأستاذ المناسبة ليك</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                <button onclick="selectStageAndLoadCourses('ابتدائي')" style="background: #1e293b; color: #3b82f6; border: 2px solid #3b82f6; padding: 20px; border-radius: 15px; font-size: 18px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-child" style="display:block; font-size: 30px; margin-bottom: 10px;"></i>ابتدائي</button>
+                <button onclick="selectStageAndLoadCourses('إعدادي')" style="background: #1e293b; color: #10b981; border: 2px solid #10b981; padding: 20px; border-radius: 15px; font-size: 18px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-book-reader" style="display:block; font-size: 30px; margin-bottom: 10px;"></i>إعدادي</button>
+                <button onclick="selectStageAndLoadCourses('ثانوي')" style="background: #1e293b; color: #f59e0b; border: 2px solid #f59e0b; padding: 20px; border-radius: 15px; font-size: 18px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-graduation-cap" style="display:block; font-size: 30px; margin-bottom: 10px;"></i>ثانوي</button>
+                <button onclick="selectStageAndLoadCourses('بكالوريا')" style="background: #1e293b; color: #d946ef; border: 2px solid #d946ef; padding: 20px; border-radius: 15px; font-size: 18px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-university" style="display:block; font-size: 30px; margin-bottom: 10px;"></i>بكالوريا</button>
+            </div>
+            <button onclick="document.getElementById('stageSelectionModal').classList.remove('active')" style="margin-top: 25px; background: rgba(239,68,68,0.1); color: #ef4444; border: none; padding: 10px 30px; border-radius: 10px; font-weight: bold; cursor: pointer;">إلغاء</button>
+        </div>
+    </div>
 
+    <!-- 2. نافذة تأكيد الشراء من الرصيد -->
+    <div id="confirmBuyModal" class="custom-modal-overlay">
+        <div class="custom-modal-content">
+            <div class="modal-icon" style="color: #10b981;"><i class="fas fa-shopping-cart"></i></div>
+            <h3>تأكيد الاشتراك</h3>
+            <p id="confirmBuyText" style="margin-bottom: 20px; font-size: 16px;"></p>
+            <div class="modal-actions">
+                <button class="btn-confirm" id="btnExecuteBuy" style="background: #10b981;">نعم، اشترك الآن</button>
+                <button class="btn-cancel" onclick="document.getElementById('confirmBuyModal').classList.remove('active')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. نافذة الشحن التلقائي لشراء الحصة -->
+    <div id="chargeToBuyModal" class="custom-modal-overlay">
+        <div class="custom-modal-content">
+            <div class="modal-icon" style="color: #ef4444;"><i class="fas fa-wallet"></i></div>
+            <h3>رصيدك غير كافٍ! ⚠️</h3>
+            <p id="chargeReqText" style="margin-bottom: 15px; font-size: 15px; color: #cbd5e1;"></p>
+            <p style="font-size: 13px; color: #f59e0b; margin-bottom: 20px;">أدخل كود الشحن بالأسفل وسيتم شحن رصيدك وشراء الحصة تلقائياً.</p>
+            <input type="text" id="autoChargeCodeInput" placeholder="أدخل كود الشحن هنا (مثال: 1234-5678-9012)" style="width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: monospace; font-size: 18px; text-align: center; margin-bottom: 20px;">
+            <div class="modal-actions">
+                <button class="btn-confirm" id="btnSubmitChargeBuy" style="background: #3b82f6;">شحن واشتراك 🚀</button>
+                <button class="btn-cancel" onclick="document.getElementById('chargeToBuyModal').classList.remove('active')">إغلاق</button>
+            </div>
+        </div>
+    </div>
     <!-- أيقونة الواتساب -->
     <a href="https://wa.me/201093139047" class="floating-whatsapp" target="_blank">
         <i class="fab fa-whatsapp"></i>
