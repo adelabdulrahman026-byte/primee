@@ -97,35 +97,7 @@ if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
 if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
 
 // ==========================================
-// 3. فلترة المدرسين من القائمة الجانبية 
-// ==========================================
-const filterLinks = document.querySelectorAll('.drawer-links a');
-const teacherCards = document.querySelectorAll('.modern-teacher-card'); 
-
-if (filterLinks.length > 0 && teacherCards.length > 0) {
-    filterLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault(); 
-            const selectedText = e.target.innerText.trim(); 
-            
-            teacherCards.forEach(card => {
-                const cardStages = card.querySelector('.stages-badges');
-                if (cardStages) {
-                    const stagesText = cardStages.innerText;
-                    if (stagesText.includes(selectedText) || selectedText.includes("عامة")) {
-                        card.style.display = "flex";
-                    } else {
-                        card.style.display = "none";
-                    }
-                }
-            });
-            closeDrawer(); 
-        });
-    });
-}
-
-// ==========================================
-// 4. نافذة متابعة ولي الأمر
+// 3. نافذة متابعة ولي الأمر
 // ==========================================
 const btnParentLogin = document.getElementById('btnParentLogin');
 if (btnParentLogin) {
@@ -143,7 +115,7 @@ if (btnParentLogin) {
 }
 
 // ==========================================
-// 5. نظام الدارك مود (Dark Mode)
+// 4. نظام الدارك مود (Dark Mode)
 // ==========================================
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const bodyElement = document.body;
@@ -153,10 +125,7 @@ if (themeToggleBtn) {
     
     if (localStorage.getItem('theme') === 'dark') {
         bodyElement.setAttribute('data-theme', 'dark');
-        if (icon) {
-            icon.classList.remove('fa-moon');
-            icon.classList.add('fa-sun');
-        }
+        if (icon) { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
     }
 
     themeToggleBtn.addEventListener('click', () => {
@@ -173,44 +142,49 @@ if (themeToggleBtn) {
 }
 
 // ==========================================
-// 6. نافذة إشعارات OneSignal
-// ==========================================
-window.addEventListener('load', () => {
-    const hasSeenNotificationPrompt = localStorage.getItem('seenNotificationPrompt');
-    const notificationModal = document.getElementById('notificationModal');
-    
-    if (!hasSeenNotificationPrompt && notificationModal) {
-        setTimeout(() => { notificationModal.classList.add('active'); }, 3000); 
-    }
-});
-
-const btnAllowNotif = document.getElementById('allowNotifications');
-const btnCloseNotif = document.getElementById('closeNotifications');
-const notifModal = document.getElementById('notificationModal');
-
-if (btnAllowNotif && notifModal) {
-    btnAllowNotif.addEventListener('click', () => {
-        notifModal.classList.remove('active');
-        localStorage.setItem('seenNotificationPrompt', 'true');
-        if (window.OneSignalDeferred) {
-            window.OneSignalDeferred.push(async function(OneSignal) {
-                await OneSignal.slidedown.promptPush();
-            });
-        }
-    });
-}
-
-if (btnCloseNotif && notifModal) {
-    btnCloseNotif.addEventListener('click', () => {
-        notifModal.classList.remove('active');
-        localStorage.setItem('seenNotificationPrompt', 'true');
-    });
-}
-
-// ==========================================
-// 7. جلب المدرسين وتنسيق الكروت החדش
+// 5. جلب المدرسين (كروت مربعة 100%)
 // ==========================================
 let teachersSwiperInstance = null;
+
+// تعريف الدالة بره عشان الزرار يشوفها
+window.openTeacherCourses = async function(instructorName) {
+    document.getElementById('modalTeacherName').innerText = 'حصص ' + instructorName;
+    const grid = document.getElementById('modalCoursesGrid');
+    
+    grid.innerHTML = '<div style="color: #94a3b8; text-align: center; width: 100%; padding: 30px;">جاري جلب الحصص... ⏳</div>';
+    document.getElementById('teacherCoursesModal').classList.add('active');
+
+    try {
+        const q = query(collection(db, "courses"), where("instructor", "==", instructorName));
+        const snapshot = await getDocs(q);
+        
+        if(snapshot.empty) {
+            grid.innerHTML = '<div style="color: #ef4444; text-align: center; width: 100%; padding: 30px;">لا توجد حصص متاحة لهذا المدرس حالياً.</div>';
+            return;
+        }
+
+        let html = '';
+        snapshot.forEach(doc => {
+            const c = doc.data();
+            const subLink = loggedInPhone ? 'student-dashboard.html' : 'login.html'; // توجيه ذكي
+            
+            html += `
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 15px; padding: 15px; text-align: right;">
+                <div style="aspect-ratio: 16/9; background: url('${c.image || 'https://via.placeholder.com/300'}') center/cover; border-radius: 10px; margin-bottom: 15px;"></div>
+                <h4 style="color: #f8fafc; margin: 0 0 5px 0; font-size: 18px; font-weight: 800;">${c.title}</h4>
+                <p style="color: #94a3b8; font-size: 13px; margin: 0 0 15px 0;"><i class="fas fa-graduation-cap"></i> ${c.grade}</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #475569; padding-top: 15px;">
+                    <span style="color: #10b981; font-weight: 900; font-size: 20px;">${c.price > 0 ? c.price + ' ج.م' : 'مجاني'}</span>
+                    <button onclick="window.location.href='${subLink}'" style="background: #f59e0b; color: #fff; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-family: 'Cairo'; font-weight: 800;">اشترك</button>
+                </div>
+            </div>`;
+        });
+        grid.innerHTML = html;
+    } catch(e) {
+        console.error(e);
+        grid.innerHTML = '<div style="color: #ef4444; text-align: center; width: 100%; padding: 30px;">حدث خطأ أثناء جلب الحصص.</div>';
+    }
+}
 
 async function loadDynamicTeachers() {
     const teachersGrid = document.getElementById('teachersGrid');
@@ -227,7 +201,6 @@ async function loadDynamicTeachers() {
         querySnapshot.forEach(doc => {
             const t = doc.data();
             
-            // ستايل البادج الشفاف اللي بحدود زي الصورة
             let stagesHtml = '';
             if (t.stages) {
                 t.stages.split(',').forEach(s => {
@@ -235,14 +208,14 @@ async function loadDynamicTeachers() {
                 });
             }
 
-            // الكارت مطابق للتصميم المطلوب (صورة مربعة فوق وكحلي تحت)
+            // التعديل السحري: aspect-ratio: 1/1 والصورة contain عشان المربع يبقى مظبوط 100%
             html += `
             <div class="swiper-slide">
                 <div class="modern-teacher-card" style="background: #1e293b; border-radius: 15px; border: 1px solid #334155; overflow: hidden; height: 100%; display: flex; flex-direction: column;">
                     
-                    <div class="card-image-wrapper" style="position: relative; height: 260px; background: #0f172a;">
-                        <img src="${t.imageUrl}" alt="${t.name}" style="width: 100%; height: 100%; object-fit: cover;">
-                        <div class="teacher-subject-badge" style="position: absolute; top: 15px; right: 15px; background: #f59e0b; color: #fff; padding: 5px 15px; border-radius: 8px; font-weight: 900; font-size: 14px;"><i class="fas fa-book"></i> ${t.subject}</div>
+                    <div class="card-image-wrapper" style="position: relative; aspect-ratio: 1 / 1; background: #0f172a; padding: 15px; border-bottom: 2px solid #3b82f6;">
+                        <img src="${t.imageUrl}" alt="${t.name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 10px;">
+                        <div class="teacher-subject-badge" style="position: absolute; top: 15px; right: 15px; background: #f59e0b; color: #fff; padding: 5px 15px; border-radius: 8px; font-weight: 900; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"><i class="fas fa-book"></i> ${t.subject}</div>
                     </div>
                     
                     <div class="card-info-wrapper" style="padding: 20px; text-align: center; display: flex; flex-direction: column; flex-grow: 1;">
@@ -261,85 +234,49 @@ async function loadDynamicTeachers() {
 
         teachersGrid.innerHTML = html;
 
-        if (typeof Swiper !== 'undefined') {
-            teachersSwiperInstance = new Swiper('.teachers-slider', {
-                loop: false, 
-                grabCursor: true,
-                autoplay: { delay: 3000, disableOnInteraction: false },
-                pagination: { el: '.swiper-pagination', clickable: true },
-                breakpoints: {
-                    0: { slidesPerView: 1, spaceBetween: 20 },
-                    768: { slidesPerView: 2, spaceBetween: 30 },
-                    1024: { slidesPerView: 3, spaceBetween: 30 }
-                }
-            });
+        function initSwiper() {
+            if (typeof Swiper !== 'undefined') {
+                teachersSwiperInstance = new Swiper('.teachers-slider', {
+                    loop: false, 
+                    grabCursor: true,
+                    autoplay: { delay: 3000, disableOnInteraction: false },
+                    pagination: { el: '.swiper-pagination', clickable: true },
+                    breakpoints: {
+                        0: { slidesPerView: 1, spaceBetween: 20 },
+                        768: { slidesPerView: 2, spaceBetween: 30 },
+                        1024: { slidesPerView: 3, spaceBetween: 30 }
+                    }
+                });
+            }
         }
+        initSwiper();
+
+        // زرار عرض جميع المدرسين (بيفرمت السلايدر ويرجعه تاني)
+        document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const sliderContainer = document.querySelector('.teachers-slider');
+            const wrapper = sliderContainer.querySelector('.swiper-wrapper');
+            
+            sliderContainer.classList.toggle('teachers-grid-active');
+            
+            if (sliderContainer.classList.contains('teachers-grid-active')) {
+                e.target.innerHTML = 'عرض كشريط <i class="fas fa-arrow-right"></i>';
+                if(teachersSwiperInstance) {
+                    teachersSwiperInstance.destroy(false, true); // تدمير السلايدر نهائياً لفك الشبكة
+                }
+                wrapper.style.transform = 'none'; // مسح أي تحريك قديم
+            } else {
+                e.target.innerHTML = 'عرض جميع المدرسين <i class="fas fa-arrow-left"></i>';
+                initSwiper(); // إعادة تشغيل السلايدر
+            }
+        });
+
     } catch (e) { console.error("خطأ في جلب المدرسين:", e); }
 }
 loadDynamicTeachers();
 
 // ==========================================
-// 8. عرض جميع المدرسين (إلغاء السلايدر)
-// ==========================================
-document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const sliderContainer = document.querySelector('.teachers-slider');
-    
-    sliderContainer.classList.toggle('teachers-grid-active');
-    
-    if (sliderContainer.classList.contains('teachers-grid-active')) {
-        e.target.innerHTML = 'عرض كشريط <i class="fas fa-arrow-right"></i>';
-        if(teachersSwiperInstance) teachersSwiperInstance.disable(); // نوقف السلايدر
-    } else {
-        e.target.innerHTML = 'عرض جميع المدرسين <i class="fas fa-arrow-left"></i>';
-        if(teachersSwiperInstance) teachersSwiperInstance.enable(); // نشغله تاني
-    }
-});
-
-// ==========================================
-// 9. نافذة عرض حصص المدرس المحددة
-// ==========================================
-window.openTeacherCourses = async function(instructorName) {
-    document.getElementById('modalTeacherName').innerText = 'حصص ' + instructorName;
-    const grid = document.getElementById('modalCoursesGrid');
-    
-    // إظهار اللودينج وفتح الشاشة
-    grid.innerHTML = '<div style="color: #94a3b8; text-align: center; width: 100%; padding: 30px;">جاري جلب الحصص... ⏳</div>';
-    document.getElementById('teacherCoursesModal').classList.add('active');
-
-    try {
-        const q = query(collection(db, "courses"), where("instructor", "==", instructorName));
-        const snapshot = await getDocs(q);
-        
-        if(snapshot.empty) {
-            grid.innerHTML = '<div style="color: #ef4444; text-align: center; width: 100%; padding: 30px;">لا توجد حصص متاحة لهذا المدرس حالياً.</div>';
-            return;
-        }
-
-        let html = '';
-        snapshot.forEach(doc => {
-            const c = doc.data();
-            html += `
-            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 15px; padding: 15px; text-align: right;">
-                <div style="height: 140px; background: url('${c.image || 'https://via.placeholder.com/300'}') center/cover; border-radius: 10px; margin-bottom: 15px;"></div>
-                <h4 style="color: #f8fafc; margin: 0 0 5px 0; font-size: 18px; font-weight: 800;">${c.title}</h4>
-                <p style="color: #94a3b8; font-size: 13px; margin: 0 0 15px 0;"><i class="fas fa-graduation-cap"></i> ${c.grade}</p>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #475569; padding-top: 15px;">
-                    <span style="color: #10b981; font-weight: 900; font-size: 20px;">${c.price > 0 ? c.price + ' ج.م' : 'مجاني'}</span>
-                    <button onclick="window.location.href='login.html'" style="background: #f59e0b; color: #fff; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-family: 'Cairo'; font-weight: 800;">اشترك</button>
-                </div>
-            </div>`;
-        });
-        
-        grid.innerHTML = html;
-    } catch(e) {
-        console.error(e);
-        grid.innerHTML = '<div style="color: #ef4444; text-align: center; width: 100%; padding: 30px;">حدث خطأ أثناء جلب الحصص.</div>';
-    }
-}
-
-// ==========================================
-// 10. جلب الباقات الديناميكية
+// 6. جلب الباقات الديناميكية (مربعات مظبوطة)
 // ==========================================
 async function loadDynamicPackages() {
     const packagesGrid = document.querySelector('.packages-grid');
@@ -355,6 +292,7 @@ async function loadDynamicPackages() {
         let html = '';
         querySnapshot.forEach(docSnap => {
             const pkg = docSnap.data();
+            const subLink = loggedInPhone ? 'student-dashboard.html' : 'login.html';
             
             let featuresHtml = '';
             if (pkg.features) {
@@ -363,22 +301,23 @@ async function loadDynamicPackages() {
                 });
             }
 
+            // صورة الباقة مربعة بالمللي aspect-ratio: 1/1
             html += `
-            <div class="package-card" style="background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 25px; overflow: hidden; position: relative;">
-                <div style="height: 150px; background: url('${pkg.imageUrl}') center/cover; margin: -25px -25px 20px -25px; border-bottom: 2px solid #f59e0b;"></div>
+            <div class="package-card" style="background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 25px; overflow: hidden; position: relative; display: flex; flex-direction: column;">
+                <div style="aspect-ratio: 1 / 1; background: url('${pkg.imageUrl}') center/contain no-repeat #0f172a; margin: -25px -25px 20px -25px; border-bottom: 2px solid #f59e0b;"></div>
                 <div class="package-header">
                     <span class="package-badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 900;">🔥 خصم خاص</span>
                     <h3 style="color: #f8fafc; font-size: 22px; margin: 15px 0 5px 0;">${pkg.name}</h3>
                     <p style="color: #94a3b8; font-size: 14px; margin: 0;">${pkg.grade}</p>
                 </div>
-                <ul class="package-features" style="list-style: none; padding: 0; margin: 20px 0; color: #cbd5e1; display: flex; flex-direction: column; gap: 10px;">
+                <ul class="package-features" style="list-style: none; padding: 0; margin: 20px 0; color: #cbd5e1; display: flex; flex-direction: column; gap: 10px; flex-grow: 1;">
                     ${featuresHtml}
                 </ul>
                 <div class="package-price" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-top: 1px dashed #475569; padding-top: 20px;">
                     <span class="old-price" style="text-decoration: line-through; color: #ef4444; font-weight: 800;">${pkg.oldPrice} ج.م</span>
                     <span class="new-price" style="font-size: 26px; font-weight: 900; color: #10b981;">${pkg.newPrice} ج.م</span>
                 </div>
-                <button onclick="window.location.href='login.html'" class="btn-package-subscribe" style="width: 100%; background: #3b82f6; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; margin-top: 20px; cursor: pointer; transition: 0.3s;">اشترك الآن</button>
+                <button onclick="window.location.href='${subLink}'" class="btn-package-subscribe" style="width: 100%; background: #3b82f6; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; margin-top: 20px; cursor: pointer; transition: 0.3s;">اشترك الآن</button>
             </div>`;
         });
         packagesGrid.innerHTML = html;
