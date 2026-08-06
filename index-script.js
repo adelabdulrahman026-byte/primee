@@ -334,3 +334,116 @@ async function loadDynamicPackages() {
     } catch (e) {}
 }
 loadDynamicPackages();
+// ==========================================
+// 7. جلب المدرسين (كروت Coverflow 3D والفلترة)
+// ==========================================
+let allTeachersData = [];
+let teachersSwiperInstance = null;
+
+// دالة رسم المدرسين بناءً على الفلتر
+function renderTeachers(filterStage) {
+    const teachersGrid = document.getElementById('teachersGrid');
+    let html = '';
+
+    const filteredTeachers = allTeachersData.filter(t => {
+        if (filterStage === 'all') return true;
+        return t.stages && t.stages.includes(filterStage);
+    });
+
+    if (filteredTeachers.length === 0) {
+        teachersGrid.innerHTML = '<div style="text-align: center; width: 100%; color: #94a3b8; padding: 50px 20px;">لا يوجد مدرسين في هذه المرحلة حالياً.</div>';
+        if(teachersSwiperInstance) { teachersSwiperInstance.destroy(true, true); teachersSwiperInstance = null; }
+        return;
+    }
+
+    filteredTeachers.forEach(t => {
+        let stagesText = t.stages ? t.stages.split(',').slice(0, 2).join(' | ') : ''; // نعرض اول مرحلتين بس عشان الزحمة
+        
+        html += `
+        <div class="swiper-slide">
+            <img src="${t.imageUrl}" alt="${t.name}" class="cover-card-img">
+            <div class="cover-card-fade">
+                <div style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); color: #f59e0b; padding: 5px 12px; border-radius: 8px; font-size: 13px; font-weight: 800; border: 1px solid rgba(255,255,255,0.1);">
+                    <i class="fas fa-book"></i> ${t.subject}
+                </div>
+                <h3>${t.name}</h3>
+                <p>${stagesText}</p>
+                <button class="cover-card-btn" onclick="openTeacherCourses('${t.name}')">تصفح الحصص <i class="fas fa-arrow-left"></i></button>
+            </div>
+        </div>`;
+    });
+
+    teachersGrid.innerHTML = html;
+
+    // إعادة تشغيل السلايدر
+    if (teachersSwiperInstance) { teachersSwiperInstance.destroy(true, true); }
+    const sliderContainer = document.querySelector('.teachers-slider');
+    
+    // لو مش دايسين "عرض الكل"، شغل السلايدر الـ 3D
+    if (!sliderContainer.classList.contains('teachers-grid-active') && typeof Swiper !== 'undefined') {
+        teachersSwiperInstance = new Swiper('.teachers-slider', {
+            effect: 'coverflow', // التأثير المطلوب!
+            grabCursor: true,
+            centeredSlides: true,
+            slidesPerView: 'auto',
+            coverflowEffect: {
+                rotate: 0, // بدون دوران
+                stretch: -30, // تداخل الكروت
+                depth: 150, // العمق للكروت الجانبية
+                modifier: 1,
+                slideShadows: false, // شيلنا الظل الافتراضي الكئيب
+            },
+            autoplay: { delay: 3000, disableOnInteraction: false },
+            pagination: { el: '.swiper-pagination', clickable: true },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            }
+        });
+    }
+}
+
+// تحميل المدرسين من الداتا بيز
+async function fetchTeachers() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "teachers"));
+        allTeachersData = [];
+        querySnapshot.forEach(doc => {
+            allTeachersData.push({ id: doc.id, ...doc.data() });
+        });
+        renderTeachers('all'); // عرض الكل في البداية
+    } catch (e) { console.error("خطأ في جلب المدرسين:", e); }
+}
+fetchTeachers();
+
+// تشغيل زراير الفلترة
+const filterBtns = document.querySelectorAll('#teachersFilters .modern-filter-btn');
+filterBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        filterBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        const filter = e.target.getAttribute('data-filter');
+        renderTeachers(filter);
+    });
+});
+
+// زرار عرض جميع المدرسين (إلغاء السلايدر وفرد الشبكة)
+document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const sliderContainer = document.querySelector('.teachers-slider');
+    const wrapper = sliderContainer.querySelector('.swiper-wrapper');
+    
+    sliderContainer.classList.toggle('teachers-grid-active');
+    
+    if (sliderContainer.classList.contains('teachers-grid-active')) {
+        e.target.innerHTML = 'عرض كشريط <i class="fas fa-arrow-right"></i>';
+        if(teachersSwiperInstance) { teachersSwiperInstance.destroy(false, true); }
+        wrapper.style.transform = 'none'; 
+    } else {
+        e.target.innerHTML = 'عرض جميع المدرسين <i class="fas fa-arrow-left"></i>';
+        // نعيد تشغيل الفلتر الحالي عشان يرجع السلايدر
+        const activeFilter = document.querySelector('#teachersFilters .modern-filter-btn.active').getAttribute('data-filter');
+        renderTeachers(activeFilter);
+    }
+});
