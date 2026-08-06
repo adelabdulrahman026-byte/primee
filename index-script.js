@@ -128,6 +128,7 @@ window.openTeacherCourses = function(instructorName) {
 }
 
 // 2. لما يختار المرحلة (نجيب الحصص ونفلترها)
+// 2. لما يختار المرحلة (نجيب الحصص ونفلترها بذكاء)
 window.selectStageAndLoadCourses = async function(stageKeyword) {
     document.getElementById('stageSelectionModal').classList.remove('active');
     document.getElementById('modalTeacherName').innerText = 'حصص ' + window.currentViewingTeacher + ' (' + stageKeyword + ')';
@@ -153,8 +154,16 @@ window.selectStageAndLoadCourses = async function(stageKeyword) {
 
         snapshot.forEach(docSnap => {
             const c = docSnap.data();
-            // فلترة بالكلمة (ابتدائي، إعدادي، ثانوي)
-            if(c.grade && c.grade.includes(stageKeyword)) {
+            const gradeStr = (c.grade || "").toLowerCase();
+            
+            // الحل الذكي لربط العربي بالاختصارات الإنجليزية اللي في لوحة التحكم
+            let isMatch = false;
+            if (stageKeyword === 'ابتدائي' && (gradeStr.includes('ابتدائي') || gradeStr.includes('ed'))) isMatch = true;
+            else if (stageKeyword === 'إعدادي' && (gradeStr.includes('إعدادي') || gradeStr.includes('prep'))) isMatch = true;
+            else if (stageKeyword === 'ثانوي' && (gradeStr.includes('ثانوي') || gradeStr.includes('sec'))) isMatch = true;
+            else if (stageKeyword === 'بكالوريا' && (gradeStr.includes('بكالوريا') || gradeStr.includes('bac'))) isMatch = true;
+
+            if(isMatch) {
                 hasCourses = true;
                 const isBought = studentMyCourses.includes(docSnap.id);
                 
@@ -185,7 +194,6 @@ window.selectStageAndLoadCourses = async function(stageKeyword) {
         }
     } catch(e) { grid.innerHTML = '<div style="color: #ef4444; text-align: center; width: 100%; padding: 30px;">حدث خطأ أثناء الجلب.</div>'; }
 }
-
 // 3. لما يدوس اشترك (نفحص الرصيد)
 window.buyCourseAction = async function(courseId, price, title) {
     if(!loggedInPhone) { window.location.href = 'login.html'; return; } // لو مش مسجل يروح يسجل
