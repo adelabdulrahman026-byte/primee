@@ -14,7 +14,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// 1. فحص تسجيل الدخول وتحديث شكل الهيدر
+// 1. فحص تسجيل الدخول
 // ==========================================
 const loggedInPhone = localStorage.getItem('studentPhone');
 if (loggedInPhone) {
@@ -38,10 +38,7 @@ async function fetchStudentNavData(phone) {
             if (navAuthSection) {
                 navAuthSection.innerHTML = `
                     <div class="logged-in-badge" onclick="window.location.href='student-dashboard.html'">
-                        <div class="badge-info">
-                            <span class="s-name">${firstName}</span>
-                            <span class="s-wallet">${balance} ج.م</span>
-                        </div>
+                        <div class="badge-info"><span class="s-name">${firstName}</span><span class="s-wallet">${balance} ج.م</span></div>
                         <div class="badge-avatar"><i class="fas fa-user-graduate"></i></div>
                     </div>
                 `;
@@ -52,14 +49,9 @@ async function fetchStudentNavData(phone) {
                 mobileAuthSection.innerHTML = `
                     <div class="mobile-user-profile" onclick="window.location.href='student-dashboard.html'">
                         <div class="m-avatar"><i class="fas fa-user-graduate"></i></div>
-                        <div class="m-info">
-                            <h4>أهلاً بك، ${firstName}</h4>
-                            <span>الرصيد: ${balance} ج.م</span>
-                        </div>
+                        <div class="m-info"><h4>أهلاً بك، ${firstName}</h4><span>الرصيد: ${balance} ج.م</span></div>
                     </div>
-                    <button class="btn-logout-mobile" onclick="localStorage.removeItem('studentPhone'); window.location.reload();">
-                        <i class="fas fa-sign-out-alt"></i> تسجيل خروج
-                    </button>
+                    <button class="btn-logout-mobile" onclick="localStorage.removeItem('studentPhone'); window.location.reload();"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
                 `;
             }
 
@@ -70,7 +62,7 @@ async function fetchStudentNavData(phone) {
 }
 
 // ==========================================
-// 2. تفعيل القائمة الجانبية (الصفوف)
+// 2. تفعيل القائمة الجانبية (Drawer)
 // ==========================================
 const openDrawerBtn = document.getElementById('openDrawer');
 const closeDrawerBtn = document.getElementById('closeDrawer');
@@ -78,56 +70,36 @@ const stagesDrawer = document.getElementById('stagesDrawer');
 const drawerOverlay = document.getElementById('drawerOverlay');
 
 if (openDrawerBtn && stagesDrawer && drawerOverlay) {
-    openDrawerBtn.addEventListener('click', () => {
-        stagesDrawer.classList.add('open');
-        drawerOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden'; 
-    });
+    openDrawerBtn.addEventListener('click', () => { stagesDrawer.classList.add('open'); drawerOverlay.classList.add('active'); document.body.style.overflow = 'hidden'; });
 }
 
 function closeDrawer() {
-    if (stagesDrawer && drawerOverlay) {
-        stagesDrawer.classList.remove('open');
-        drawerOverlay.classList.remove('active');
-        document.body.style.overflow = ''; 
-    }
+    if (stagesDrawer && drawerOverlay) { stagesDrawer.classList.remove('open'); drawerOverlay.classList.remove('active'); document.body.style.overflow = ''; }
 }
 
 if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
 if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
 
 // ==========================================
-// 3. نافذة متابعة ولي الأمر
+// 3. نافذة متابعة ولي الأمر والدارك مود
 // ==========================================
 const btnParentLogin = document.getElementById('btnParentLogin');
 if (btnParentLogin) {
     btnParentLogin.addEventListener('click', () => {
-        const phoneInput = document.getElementById('parentStudentPhone');
-        if (phoneInput) {
-            const phone = phoneInput.value;
-            if (phone.length >= 10) { 
-                window.location.href = `parent-report.html?phone=${phone}`;
-            } else {
-                alert("رجاءً إدخال رقم هاتف صحيح للطالب.");
-            }
-        }
+        const phone = document.getElementById('parentStudentPhone').value;
+        if (phone.length >= 10) window.location.href = `parent-report.html?phone=${phone}`;
+        else alert("رجاءً إدخال رقم هاتف صحيح للطالب.");
     });
 }
 
-// ==========================================
-// 4. نظام الدارك مود (Dark Mode)
-// ==========================================
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const bodyElement = document.body;
-
 if (themeToggleBtn) {
     const icon = themeToggleBtn.querySelector('i');
-    
     if (localStorage.getItem('theme') === 'dark') {
         bodyElement.setAttribute('data-theme', 'dark');
         if (icon) { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
     }
-
     themeToggleBtn.addEventListener('click', () => {
         if (bodyElement.getAttribute('data-theme') === 'dark') {
             bodyElement.removeAttribute('data-theme');
@@ -142,11 +114,140 @@ if (themeToggleBtn) {
 }
 
 // ==========================================
-// 5. جلب المدرسين (كروت مربعة 100%)
+// 4. نظام المدرسين (فلترة + كارت مطابق للتصميم)
 // ==========================================
+let allTeachersData = [];
 let teachersSwiperInstance = null;
 
-// تعريف الدالة بره عشان الزرار يشوفها
+// تحميل المدرسين من الداتا بيز مرة واحدة
+async function fetchTeachers() {
+    const teachersGrid = document.getElementById('teachersGrid');
+    try {
+        const querySnapshot = await getDocs(collection(db, "teachers"));
+        if (querySnapshot.empty) {
+            teachersGrid.innerHTML = '<div style="text-align: center; width: 100%; color: #94a3b8; padding: 20px;">جاري انضمام نخبة من المدرسين قريباً...</div>';
+            return;
+        }
+
+        allTeachersData = [];
+        querySnapshot.forEach(doc => {
+            allTeachersData.push({ id: doc.id, ...doc.data() });
+        });
+
+        renderTeachers('all'); // عرض الكل في البداية
+    } catch (e) { console.error("خطأ في جلب المدرسين:", e); }
+}
+
+// رسم الكروت بناءً على الفلتر
+function renderTeachers(filterStage) {
+    const teachersGrid = document.getElementById('teachersGrid');
+    let html = '';
+
+    const filteredTeachers = allTeachersData.filter(t => {
+        if (filterStage === 'all') return true;
+        return t.stages && t.stages.includes(filterStage);
+    });
+
+    if (filteredTeachers.length === 0) {
+        teachersGrid.innerHTML = '<div style="text-align: center; width: 100%; color: #94a3b8; padding: 20px;">لا يوجد مدرسين في هذه المرحلة حالياً.</div>';
+        if(teachersSwiperInstance) { teachersSwiperInstance.destroy(true, true); teachersSwiperInstance = null; }
+        return;
+    }
+
+    filteredTeachers.forEach(t => {
+        let stagesHtml = '';
+        if (t.stages) {
+            t.stages.split(',').forEach(s => {
+                // البادج الشفاف زي الصورة
+                stagesHtml += `<span class="stage-badge" style="background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700;">${s.trim()}</span>`;
+            });
+        }
+
+        // الكارت الجديد המربع بالمللي!
+        html += `
+        <div class="swiper-slide">
+            <div class="modern-teacher-card" style="background: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden; height: 100%; display: flex; flex-direction: column;">
+                
+                <div class="card-image-wrapper" style="position: relative; width: 100%; aspect-ratio: 1 / 1; border-bottom: 2px solid #3b82f6; overflow: hidden; background: #0f172a;">
+                    <img src="${t.imageUrl}" alt="${t.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div class="teacher-subject-badge" style="position: absolute; top: 15px; right: 15px; background: #f59e0b; color: #fff; padding: 5px 15px; border-radius: 8px; font-weight: 900; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"><i class="fas fa-book"></i> ${t.subject}</div>
+                </div>
+                
+                <div class="card-info-wrapper" style="padding: 20px; text-align: center; display: flex; flex-direction: column; flex-grow: 1; background: #1e293b;">
+                    <h3 style="color: #f8fafc; margin: 0 0 15px 0; font-size: 20px; font-weight: 900;">${t.name}</h3>
+                    <div class="stages-badges" style="margin-bottom: 25px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
+                        ${stagesHtml}
+                    </div>
+                    <div style="margin-top: auto;">
+                        <button onclick="openTeacherCourses('${t.name}')" style="width: 100%; background: #3b82f6; color: #fff; border: none; padding: 12px; border-radius: 8px; font-family: 'Cairo'; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.3s;">تصفح الحصص <i class="fas fa-arrow-left"></i></button>
+                    </div>
+                </div>
+
+            </div>
+        </div>`;
+    });
+
+    teachersGrid.innerHTML = html;
+
+    // إعادة تشغيل السلايدر
+    if (teachersSwiperInstance) { teachersSwiperInstance.destroy(true, true); }
+    const sliderContainer = document.querySelector('.teachers-slider');
+    if (!sliderContainer.classList.contains('teachers-grid-active')) {
+        initSwiper();
+    }
+}
+
+function initSwiper() {
+    if (typeof Swiper !== 'undefined') {
+        teachersSwiperInstance = new Swiper('.teachers-slider', {
+            loop: false, 
+            grabCursor: true,
+            autoplay: { delay: 3000, disableOnInteraction: false },
+            pagination: { el: '.swiper-pagination', clickable: true },
+            breakpoints: {
+                0: { slidesPerView: 1, spaceBetween: 20 },
+                768: { slidesPerView: 2, spaceBetween: 30 },
+                1024: { slidesPerView: 3, spaceBetween: 30 }
+            }
+        });
+    }
+}
+
+fetchTeachers(); // تشغيل الجلب
+
+// أزرار فلترة المراحل
+const filterBtns = document.querySelectorAll('#teachersFilters .modern-filter-btn');
+filterBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        filterBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        const filter = e.target.getAttribute('data-filter');
+        renderTeachers(filter);
+    });
+});
+
+// زرار عرض جميع المدرسين (إلغاء السلايدر)
+document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const sliderContainer = document.querySelector('.teachers-slider');
+    const wrapper = sliderContainer.querySelector('.swiper-wrapper');
+    
+    sliderContainer.classList.toggle('teachers-grid-active');
+    
+    if (sliderContainer.classList.contains('teachers-grid-active')) {
+        e.target.innerHTML = 'عرض كشريط <i class="fas fa-arrow-right"></i>';
+        if(teachersSwiperInstance) { teachersSwiperInstance.destroy(false, true); }
+        wrapper.style.transform = 'none'; 
+    } else {
+        e.target.innerHTML = 'عرض جميع المدرسين <i class="fas fa-arrow-left"></i>';
+        initSwiper(); 
+    }
+});
+
+// ==========================================
+// 5. نافذة عرض حصص المدرس المحددة (المودال)
+// ==========================================
 window.openTeacherCourses = async function(instructorName) {
     document.getElementById('modalTeacherName').innerText = 'حصص ' + instructorName;
     const grid = document.getElementById('modalCoursesGrid');
@@ -166,7 +267,7 @@ window.openTeacherCourses = async function(instructorName) {
         let html = '';
         snapshot.forEach(doc => {
             const c = doc.data();
-            const subLink = loggedInPhone ? 'student-dashboard.html' : 'login.html'; // توجيه ذكي
+            const subLink = loggedInPhone ? 'student-dashboard.html' : 'login.html'; 
             
             html += `
             <div style="background: #1e293b; border: 1px solid #334155; border-radius: 15px; padding: 15px; text-align: right;">
@@ -181,102 +282,12 @@ window.openTeacherCourses = async function(instructorName) {
         });
         grid.innerHTML = html;
     } catch(e) {
-        console.error(e);
         grid.innerHTML = '<div style="color: #ef4444; text-align: center; width: 100%; padding: 30px;">حدث خطأ أثناء جلب الحصص.</div>';
     }
 }
 
-async function loadDynamicTeachers() {
-    const teachersGrid = document.getElementById('teachersGrid');
-    if (!teachersGrid) return;
-
-    try {
-        const querySnapshot = await getDocs(collection(db, "teachers"));
-        if (querySnapshot.empty) {
-            teachersGrid.innerHTML = '<div style="text-align: center; width: 100%; color: #94a3b8; padding: 20px;">جاري انضمام نخبة من المدرسين قريباً...</div>';
-            return;
-        }
-
-        let html = '';
-        querySnapshot.forEach(doc => {
-            const t = doc.data();
-            
-            let stagesHtml = '';
-            if (t.stages) {
-                t.stages.split(',').forEach(s => {
-                    stagesHtml += `<span class="stage-badge" style="background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700;">${s.trim()}</span>`;
-                });
-            }
-
-            // التعديل السحري: aspect-ratio: 1/1 والصورة contain عشان المربع يبقى مظبوط 100%
-            html += `
-            <div class="swiper-slide">
-                <div class="modern-teacher-card" style="background: #1e293b; border-radius: 15px; border: 1px solid #334155; overflow: hidden; height: 100%; display: flex; flex-direction: column;">
-                    
-                    <div class="card-image-wrapper" style="position: relative; aspect-ratio: 1 / 1; background: #0f172a; padding: 15px; border-bottom: 2px solid #3b82f6;">
-                        <img src="${t.imageUrl}" alt="${t.name}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 10px;">
-                        <div class="teacher-subject-badge" style="position: absolute; top: 15px; right: 15px; background: #f59e0b; color: #fff; padding: 5px 15px; border-radius: 8px; font-weight: 900; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"><i class="fas fa-book"></i> ${t.subject}</div>
-                    </div>
-                    
-                    <div class="card-info-wrapper" style="padding: 20px; text-align: center; display: flex; flex-direction: column; flex-grow: 1;">
-                        <h3 style="color: #f8fafc; margin: 0 0 15px 0; font-size: 22px; font-weight: 900;">${t.name}</h3>
-                        <div class="stages-badges" style="margin-bottom: 25px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;">
-                            ${stagesHtml}
-                        </div>
-                        <div style="margin-top: auto;">
-                            <button onclick="openTeacherCourses('${t.name}')" style="width: 100%; background: #3b82f6; color: #fff; border: none; padding: 12px; border-radius: 10px; font-family: 'Cairo'; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.3s;">تصفح الحصص <i class="fas fa-arrow-left"></i></button>
-                        </div>
-                    </div>
-
-                </div>
-            </div>`;
-        });
-
-        teachersGrid.innerHTML = html;
-
-        function initSwiper() {
-            if (typeof Swiper !== 'undefined') {
-                teachersSwiperInstance = new Swiper('.teachers-slider', {
-                    loop: false, 
-                    grabCursor: true,
-                    autoplay: { delay: 3000, disableOnInteraction: false },
-                    pagination: { el: '.swiper-pagination', clickable: true },
-                    breakpoints: {
-                        0: { slidesPerView: 1, spaceBetween: 20 },
-                        768: { slidesPerView: 2, spaceBetween: 30 },
-                        1024: { slidesPerView: 3, spaceBetween: 30 }
-                    }
-                });
-            }
-        }
-        initSwiper();
-
-        // زرار عرض جميع المدرسين (بيفرمت السلايدر ويرجعه تاني)
-        document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            const sliderContainer = document.querySelector('.teachers-slider');
-            const wrapper = sliderContainer.querySelector('.swiper-wrapper');
-            
-            sliderContainer.classList.toggle('teachers-grid-active');
-            
-            if (sliderContainer.classList.contains('teachers-grid-active')) {
-                e.target.innerHTML = 'عرض كشريط <i class="fas fa-arrow-right"></i>';
-                if(teachersSwiperInstance) {
-                    teachersSwiperInstance.destroy(false, true); // تدمير السلايدر نهائياً لفك الشبكة
-                }
-                wrapper.style.transform = 'none'; // مسح أي تحريك قديم
-            } else {
-                e.target.innerHTML = 'عرض جميع المدرسين <i class="fas fa-arrow-left"></i>';
-                initSwiper(); // إعادة تشغيل السلايدر
-            }
-        });
-
-    } catch (e) { console.error("خطأ في جلب المدرسين:", e); }
-}
-loadDynamicTeachers();
-
 // ==========================================
-// 6. جلب الباقات الديناميكية (مربعات مظبوطة)
+// 6. جلب الباقات الديناميكية
 // ==========================================
 async function loadDynamicPackages() {
     const packagesGrid = document.querySelector('.packages-grid');
@@ -301,7 +312,6 @@ async function loadDynamicPackages() {
                 });
             }
 
-            // صورة الباقة مربعة بالمللي aspect-ratio: 1/1
             html += `
             <div class="package-card" style="background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 25px; overflow: hidden; position: relative; display: flex; flex-direction: column;">
                 <div style="aspect-ratio: 1 / 1; background: url('${pkg.imageUrl}') center/contain no-repeat #0f172a; margin: -25px -25px 20px -25px; border-bottom: 2px solid #f59e0b;"></div>
@@ -321,6 +331,6 @@ async function loadDynamicPackages() {
             </div>`;
         });
         packagesGrid.innerHTML = html;
-    } catch (e) { console.error("خطأ في جلب الباقات:", e); }
+    } catch (e) {}
 }
 loadDynamicPackages();
