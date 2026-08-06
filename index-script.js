@@ -114,46 +114,189 @@ if (themeToggleBtn) {
 }
 
 // ==========================================
-// 5. نافذة عرض حصص المدرس المحددة (المودال)
+// 5. نظام اختيار المرحلة وتصفح الحصص والشراء
 // ==========================================
-window.openTeacherCourses = async function(instructorName) {
-    document.getElementById('modalTeacherName').innerText = 'حصص ' + instructorName;
+window.currentViewingTeacher = "";
+let pendingCourseId = null;
+let pendingCoursePrice = 0;
+let pendingCourseTitle = "";
+
+// 1. لما يدوس على تصفح الحصص (نفتحله اختيار المرحلة)
+window.openTeacherCourses = function(instructorName) {
+    window.currentViewingTeacher = instructorName;
+    document.getElementById('stageSelectionModal').classList.add('active');
+}
+
+// 2. لما يختار المرحلة (نجيب الحصص ونفلترها)
+window.selectStageAndLoadCourses = async function(stageKeyword) {
+    document.getElementById('stageSelectionModal').classList.remove('active');
+    document.getElementById('modalTeacherName').innerText = 'حصص ' + window.currentViewingTeacher + ' (' + stageKeyword + ')';
     const grid = document.getElementById('modalCoursesGrid');
     
-    grid.innerHTML = '<div style="color: #94a3b8; text-align: center; width: 100%; padding: 30px;">جاري جلب الحصص... ⏳</div>';
+    grid.innerHTML = '<div style="text-align: center; width: 100%; padding: 30px;"><i class="fas fa-spinner fa-spin" style="font-size:30px; color:#3b82f6;"></i><br>جاري جلب الحصص...</div>';
     document.getElementById('teacherCoursesModal').classList.add('active');
 
     try {
-        const q = query(collection(db, "courses"), where("instructor", "==", instructorName));
-        const snapshot = await getDocs(q);
-        
-        if(snapshot.empty) {
-            grid.innerHTML = '<div style="color: #ef4444; text-align: center; width: 100%; padding: 30px;">لا توجد حصص متاحة لهذا المدرس حالياً.</div>';
-            return;
+        // لو الطالب مسجل، نجيب الداتا بتاعته عشان نعرف هو شاري ايه قبل كده
+        let studentMyCourses = [];
+        if(loggedInPhone) {
+            const userQ = query(collection(db, "users"), where("studentPhone", "==", loggedInPhone));
+            const userSnap = await getDocs(userQ);
+            if(!userSnap.empty) studentMyCourses = userSnap.docs[0].data().myCourses || [];
         }
 
+        const q = query(collection(db, "courses"), where("instructor", "==", window.currentViewingTeacher));
+        const snapshot = await getDocs(q);
+        
         let html = '';
-        snapshot.forEach(doc => {
-            const c = doc.data();
-            const subLink = loggedInPhone ? 'student-dashboard.html' : 'login.html'; 
-            
-            html += `
-            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 15px; padding: 15px; text-align: right;">
-                <div style="aspect-ratio: 16/9; background: url('${c.image || 'https://via.placeholder.com/300'}') center/cover; border-radius: 10px; margin-bottom: 15px;"></div>
-                <h4 style="color: #f8fafc; margin: 0 0 5px 0; font-size: 18px; font-weight: 800;">${c.title}</h4>
-                <p style="color: #94a3b8; font-size: 13px; margin: 0 0 15px 0;"><i class="fas fa-graduation-cap"></i> ${c.grade}</p>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #475569; padding-top: 15px;">
-                    <span style="color: #10b981; font-weight: 900; font-size: 20px;">${c.price > 0 ? c.price + ' ج.م' : 'مجاني'}</span>
-                    <button onclick="window.location.href='${subLink}'" style="background: #f59e0b; color: #fff; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-family: 'Cairo'; font-weight: 800;">اشترك</button>
-                </div>
-            </div>`;
+        let hasCourses = false;
+
+        snapshot.forEach(docSnap => {
+            const c = docSnap.data();
+            // فلترة بالكلمة (ابتدائي، إعدادي، ثانوي)
+            if(c.grade && c.grade.includes(stageKeyword)) {
+                hasCourses = true;
+                const isBought = studentMyCourses.includes(docSnap.id);
+                
+                let btnHtml = '';
+                if(isBought) {
+                    btnHtml = `<button onclick="window.location.href='student-dashboard.html'" style="background: #1e293b; color: #10b981; border: 1px solid #10b981; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 800;">تم الشراء <i class="fas fa-check"></i></button>`;
+                } else {
+                    btnHtml = `<button onclick="buyCourseAction('${docSnap.id}', ${c.price}, '${c.title}')" style="background: #f59e0b; color: #fff; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 800;">اشترك الآن</button>`;
+                }
+
+                html += `
+                <div style="background: #1e293b; border: 1px solid #334155; border-radius: 15px; padding: 15px; text-align: right;">
+                    <div style="aspect-ratio: 16/9; background: url('${c.image || 'https://via.placeholder.com/300'}') center/cover; border-radius: 10px; margin-bottom: 15px;"></div>
+                    <h4 style="color: #f8fafc; margin: 0 0 5px 0; font-size: 18px; font-weight: 800;">${c.title}</h4>
+                    <p style="color: #94a3b8; font-size: 13px; margin: 0 0 15px 0;"><i class="fas fa-graduation-cap"></i> ${c.grade}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #475569; padding-top: 15px;">
+                        <span style="color: #10b981; font-weight: 900; font-size: 20px;">${c.price > 0 ? c.price + ' ج.م' : 'مجاني'}</span>
+                        ${btnHtml}
+                    </div>
+                </div>`;
+            }
         });
-        grid.innerHTML = html;
-    } catch(e) {
-        grid.innerHTML = '<div style="color: #ef4444; text-align: center; width: 100%; padding: 30px;">حدث خطأ أثناء جلب الحصص.</div>';
-    }
+
+        if(!hasCourses) {
+            grid.innerHTML = '<div style="color: #ef4444; text-align: center; width: 100%; padding: 30px;">لا توجد حصص لهذا المدرس في مرحلة الـ ' + stageKeyword + ' حالياً.</div>';
+        } else {
+            grid.innerHTML = html;
+        }
+    } catch(e) { grid.innerHTML = '<div style="color: #ef4444; text-align: center; width: 100%; padding: 30px;">حدث خطأ أثناء الجلب.</div>'; }
 }
 
+// 3. لما يدوس اشترك (نفحص الرصيد)
+window.buyCourseAction = async function(courseId, price, title) {
+    if(!loggedInPhone) { window.location.href = 'login.html'; return; } // لو مش مسجل يروح يسجل
+    
+    // نجيب الرصيد الحالي من الداتا بيز فريش
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+
+    try {
+        const userQ = query(collection(db, "users"), where("studentPhone", "==", loggedInPhone));
+        const userSnap = await getDocs(userQ);
+        const userData = userSnap.docs[0].data();
+        window.currentUserId = userSnap.docs[0].id;
+        window.currentUserBalance = parseInt(userData.walletBalance) || 0;
+
+        pendingCourseId = courseId;
+        pendingCoursePrice = parseInt(price) || 0;
+        pendingCourseTitle = title;
+
+        // لو الحصة مجانية أو رصيده يكفي
+        if(window.currentUserBalance >= pendingCoursePrice) {
+            document.getElementById('confirmBuyText').innerHTML = `سعر الحصة: <strong style="color:#ef4444">${pendingCoursePrice} ج.م</strong><br>رصيدك الحالي: <strong style="color:#10b981">${window.currentUserBalance} ج.م</strong><br><br>سيتم خصم المبلغ وإضافة الحصة لكورساتك، هل أنت متأكد؟`;
+            document.getElementById('confirmBuyModal').classList.add('active');
+        } else {
+            // رصيده مش مكفي
+            document.getElementById('chargeReqText').innerHTML = `سعر الحصة <strong>${pendingCoursePrice} ج.م</strong> ورصيدك الحالي <strong>${window.currentUserBalance} ج.م</strong>.<br>تحتاج لشحن <strong>${pendingCoursePrice - window.currentUserBalance} ج.م</strong> إضافية.`;
+            document.getElementById('chargeToBuyModal').classList.add('active');
+        }
+    } catch (error) {} 
+    finally { btn.innerHTML = originalText; btn.disabled = false; }
+}
+
+// 4. تنفيذ الشراء بالرصيد المتاح
+document.getElementById('btnExecuteBuy')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnExecuteBuy');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الشراء...';
+    btn.disabled = true;
+
+    try {
+        const newBalance = window.currentUserBalance - pendingCoursePrice;
+        await updateDoc(doc(db, "users", window.currentUserId), {
+            walletBalance: newBalance,
+            myCourses: arrayUnion(pendingCourseId) // بنضيف الـ ID جوه مصفوفة كورساته
+        });
+        
+        document.getElementById('confirmBuyModal').classList.remove('active');
+        document.getElementById('teacherCoursesModal').classList.remove('active');
+        alert("🎉 مبروك! تم شراء الحصة بنجاح، تقدر تلاقيها دلوقتي في قسم (كورساتي).");
+        window.location.href = 'student-dashboard.html'; // نوجهه يشوف حصته
+    } catch(e) { alert("حدث خطأ أثناء الشراء."); btn.innerHTML = 'نعم، اشترك الآن'; btn.disabled = false; }
+});
+
+// 5. تنفيذ الشحن والشراء الأوتوماتيكي في نفس اللحظة
+document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async () => {
+    const codeVal = document.getElementById('autoChargeCodeInput').value.trim();
+    if(!codeVal) return alert("يرجى إدخال الكود أولاً.");
+
+    const btn = document.getElementById('btnSubmitChargeBuy');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الشحن...';
+    btn.disabled = true;
+
+    try {
+        // نبحث عن الكود
+        const q = query(collection(db, "charge_codes"), where("code", "==", codeVal));
+        const snap = await getDocs(q);
+
+        if (snap.empty) throw new Error("الكود غير صحيح.");
+        
+        const codeDoc = snap.docs[0];
+        const codeData = codeDoc.data();
+
+        if (codeData.isUsed) throw new Error("هذا الكود تم استخدامه مسبقاً.");
+
+        const codeValue = parseInt(codeData.value);
+        const newTempBalance = window.currentUserBalance + codeValue;
+
+        // نحرق الكود
+        await updateDoc(doc(db, "charge_codes", codeDoc.id), {
+            isUsed: true,
+            usedByPhone: loggedInPhone,
+            usedAt: new Date().toISOString()
+        });
+
+        // نفحص هل الرصيد بعد الشحن كفى الحصة؟
+        if(newTempBalance >= pendingCoursePrice) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> رصيد كافٍ، جاري الشراء...';
+            // نخصم تمن الحصة ونشحنه بالباقي ونضيف الحصة
+            const finalBalance = newTempBalance - pendingCoursePrice;
+            await updateDoc(doc(db, "users", window.currentUserId), {
+                walletBalance: finalBalance,
+                myCourses: arrayUnion(pendingCourseId)
+            });
+            alert(`🎉 تم شحن (${codeValue} ج.م) وشراء الحصة بنجاح!\nالرصيد المتبقي في محفظتك: ${finalBalance} ج.م`);
+            window.location.href = 'student-dashboard.html';
+        } else {
+            // شحن بس لسه الرصيد مكملش ثمن الحصة
+            await updateDoc(doc(db, "users", window.currentUserId), { walletBalance: newTempBalance });
+            window.currentUserBalance = newTempBalance; // نحدث الرصيد
+            document.getElementById('autoChargeCodeInput').value = '';
+            alert(`✅ تم شحن (${codeValue} ج.م) بنجاح.\nلكن رصيدك الحالي (${newTempBalance} ج.م) لا يكفي لشراء الحصة (${pendingCoursePrice} ج.م). أدخل كود آخر للاستكمال.`);
+            btn.innerHTML = 'شحن واشتراك 🚀';
+            btn.disabled = false;
+        }
+    } catch(err) { 
+        alert(err.message || "حدث خطأ أثناء الشحن."); 
+        btn.innerHTML = 'شحن واشتراك 🚀'; 
+        btn.disabled = false; 
+    }
+});
 // ==========================================
 // 6. جلب الباقات الديناميكية
 // ==========================================
