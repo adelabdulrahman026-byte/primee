@@ -10,7 +10,7 @@
     <!-- مكتبة السلايدر CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     
-    <<link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="style.css?v=99">
 
     <!-- كود إشعارات OneSignal -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -161,11 +161,23 @@
             <a href="#" id="viewAllTeachersBtn" class="view-all">عرض جميع المدرسين <i class="fas fa-arrow-left"></i></a>
         </div>
         
+        <!-- أزرار الفلترة للمدرسين -->
+        <div class="packages-filters-container" id="teachersFilters" style="margin-top: -10px; margin-bottom: 20px;">
+            <button class="modern-filter-btn active" data-filter="all">الكل</button>
+            <button class="modern-filter-btn" data-filter="الابتدائي">ابتدائي</button>
+            <button class="modern-filter-btn" data-filter="الإعدادي">إعدادي</button>
+            <button class="modern-filter-btn" data-filter="الثانوي">ثانوي</button>
+            <button class="modern-filter-btn" data-filter="بكالوريا">بكالوريا</button>
+        </div>
+        
         <div class="swiper teachers-slider">
             <div class="swiper-wrapper" id="teachersGrid">
-                <!-- المدرسين هيتم تحميلهم من الداتا بيز هنا -->
+                <!-- المدرسين هيتم تحميلهم هنا -->
                 <div style="text-align: center; width: 100%; color: #94a3b8; padding: 20px;">جاري انضمام نخبة من المدرسين قريباً...</div>
             </div>
+            <!-- أزرار التقليب -->
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
             <div class="swiper-pagination"></div>
         </div>
     </section>
@@ -285,6 +297,6 @@
 
     <!-- مكتبة Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-<script type="module" src="index-script.js?v=6"></script>
+<script type="module" src="index-script.js?v=99"></script>
 </body>
 </html>
