@@ -393,3 +393,20 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     .parent-report-body .student-info p { justify-content: center; }
     .modern-table { display: block; overflow-x: auto; white-space: nowrap; }
 }
+/* ==========================================================================
+   10. عرض جميع المدرسين (إلغاء السلايدر وتحويله لشبكة)
+========================================================================== */
+.teachers-grid-active .swiper-wrapper {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 30px !important;
+    transform: none !important;
+}
+.teachers-grid-active .swiper-slide {
+    width: 100% !important;
+    margin-right: 0 !important;
+    height: auto !important;
+}
+.teachers-grid-active .swiper-pagination {
+    display: none !important;
+}
