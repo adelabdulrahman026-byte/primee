@@ -407,6 +407,111 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     margin-right: 0 !important;
     height: auto !important;
 }
+/* ==========================================================================
+   ستايل كروت المدرسين החדش (Coverflow 3D) + الفلتر
+========================================================================== */
+.teachers-slider {
+    padding: 40px 0 60px 0 !important;
+}
+.teachers-slider .swiper-slide {
+    width: 320px; /* عرض الكارت */
+    height: 320px; /* طول الكارت عشان يبقى مربع 100% */
+    opacity: 0.4; /* شفافية للكروت الجانبية */
+    transition: opacity 0.3s ease;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.teachers-slider .swiper-slide-active {
+    opacity: 1; /* الكارت اللي في النص واضح 100% */
+    box-shadow: 0 15px 40px rgba(91, 33, 182, 0.4);
+}
+
+/* الصورة تملأ الكارت المربع بالكامل */
+.cover-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* تأثير الـ Fade (أسود في موف) */
+.cover-card-fade {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 70%;
+    background: linear-gradient(to top, rgba(15, 23, 42, 1) 10%, rgba(91, 33, 182, 0.8) 60%, transparent 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    text-align: center;
+}
+
+.cover-card-fade h3 {
+    color: #fff;
+    margin: 0 0 5px 0;
+    font-size: 24px;
+    font-weight: 900;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.cover-card-fade p {
+    color: #cbd5e1;
+    margin: 0 0 15px 0;
+    font-size: 14px;
+    font-weight: 700;
+}
+.cover-card-btn {
+    background: #f59e0b;
+    color: #fff;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-family: 'Cairo';
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.cover-card-btn:hover { background: #d97706; transform: translateY(-2px); }
+
+/* أزرار التقليب للسلايدر */
+.swiper-button-next, .swiper-button-prev {
+    color: #3b82f6 !important;
+    background: #fff;
+    width: 45px !important;
+    height: 45px !important;
+    border-radius: 50%;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    top: auto !important;
+    bottom: 0px !important;
+}
+.swiper-button-next::after, .swiper-button-prev::after {
+    font-size: 20px !important;
+    font-weight: bold;
+}
+
+/* تظبيط الجريد لما تدوس "عرض جميع المدرسين" */
+.teachers-grid-active .swiper-wrapper {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 25px !important;
+    transform: none !important;
+}
+.teachers-grid-active .swiper-slide {
+    width: 100% !important;
+    height: 320px !important; /* نحافظ على المربع */
+    opacity: 1 !important;
+    margin-right: 0 !important;
+    transform: none !important;
+}
+.teachers-grid-active .swiper-pagination,
+.teachers-grid-active .swiper-button-next,
+.teachers-grid-active .swiper-button-prev {
+    display: none !important;
+}
 .teachers-grid-active .swiper-pagination {
     display: none !important;
 }
