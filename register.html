@@ -113,7 +113,19 @@
             <button class="btn-close-modal" onclick="window.location.href='login.html'">متابعة لتسجيل الدخول</button>
         </div>
     </div>
-
+<!-- نافذة تأكيد الواتساب (OTP) -->
+    <div class="modal-overlay" id="otpModal">
+        <div class="modal-content" style="max-width: 400px; padding: 30px;">
+            <div class="modal-icon" style="color: #25d366; font-size: 45px; margin-bottom: 10px;"><i class="fab fa-whatsapp"></i></div>
+            <h3 style="color: #25d366; font-weight: 900; margin-bottom: 10px;">تأكيد رقم الواتساب</h3>
+            <p style="color: var(--text-muted); font-size: 15px; font-weight: 600; margin-bottom: 25px;">أرسلنا كود تأكيد مكون من 4 أرقام إلى:<br><b id="displayOtpPhone" style="color: var(--text-main); font-size: 18px;" dir="ltr"></b></p>
+            
+            <input type="text" id="otpInput" placeholder="----" maxlength="4" style="width: 100%; text-align: center; font-size: 35px; letter-spacing: 20px; font-weight: 900; padding: 15px; border-radius: 15px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-main); margin-bottom: 25px;" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            
+            <button id="btnVerifyOtp" class="btn-submit" style="background: #25d366; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(37,211,102,0.2);">تأكيد الكود وإنشاء الحساب</button>
+            <button onclick="document.getElementById('otpModal').classList.remove('active')" style="width: 100%; padding: 10px; background: transparent; border: none; color: var(--text-muted); font-weight: 800; cursor: pointer; transition: 0.3s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">إلغاء وتعديل الرقم</button>
+        </div>
+    </div>
     <script type="module" src="register-script.js"></script>
     <script>
         document.getElementById('profilePic').addEventListener('change', function() {
