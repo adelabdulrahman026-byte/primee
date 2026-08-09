@@ -29,7 +29,7 @@
             max-width: 400px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             position: relative;
-            margin-top: 60px;
+            margin-top: 60px; /* مساحة عشان رأس الطالب ماتتقطعش */
         }
 
         /* ==================== شخصية الطالب ==================== */
@@ -128,13 +128,8 @@
             box-shadow: 0 5px 10px rgba(0,0,0,0.15);
         }
 
-        /* ----- التعديل هنا: زودنا المسافة وخليناها إجبارية عشان تغطي العين صح ----- */
-        .student-mascot.hide-eyes .left-hand { 
-            transform: translateY(-100px) translateX(25px) rotate(30deg) !important; 
-        }
-        .student-mascot.hide-eyes .right-hand { 
-            transform: translateY(-100px) translateX(-25px) rotate(-30deg) !important; 
-        }
+        .student-mascot.hide-eyes .left-hand { transform: translateY(-85px) translateX(30px) rotate(25deg); }
+        .student-mascot.hide-eyes .right-hand { transform: translateY(-85px) translateX(-30px) rotate(-25deg); }
 
         /* ==================== تنسيق الحقول ==================== */
         .form-header {
@@ -197,6 +192,7 @@
             box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
         }
 
+        /* النصوص جوه الزرار */
         .btn-text {
             transition: opacity 0.3s, transform 0.3s;
             position: absolute;
@@ -205,6 +201,7 @@
         .text-processing { opacity: 0; transform: translateY(30px); }
         .text-success { opacity: 0; transform: translateY(30px); color: #fff;}
 
+        /* مؤشر التحميل */
         .spinner {
             width: 20px;
             height: 20px;
@@ -218,6 +215,7 @@
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
+        /* حالة التحميل (Processing) */
         .animated-submit-btn.processing {
             background: #1e1b4b;
             pointer-events: none;
@@ -226,6 +224,7 @@
         .animated-submit-btn.processing .text-processing { opacity: 1; transform: translateY(0); display: flex; align-items: center;}
         .animated-submit-btn.processing .spinner { display: block; }
 
+        /* حالة النجاح (Success) */
         .animated-submit-btn.success {
             background: #10b981;
             box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
@@ -275,6 +274,7 @@
                 <a href="forgot-password.html" style="color: var(--primary-color, #3b82f6); font-size: 14px; text-decoration: none; font-weight: 600;">نسيت كلمة المرور؟</a>
             </div>
 
+            <!-- الزرار التفاعلي -->
             <button type="submit" class="animated-submit-btn" id="submitBtn">
                 <span class="btn-text text-default">دخول للمنصة 🚀</span>
                 <span class="btn-text text-processing"><div class="spinner"></div> جاري التحقق...</span>
@@ -287,6 +287,7 @@
         </p>
     </div>
 
+    <!-- سكربت التحكم في شخصية الطالب وزرار الدخول -->
     <script>
         const phoneInput = document.getElementById('loginPhone');
         const passInput = document.getElementById('loginPassword');
@@ -295,7 +296,7 @@
         const loginForm = document.getElementById('loginForm');
         const submitBtn = document.getElementById('submitBtn');
 
-        // --- 1. تفاعل شخصية الطالب (حركة العيون) ---
+        // --- 1. تفاعل شخصية الطالب ---
         phoneInput.addEventListener('focus', () => {
             pupils.forEach(p => p.style.transform = 'translateY(6px)');
         });
@@ -309,27 +310,14 @@
             pupils.forEach(p => p.style.transform = 'translate(0px, 0px)');
         });
 
-        // --- 2. تغمية العين (محدثة عشان تشتغل مع الكتابة والضغط) ---
-        function checkPasswordAndHideEyes() {
-            // يتأكد إن نوع الحقل باسورد (عشان لو انت عامله نص وبتشوفه مايغطيش عينه)
-            if (passInput.getAttribute('type') === 'password') {
-                studentChar.classList.add('hide-eyes');
-            }
-        }
-
-        passInput.addEventListener('focus', checkPasswordAndHideEyes);
-        passInput.addEventListener('input', checkPasswordAndHideEyes); // ضفناها هنا عشان الكتابة
-        
-        passInput.addEventListener('blur', () => {
-            studentChar.classList.remove('hide-eyes');
-        });
+        passInput.addEventListener('focus', () => studentChar.classList.add('hide-eyes'));
+        passInput.addEventListener('blur', () => studentChar.classList.remove('hide-eyes'));
 
         // إظهار/إخفاء الباسورد
         const togglePassword = document.getElementById('togglePassword');
         togglePassword.addEventListener('click', function () {
             const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passInput.setAttribute('type', type);
-            
             // لما بيظهر الباسورد بنخلي الطالب يشيل إيده
             if(type === 'text') {
                 studentChar.classList.remove('hide-eyes');
@@ -338,16 +326,24 @@
             }
         });
 
-        // --- 3. تفاعل زرار الدخول ---
+        // --- 2. تفاعل زرار الدخول (Submit Animation) ---
         loginForm.addEventListener('submit', (e) => {
-            e.preventDefault(); 
+            e.preventDefault(); // منع إعادة تحميل الصفحة فوراً
+            
+            // إضافة حالة التحميل
             submitBtn.classList.add('processing');
 
+            // محاكاة وقت الاتصال بقاعدة البيانات (مثلاً ثانيتين)
             setTimeout(() => {
                 submitBtn.classList.remove('processing');
-                submitBtn.classList.add('success'); 
+                submitBtn.classList.add('success'); // تحويل الزرار للأخضر
+
+                // هنا بتحط كود الجافاسكريبت بتاعك الفعلي اللي بيحول الطالب للصفحة اللي بعدها
+                // setTimeout(() => { window.location.href = 'student-dashboard.html'; }, 1000);
+                
             }, 2000);
         });
     </script>
+
 </body>
 </html>
