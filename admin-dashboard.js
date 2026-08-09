@@ -120,6 +120,32 @@ async function sendWhatsAppToParent(parentPhone, msgText) {
 }
 
 // ==========================================
+// دالة الرفع السريعة الخاصة بـ Cloudflare R2 🔥
+// ==========================================
+async function uploadImageToR2(file) {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+        const response = await fetch("https://primee-api.adelabdulrahman026.workers.dev/upload-image", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            return data.url;
+        } else {
+            throw new Error(data.error || "فشل رفع الصورة");
+        }
+    } catch (error) {
+        console.error("R2 Upload Error:", error);
+        throw new Error("حدث خطأ أثناء الاتصال بسيرفر الصور الجديد.");
+    }
+}
+
+// ==========================================
 // 1. مراقبة الطلاب والأرباح (مفلترة للمساعدين)
 // ==========================================
 let allStudentsData = [];
@@ -280,7 +306,7 @@ document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) 
         const selectStages = document.getElementById('teacherStages');
         const selectedStages = Array.from(selectStages.selectedOptions).map(opt => opt.value).join(', ');
         const imageFile = document.getElementById('teacherImage').files[0];
-        let imageUrl = imageFile ? await uploadImageToImgBB(imageFile) : null;
+        let imageUrl = imageFile ? await uploadImageToR2(imageFile) : null;
 
         const teacherData = {
             name: document.getElementById('teacherName').value.trim(),
@@ -327,7 +353,7 @@ onSnapshot(query(teachersRef), (snapshot) => {
 });
 
 // ==========================================
-// 4. إدارة الكورسات (Vimeo + ImgBB)
+// 4. إدارة الكورسات (Vimeo + Cloudflare R2)
 // ==========================================
 const coursesRef = collection(db, "courses");
 
@@ -338,15 +364,6 @@ window.deleteCourse = async function(id) {
     }
 };
 
-async function uploadImageToImgBB(file) {
-    const keys = await getSecureApiKeys(); 
-    if(!keys || !keys.imgbb_token) throw new Error("مفتاح ImgBB مفقود");
-    const formData = new FormData(); formData.append("image", file);
-    const res = await fetch(`https://api.imgbb.com/1/upload?key=${keys.imgbb_token}`, { method: "POST", body: formData });
-    const data = await res.json();
-    if(data.success) return data.data.url; else throw new Error("فشل رفع الصورة");
-}
-
 async function uploadToVimeo(file, progressCallback) {
     const keys = await getSecureApiKeys();
 
@@ -354,7 +371,6 @@ async function uploadToVimeo(file, progressCallback) {
         throw new Error("مفتاح Vimeo غير موجود");
     }
 
-    // إنشاء عملية رفع جديدة في Vimeo
     const createResponse = await fetch("https://api.vimeo.com/me/videos", {
         method: "POST",
         headers: {
@@ -363,10 +379,7 @@ async function uploadToVimeo(file, progressCallback) {
             Accept: "application/vnd.vimeo.*+json;version=3.4"
         },
         body: JSON.stringify({
-            upload: {
-                approach: "tus",
-                size: file.size.toString()
-            }
+            upload: { approach: "tus", size: file.size.toString() }
         })
     });
 
@@ -378,60 +391,26 @@ async function uploadToVimeo(file, progressCallback) {
     const video = await createResponse.json();
 
     return new Promise((resolve, reject) => {
-
         const upload = new tus.Upload(file, {
-
             uploadUrl: video.upload.upload_link,
-
             retryDelays: [0,3000,5000,10000,20000],
-
-            headers: {
-                Authorization: `Bearer ${keys.vimeo_token}`
-            },
-
-            metadata: {
-                filename: file.name,
-                filetype: file.type
-            },
-
-            onError(error){
-                reject(error);
-            },
-
+            headers: { Authorization: `Bearer ${keys.vimeo_token}` },
+            metadata: { filename: file.name, filetype: file.type },
+            onError(error){ reject(error); },
             onProgress(bytesUploaded, bytesTotal){
-
-                const percentage =
-                ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-
+                const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
                 progressCallback(percentage);
             },
-
             async onSuccess(){
-
-                // نشر الفيديو بعد انتهاء الرفع
                 await fetch(video.uri,{
                     method:"PATCH",
-                    headers:{
-                        Authorization:`Bearer ${keys.vimeo_token}`,
-                        "Content-Type":"application/json"
-                    },
-                    body:JSON.stringify({
-                        privacy:{
-                            view:"disable"
-                        }
-                    })
+                    headers:{ Authorization:`Bearer ${keys.vimeo_token}`, "Content-Type":"application/json" },
+                    body:JSON.stringify({ privacy:{ view:"disable" } })
                 });
-
-                resolve(
-                    "https://player.vimeo.com/video/" +
-                    video.uri.split("/").pop()
-                );
+                resolve("https://player.vimeo.com/video/" + video.uri.split("/").pop());
             }
-
         });
-
         upload.start();
-
     });
 }
 document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
@@ -449,7 +428,7 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
         const videoFiles = document.getElementById('courseVideoFiles')?.files; 
         const selectedExamId = document.getElementById('requiredExamSelect').value;
 
-        if(imageFile) imageUrl = await uploadImageToImgBB(imageFile);
+        if(imageFile) imageUrl = await uploadImageToR2(imageFile);
 
         if(videoFiles && videoFiles.length > 0) {
             document.getElementById('videoProgressContainer').style.display = 'block';
@@ -607,7 +586,7 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
             const type = box.querySelector('.q-type').value;
             const text = box.querySelector('.q-text').value;
             const imageFile = box.querySelector('.q-image').files[0];
-            let imageUrl = imageFile ? await uploadImageToImgBB(imageFile) : null;
+            let imageUrl = imageFile ? await uploadImageToR2(imageFile) : null;
             if (type === 'mcq') qs.push({ type:'mcq', text:text, imageUrl:imageUrl, options:[box.querySelector('.q-opt1').value, box.querySelector('.q-opt2').value, box.querySelector('.q-opt3').value, box.querySelector('.q-opt4').value], correctIndex: parseInt(box.querySelector('.q-correct').value)-1 });
             else qs.push({ type:'essay', text:text, imageUrl:imageUrl });
         }
@@ -920,7 +899,7 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
         const videoFiles = document.getElementById('pkgVideoFiles')?.files; 
         const selectedExamId = document.getElementById('pkgExamSelect').value;
 
-        if(imageFile) imageUrl = await uploadImageToImgBB(imageFile);
+        if(imageFile) imageUrl = await uploadImageToR2(imageFile);
 
         // رفع الفيديوهات الجديدة وتحويلها لـ Objects (فيديو + امتحانه)
         if(videoFiles && videoFiles.length > 0) {
