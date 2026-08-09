@@ -7,15 +7,40 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     
-    <!-- ستايل شخصية الطالب والجانب الأيمن الجديد -->
     <style>
-        /* ==================== شخصية الطالب (مكان الروبوت) ==================== */
-        .student-wrapper {
+        /* ==================== إعدادات الصفحة والفورم المتسنتر ==================== */
+        body {
+            background-color: var(--bg-body, #0b0f19);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .centered-login-box {
+            background: var(--input-bg, #151a28);
+            border: 1px solid var(--input-border, #1e293b);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             position: relative;
+            margin-top: 60px;
+        }
+
+        /* ==================== شخصية الطالب ==================== */
+        .student-wrapper {
+            position: absolute;
+            top: -110px;
+            left: 50%;
+            transform: translateX(-50%);
             height: 150px;
             display: flex;
             justify-content: center;
-            margin-bottom: 20px;
             z-index: 10;
         }
 
@@ -23,10 +48,8 @@
             position: relative;
             width: 120px;
             height: 120px;
-            margin-top: 20px;
         }
 
-        /* طاقية التخرج */
         .cap {
             position: absolute;
             top: -15px;
@@ -47,16 +70,15 @@
             top: 15px;
             width: 5px;
             height: 40px;
-            background: #f59e0b; /* لون الشراشيب */
+            background: #f59e0b;
             border-radius: 5px;
         }
 
-        /* الوجه */
         .face {
             position: absolute;
             width: 120px;
             height: 120px;
-            background: #fcd5ce; /* لون البشرة */
+            background: #fcd5ce;
             border-radius: 50%;
             box-shadow: inset -5px -5px 15px rgba(0,0,0,0.1);
             display: flex;
@@ -66,7 +88,6 @@
             z-index: 2;
         }
 
-        /* النظارة (إطارات العيون) */
         .glass-frame {
             width: 42px;
             height: 42px;
@@ -80,7 +101,6 @@
             margin-top: 10px;
         }
 
-        /* عدسة العين الداخلية */
         .pupil {
             width: 12px;
             height: 12px;
@@ -89,7 +109,6 @@
             transition: transform 0.1s ease-out;
         }
 
-        /* الأيدي */
         .hands {
             position: absolute;
             bottom: -25px;
@@ -109,237 +128,226 @@
             box-shadow: 0 5px 10px rgba(0,0,0,0.15);
         }
 
-        /* حالة الباسورد (تغطية الوجه بالأيدي) */
-        .student-mascot.hide-eyes .left-hand {
-            transform: translateY(-85px) translateX(30px) rotate(25deg);
+        /* ----- التعديل هنا: زودنا المسافة وخليناها إجبارية عشان تغطي العين صح ----- */
+        .student-mascot.hide-eyes .left-hand { 
+            transform: translateY(-100px) translateX(25px) rotate(30deg) !important; 
+        }
+        .student-mascot.hide-eyes .right-hand { 
+            transform: translateY(-100px) translateX(-25px) rotate(-30deg) !important; 
         }
 
-        .student-mascot.hide-eyes .right-hand {
-            transform: translateY(-85px) translateX(-30px) rotate(-25deg);
+        /* ==================== تنسيق الحقول ==================== */
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--text-main, #fff);
         }
 
-        /* ==================== الجانب الأيمن الجديد (بدون Lottie) ==================== */
-        .modern-brand-side {
-            background: linear-gradient(135deg, var(--primary-color, #3b82f6), #1e1b4b);
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted, #94a3b8);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(0,0,0,0.2);
+            border: 2px solid var(--input-border, #1e293b);
+            border-radius: 12px;
+            color: var(--text-main, #fff);
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary-color, #3b82f6);
+        }
+
+        /* ==================== زرار الدخول التفاعلي ==================== */
+        .animated-submit-btn {
             position: relative;
+            width: 100%;
+            height: 55px;
+            background: var(--primary-color, #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
             overflow: hidden;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
-            padding: 40px;
-            color: white;
-            min-height: 100vh;
+            gap: 10px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
         }
 
-        /* خلفية منقطة بتتحرك ببطء */
-        .modern-brand-side::before {
-            content: '';
+        .animated-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-text {
+            transition: opacity 0.3s, transform 0.3s;
             position: absolute;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 10%, transparent 10%);
-            background-size: 40px 40px;
-            opacity: 0.4;
-            animation: moveBg 30s linear infinite;
+        }
+        .text-default { opacity: 1; transform: translateY(0); }
+        .text-processing { opacity: 0; transform: translateY(30px); }
+        .text-success { opacity: 0; transform: translateY(30px); color: #fff;}
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+            margin-left: 10px;
         }
 
-        @keyframes moveBg {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-100px); }
-        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* العناصر الطايرة */
-        .floating-item {
-            position: absolute;
-            font-size: 50px;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
-            animation: float 4s ease-in-out infinite;
-            z-index: 1;
+        .animated-submit-btn.processing {
+            background: #1e1b4b;
+            pointer-events: none;
         }
+        .animated-submit-btn.processing .text-default { opacity: 0; transform: translateY(-30px); }
+        .animated-submit-btn.processing .text-processing { opacity: 1; transform: translateY(0); display: flex; align-items: center;}
+        .animated-submit-btn.processing .spinner { display: block; }
 
-        .item-1 { top: 15%; right: 15%; animation-delay: 0s; font-size: 55px; }
-        .item-2 { top: 30%; left: 10%; animation-delay: 1.5s; font-size: 40px; }
-        .item-3 { bottom: 20%; right: 20%; animation-delay: 2s; font-size: 45px; }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(10deg); }
+        .animated-submit-btn.success {
+            background: #10b981;
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+            pointer-events: none;
         }
-
-        /* محتوى البراند */
-        .brand-content {
-            position: relative;
-            z-index: 2;
-            max-width: 400px;
-        }
-
-        .brand-title {
-            font-size: 48px;
-            font-weight: 900;
-            margin-bottom: 15px;
-            line-height: 1.2;
-            text-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-
-        .brand-title span {
-            color: #f59e0b; /* لون ذهبي للتميز */
-        }
-
-        .brand-desc {
-            font-size: 18px;
-            color: #e2e8f0;
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-
-        /* كارت زجاجي للاقتباس */
-        .glass-quote {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 25px;
-            border-radius: 20px;
-            font-size: 18px;
-            font-weight: 800;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            position: relative;
-        }
-
-        .glass-quote i {
-            color: #f59e0b;
-            font-size: 24px;
-            margin-bottom: 10px;
-            display: block;
-        }
+        .animated-submit-btn.success .text-processing { opacity: 0; transform: translateY(-30px); }
+        .animated-submit-btn.success .text-success { opacity: 1; transform: translateY(0); display: flex; align-items: center; gap: 5px;}
     </style>
 </head>
 <body>
 
-    <div class="split-container">
-
-        <!-- الجانب الأيمن المحدث: تصميم تفاعلي زجاجي -->
-        <div class="brand-side modern-brand-side">
-            <!-- العناصر الطائرة اللي بتدي شكل مرح -->
-            <div class="floating-item item-1">🎓</div>
-            <div class="floating-item item-2">⭐</div>
-            <div class="floating-item item-3">🚀</div>
-            
-            <div class="brand-content">
-                <h1 class="brand-title">أهلاً بعودتك<br><span>يا بطل</span> 👋</h1>
-                <p class="brand-desc">استعد لاستكمال رحلتك التعليمية معنا في Primee Academy، حيث نصنع التفوق بمتعة.</p>
-                
-                <div class="glass-quote">
-                    <i>✨</i>
-                    "النجاح لا يأتي لمن ينتظر، بل لمن يقرر أن يبدأ الآن."
+    <div class="centered-login-box">
+        
+        <!-- شخصية الطالب -->
+        <div class="student-wrapper">
+            <div class="student-mascot" id="studentChar">
+                <div class="cap"></div>
+                <div class="face">
+                    <div class="glass-frame"><div class="pupil"></div></div>
+                    <div class="glass-frame"><div class="pupil"></div></div>
+                </div>
+                <div class="hands">
+                    <div class="hand left-hand"></div>
+                    <div class="hand right-hand"></div>
                 </div>
             </div>
         </div>
 
-        <!-- الجانب الأيسر: فورم الدخول -->
-        <div class="form-side">
-            <div class="form-header">
-                <h3>تسجيل الدخول</h3>
-                <button class="theme-toggle" id="themeBtn" title="تغيير المظهر">🌙</button>
-            </div>
-
-            <!-- إضافة شخصية الطالب هنا -->
-            <div class="student-wrapper">
-                <div class="student-mascot" id="studentChar">
-                    <div class="cap"></div>
-                    <div class="face">
-                        <div class="glass-frame">
-                            <div class="pupil"></div>
-                        </div>
-                        <div class="glass-frame">
-                            <div class="pupil"></div>
-                        </div>
-                    </div>
-                    <div class="hands">
-                        <div class="hand left-hand"></div>
-                        <div class="hand right-hand"></div>
-                    </div>
-                </div>
-            </div>
-
-            <form id="loginForm">
-                <div class="form-group">
-                    <label>رقمك الشخصي (واتساب)</label>
-                    <input type="tel" id="loginPhone" placeholder="أدخل رقم الهاتف" required>
-                </div>
-
-                <div class="form-group" style="position: relative;">
-                    <label>كلمة المرور</label>
-                    <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required style="padding-left: 45px;">
-                    <span id="togglePassword" style="position: absolute; left: 15px; top: 42px; font-size: 20px; cursor: pointer;">👁️</span>
-                </div>
-
-                <div style="text-align: left; margin-bottom: 20px;">
-                    <a href="forgot-password.html" style="color: var(--primary-color); font-size: 14px; text-decoration: none; font-weight: 600;">نسيت كلمة المرور؟</a>
-                </div>
-
-                <button type="submit" class="btn-submit">دخول للمنصة</button>
-            </form>
-
-            <p style="text-align: center; margin-top: 20px; color: var(--text-muted);">
-                ليس لديك حساب؟ <a href="register.html" style="color: var(--primary-color); font-weight: 800;">سجل الآن</a>
-            </p>
+        <div class="form-header">
+            <h2 style="margin: 0; font-weight: 900;">تسجيل الدخول</h2>
+            <p style="margin-top: 5px; color: var(--text-muted, #94a3b8); font-size: 14px;">مرحباً بك في Primee Academy</p>
         </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>رقمك الشخصي (واتساب)</label>
+                <input type="tel" id="loginPhone" placeholder="أدخل رقم الهاتف" required>
+            </div>
+
+            <div class="form-group" style="position: relative;">
+                <label>كلمة المرور</label>
+                <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required style="padding-left: 45px;">
+                <span id="togglePassword" style="position: absolute; left: 15px; top: 42px; font-size: 20px; cursor: pointer;">👁️</span>
+            </div>
+
+            <div style="text-align: left; margin-bottom: 25px;">
+                <a href="forgot-password.html" style="color: var(--primary-color, #3b82f6); font-size: 14px; text-decoration: none; font-weight: 600;">نسيت كلمة المرور؟</a>
+            </div>
+
+            <button type="submit" class="animated-submit-btn" id="submitBtn">
+                <span class="btn-text text-default">دخول للمنصة 🚀</span>
+                <span class="btn-text text-processing"><div class="spinner"></div> جاري التحقق...</span>
+                <span class="btn-text text-success">تم الدخول بنجاح ✔️</span>
+            </button>
+        </form>
+
+        <p style="text-align: center; margin-top: 25px; color: var(--text-muted, #94a3b8); font-size: 15px;">
+            ليس لديك حساب؟ <a href="register.html" style="color: var(--primary-color, #3b82f6); font-weight: 800; text-decoration: none;">سجل الآن</a>
+        </p>
     </div>
 
-    <!-- نافذة التنبيهات -->
-    <div class="modal-overlay" id="alertModal">
-        <div class="modal-content">
-            <h3 id="alertTitle">تنبيه</h3>
-            <p id="alertMessage">رسالة التنبيه هنا</p>
-            <button class="btn-close-modal" onclick="closeAlertModal()">حسناً</button>
-        </div>
-    </div>
-
-    <!-- سكربت التحكم في شخصية الطالب -->
     <script>
         const phoneInput = document.getElementById('loginPhone');
         const passInput = document.getElementById('loginPassword');
         const studentChar = document.getElementById('studentChar');
         const pupils = document.querySelectorAll('.pupil');
+        const loginForm = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
 
-        // 1. عند التركيز على الرقم (العيون تنزل لتحت شوية)
+        // --- 1. تفاعل شخصية الطالب (حركة العيون) ---
         phoneInput.addEventListener('focus', () => {
-            pupils.forEach(pupil => {
-                pupil.style.transform = 'translateY(6px)';
-            });
+            pupils.forEach(p => p.style.transform = 'translateY(6px)');
         });
 
-        // 2. حركة العيون يمين وشمال مع كتابة الرقم
         phoneInput.addEventListener('input', (e) => {
-            let textLength = e.target.value.length;
-            // حساب المسافة عشان العين تتحرك مع الرقم
-            let moveX = Math.min(Math.max(textLength * 1.5 - 10, -10), 10); 
-            
-            pupils.forEach(pupil => {
-                pupil.style.transform = `translate(${moveX}px, 6px)`;
-            });
+            let moveX = Math.min(Math.max(e.target.value.length * 1.5 - 10, -10), 10); 
+            pupils.forEach(p => p.style.transform = `translate(${moveX}px, 6px)`);
         });
 
-        // 3. رجوع العيون للمنتصف لما يخرج من حقل الرقم
         phoneInput.addEventListener('blur', () => {
-            pupils.forEach(pupil => {
-                pupil.style.transform = 'translate(0px, 0px)';
-            });
+            pupils.forEach(p => p.style.transform = 'translate(0px, 0px)');
         });
 
-        // 4. لما يضغط على الباسورد (الطالب يرفع إيده ويغطي عينه)
-        passInput.addEventListener('focus', () => {
-            studentChar.classList.add('hide-eyes');
-        });
+        // --- 2. تغمية العين (محدثة عشان تشتغل مع الكتابة والضغط) ---
+        function checkPasswordAndHideEyes() {
+            // يتأكد إن نوع الحقل باسورد (عشان لو انت عامله نص وبتشوفه مايغطيش عينه)
+            if (passInput.getAttribute('type') === 'password') {
+                studentChar.classList.add('hide-eyes');
+            }
+        }
 
-        // 5. لما يخرج من الباسورد (الطالب ينزل إيده)
+        passInput.addEventListener('focus', checkPasswordAndHideEyes);
+        passInput.addEventListener('input', checkPasswordAndHideEyes); // ضفناها هنا عشان الكتابة
+        
         passInput.addEventListener('blur', () => {
             studentChar.classList.remove('hide-eyes');
         });
-    </script>
 
-    <script type="module" src="login-script.js"></script>
+        // إظهار/إخفاء الباسورد
+        const togglePassword = document.getElementById('togglePassword');
+        togglePassword.addEventListener('click', function () {
+            const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passInput.setAttribute('type', type);
+            
+            // لما بيظهر الباسورد بنخلي الطالب يشيل إيده
+            if(type === 'text') {
+                studentChar.classList.remove('hide-eyes');
+            } else {
+                studentChar.classList.add('hide-eyes');
+            }
+        });
+
+        // --- 3. تفاعل زرار الدخول ---
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault(); 
+            submitBtn.classList.add('processing');
+
+            setTimeout(() => {
+                submitBtn.classList.remove('processing');
+                submitBtn.classList.add('success'); 
+            }, 2000);
+        });
+    </script>
 </body>
 </html>
