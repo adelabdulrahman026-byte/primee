@@ -155,9 +155,25 @@ document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
         document.getElementById('successModal').classList.add('active'); // إظهار النجاح
 
     } catch (error) {
+        console.error("تفاصيل الخطأ كاملة:", error); // عشان نقرا الخطأ من الـ Console
         document.getElementById('otpModal').classList.remove('active');
-        showAlert('خطأ', 'حدث خطأ أثناء إنشاء الحساب، ربما تم التسجيل من قبل.');
+        
+        let errorMsg = error.message; // الخطأ الافتراضي
+        
+        // ترجمة أخطاء فايربيز الشائعة
+        if (error.code === 'auth/weak-password') {
+            errorMsg = "كلمة المرور ضعيفة جداً، يجب أن تكون 6 أحرف أو أرقام على الأقل.";
+        } else if (error.code === 'auth/email-already-in-use') {
+            errorMsg = "هذا الحساب مسجل لدينا بالفعل.";
+        } else if (error.code === 'auth/operation-not-allowed') {
+            errorMsg = "إعدادات الأمان في فايربيز تمنع التسجيل، تأكد من تفعيل Email/Password.";
+        } else if (error.code === 'auth/invalid-email') {
+            errorMsg = "صيغة الإيميل الوهمي غير صحيحة.";
+        }
+        
+        showAlert('خطأ في التسجيل', errorMsg);
     } finally {
-        btn.innerHTML = "تأكيد الكود وإنشاء الحساب"; btn.disabled = false;
+        btn.innerHTML = "تأكيد الكود وإنشاء الحساب"; 
+        btn.disabled = false;
     }
 });
