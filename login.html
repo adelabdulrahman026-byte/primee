@@ -6,232 +6,275 @@
     <title>تسجيل الدخول - Primee Academy</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://lottie.host/6bc24f6a-10be-40e0-b7e2-7b0fc44e2512/zP2Kc77nro.lottie.json"></script>
+
+    <!-- ستايل الشخصية التفاعلية (Peekaboo) والـ Micro-interactions -->
     <style>
-        body {
-            background-color: var(--bg-body, #0b0f19);
+        /* ==================== تصميم الدب التفاعلي (Interactive Mascot) ==================== */
+        .mascot-wrapper {
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            font-family: 'Cairo', sans-serif;
-        }
-        .login-box {
-            background: var(--input-bg, #151a28);
-            border: 1px solid var(--input-border, #1e293b);
-            border-radius: 24px;
-            padding: 40px 30px;
-            width: 100%;
-            max-width: 420px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 35px;
-        }
-        .header h2 {
-            color: var(--text-main, #fff);
-            font-size: 28px;
-            font-weight: 900;
-            margin: 0 0 8px 0;
-        }
-        .header p {
-            color: var(--text-muted, #94a3b8);
-            font-size: 15px;
-            margin: 0;
-        }
-        .form-group {
             margin-bottom: 20px;
             position: relative;
+            z-index: 10;
         }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-muted, #94a3b8);
-            font-size: 14px;
-            font-weight: 600;
+
+        .bear-head {
+            width: 100px;
+            height: 100px;
+            background: #ffffff;
+            border-radius: 50%;
+            position: relative;
+            border: 3px solid #cbd5e1;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
         }
+
+        .bear-ear {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color, #3b82f6);
+            border-radius: 50%;
+            position: absolute;
+            top: -5px;
+            z-index: -1;
+            border: 3px solid #cbd5e1;
+        }
+        .bear-ear.left { left: -5px; }
+        .bear-ear.right { right: -5px; }
+
+        .bear-eye {
+            width: 24px;
+            height: 24px;
+            background: #f8fafc;
+            border: 3px solid #334155;
+            border-radius: 50%;
+            position: absolute;
+            top: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .bear-eye.left { left: 18px; }
+        .bear-eye.right { right: 18px; }
+
+        .bear-pupil {
+            width: 12px;
+            height: 12px;
+            background: #0f172a;
+            border-radius: 50%;
+            transition: transform 0.1s ease-out;
+        }
+
+        .bear-nose {
+            width: 14px;
+            height: 10px;
+            background: #334155;
+            border-radius: 50%;
+            position: absolute;
+            top: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .bear-hand {
+            width: 35px;
+            height: 40px;
+            background: #ffffff;
+            border: 3px solid #cbd5e1;
+            border-radius: 20px;
+            position: absolute;
+            bottom: -30px; /* مخفية تحت */
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1.2);
+            z-index: 5;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .bear-hand.left { left: 10px; }
+        .bear-hand.right { right: 10px; }
+
+        /* حالة الاستغماية (تغطية العيون) */
+        .mascot-wrapper.hide-eyes .bear-hand.left {
+            bottom: 20px;
+            left: 15px;
+            transform: rotate(30deg);
+        }
+        .mascot-wrapper.hide-eyes .bear-hand.right {
+            bottom: 20px;
+            right: 15px;
+            transform: rotate(-30deg);
+        }
+
+        /* ==================== Micro-interactions للحقول والزرار ==================== */
         .form-group input {
-            width: 100%;
-            padding: 15px;
-            background: rgba(0,0,0,0.2);
-            border: 2px solid var(--input-border, #1e293b);
-            border-radius: 12px;
-            color: var(--text-main, #fff);
-            font-size: 15px;
-            outline: none;
-            transition: 0.3s;
-            box-sizing: border-box;
+            transition: all 0.3s ease;
         }
         .form-group input:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(59, 130, 246, 0.15);
             border-color: var(--primary-color, #3b82f6);
         }
-        .toggle-pass {
-            position: absolute;
-            left: 15px;
-            top: 43px;
-            font-size: 18px;
-            cursor: pointer;
-            user-select: none;
-        }
-        .links {
-            text-align: left;
-            margin-bottom: 25px;
-        }
-        .links a {
-            color: var(--primary-color, #3b82f6);
-            font-size: 14px;
-            text-decoration: none;
-            font-weight: 600;
-        }
+
         .btn-submit {
-            width: 100%;
-            padding: 16px;
-            background: var(--primary-color, #3b82f6);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            cursor: pointer;
         }
         .btn-submit:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
-            background: #2563eb;
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
         }
         .btn-submit:active {
             transform: translateY(1px);
         }
-        .register-link {
-            text-align: center;
-            margin-top: 25px;
-            color: var(--text-muted, #94a3b8);
-            font-size: 15px;
+        /* لمعة خفيفة بتعدي على الزرار */
+        .btn-submit::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
+            transform: skewX(-20deg);
+            z-index: -1;
+            transition: 0.5s;
         }
-        .register-link a {
-            color: var(--primary-color, #3b82f6);
-            font-weight: 800;
-            text-decoration: none;
-        }
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(4px);
-        }
-        .modal-content {
-            background: var(--input-bg, #151a28);
-            padding: 30px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 350px;
-            text-align: center;
-            border: 1px solid var(--input-border, #1e293b);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-        }
-        .modal-content h3 {
-            color: #fff;
-            margin-top: 0;
-            font-size: 22px;
-        }
-        .modal-content p {
-            color: #94a3b8;
-            font-size: 15px;
-            margin-bottom: 25px;
-        }
-        .btn-close-modal {
-            background: var(--primary-color, #3b82f6);
-            color: #fff;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-            font-size: 15px;
-            transition: 0.3s;
-        }
-        .btn-close-modal:hover {
-            background: #2563eb;
+        .btn-submit:hover::after {
+            left: 150%;
+            transition: 0.7s ease-in-out;
         }
     </style>
 </head>
 <body>
 
-    <div class="login-box">
-        <div class="header">
-            <h2>تسجيل الدخول</h2>
-            <p>مرحباً بك مجدداً في Primee Academy</p>
+    <div class="split-container">
+        
+        <!-- الجانب الأيمن: البراند -->
+        <div class="brand-side">
+            <img src="https://adelabdulrahman026-byte.github.io/primee/white%20logo.png" alt="Primee Text Logo">
+            <h2>أهلاً بعودتك يا بطل 👋</h2>
+            <p>استعد لاستكمال رحلتك التعليمية معنا.</p>
+            
+            <!-- أنيميشن Lottie معبر عن الدخول والأمان -->
+            <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.4/dist/dotlottie-wc.js" type="module"></script>
+            <dotlottie-wc src="https://lottie.host/6bc24f6a-10be-40e0-b7e2-7b0fc44e2512/zP2Kc77nro.lottie" style="width: 300px;height: 300px" autoplay loop></dotlottie-wc>
         </div>
 
-        <form id="loginForm">
-            <div class="form-group">
-                <label>رقمك الشخصي (واتساب)</label>
-                <input type="tel" id="loginPhone" placeholder="أدخل رقم الهاتف" required>
+        <!-- الجانب الأيسر: فورم الدخول -->
+        <div class="form-side">
+            <div class="form-header">
+                <h3>تسجيل الدخول</h3>
+                <button class="theme-toggle" id="themeBtn" title="تغيير المظهر">🌙</button>
             </div>
 
-            <div class="form-group">
-                <label>كلمة المرور</label>
-                <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required style="padding-left: 45px;">
-                <span id="togglePassword" class="toggle-pass">👁️</span>
+            <!-- الشخصية التفاعلية (Mascot) -->
+            <div class="mascot-wrapper" id="mascotWrapper">
+                <div class="bear-head">
+                    <div class="bear-ear left"></div>
+                    <div class="bear-ear right"></div>
+                    <div class="bear-eye left"><div class="bear-pupil"></div></div>
+                    <div class="bear-eye right"><div class="bear-pupil"></div></div>
+                    <div class="bear-nose"></div>
+                    <div class="bear-hand left"></div>
+                    <div class="bear-hand right"></div>
+                </div>
             </div>
 
-            <div class="links">
-                <a href="forgot-password.html">نسيت كلمة المرور؟</a>
-            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>رقمك الشخصي (واتساب)</label>
+                    <input type="tel" id="loginPhone" placeholder="أدخل رقم الهاتف" required>
+                </div>
 
-            <button type="submit" class="btn-submit" id="submitBtn">
-                <span id="btnText">دخول للمنصة 🚀</span>
-            </button>
-        </form>
+                <div class="form-group" style="position: relative;">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required style="padding-left: 45px;">
+                    <!-- أيقونة إظهار/إخفاء الباسوورد -->
+                    <span id="togglePassword" style="position: absolute; left: 15px; top: 42px; font-size: 20px; cursor: pointer; user-select: none;">👁️</span>
+                </div>
 
-        <div class="register-link">
-            ليس لديك حساب؟ <a href="register.html">سجل الآن</a>
+                <!-- رابط نسيت كلمة المرور -->
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <a href="forgot-password.html" style="color: var(--primary-color); font-size: 14px; text-decoration: none; font-weight: 600;">نسيت كلمة المرور؟</a>
+                </div>
+
+                <button type="submit" class="btn-submit">دخول للمنصة</button>
+            </form>
+            
+            <p style="text-align: center; margin-top: 20px; color: var(--text-muted);">
+                ليس لديك حساب؟ <a href="register.html" style="color: var(--primary-color); font-weight: 800;">سجل الآن</a>
+            </p>
         </div>
     </div>
 
+    <!-- نافذة التنبيهات المنبثقة -->
     <div class="modal-overlay" id="alertModal">
         <div class="modal-content">
             <h3 id="alertTitle">تنبيه</h3>
-            <p id="alertMessage"></p>
-            <button class="btn-close-modal" onclick="document.getElementById('alertModal').style.display='none'">حسناً</button>
+            <p id="alertMessage">رسالة التنبيه هنا</p>
+            <button class="btn-close-modal" onclick="closeAlertModal()">حسناً</button>
         </div>
     </div>
 
+    <!-- سكربت التحكم في حركة الشخصية فقط (بدون التدخل في فورم الدخول) -->
     <script>
+        const phoneInput = document.getElementById('loginPhone');
         const passInput = document.getElementById('loginPassword');
+        const mascot = document.getElementById('mascotWrapper');
+        const pupils = document.querySelectorAll('.bear-pupil');
         const togglePassword = document.getElementById('togglePassword');
-        const submitBtn = document.getElementById('submitBtn');
-        const btnText = document.getElementById('btnText');
-        const loginForm = document.getElementById('loginForm');
-        
+
+        // 1. حركة العيون مع رقم التليفون
+        phoneInput.addEventListener('input', (e) => {
+            let textLength = e.target.value.length;
+            let moveX = Math.min(Math.max(textLength * 1.5 - 8, -8), 8); 
+            pupils.forEach(pupil => {
+                pupil.style.transform = `translateX(${moveX}px)`;
+            });
+        });
+
+        // 2. نزول العيون عند التركيز على الرقم
+        phoneInput.addEventListener('focus', () => {
+            pupils.forEach(pupil => {
+                pupil.style.transform = `translateY(4px)`;
+            });
+        });
+
+        // 3. رجوع العيون للمنتصف
+        phoneInput.addEventListener('blur', () => {
+            pupils.forEach(pupil => {
+                pupil.style.transform = `translate(0px, 0px)`;
+            });
+        });
+
+        // 4. تغمية العيون عند التركيز على الباسورد
+        function handlePeekaboo() {
+            if (passInput.getAttribute('type') === 'password') {
+                mascot.classList.add('hide-eyes');
+            }
+        }
+        passInput.addEventListener('focus', handlePeekaboo);
+        passInput.addEventListener('input', handlePeekaboo);
+
+        passInput.addEventListener('blur', () => {
+            mascot.classList.remove('hide-eyes');
+        });
+
+        // 5. التفاعل مع أيقونة إظهار الباسورد
         togglePassword.addEventListener('click', () => {
             const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passInput.setAttribute('type', type);
-        });
-
-        submitBtn.addEventListener('click', () => {
-            if(loginForm.checkValidity()) {
-                btnText.innerHTML = 'جاري التحقق... ⏳';
-                setTimeout(() => {
-                    btnText.innerHTML = 'دخول للمنصة 🚀';
-                }, 3000);
+            
+            if (type === 'text') {
+                mascot.classList.remove('hide-eyes');
+            } else if (document.activeElement === passInput) {
+                mascot.classList.add('hide-eyes');
             }
         });
     </script>
+
+    <!-- ملف السكربت الأساسي بتاعك (بيشتغل براحته ومفيش حاجة هتعطله) -->
     <script type="module" src="login-script.js"></script>
 </body>
 </html>
