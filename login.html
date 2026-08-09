@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="style.css">
     
     <style>
-        /* ==================== إعدادات الصفحة والفورم المتسنتر ==================== */
         body {
             background-color: var(--bg-body, #0b0f19);
             display: flex;
@@ -20,122 +19,31 @@
             font-family: 'Cairo', sans-serif;
         }
 
-        .centered-login-box {
+        .clean-login-box {
             background: var(--input-bg, #151a28);
             border: 1px solid var(--input-border, #1e293b);
             border-radius: 24px;
             padding: 40px 30px;
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            position: relative;
-            margin-top: 60px; /* مساحة عشان رأس الطالب ماتتقطعش */
         }
 
-        /* ==================== شخصية الطالب ==================== */
-        .student-wrapper {
-            position: absolute;
-            top: -110px;
-            left: 50%;
-            transform: translateX(-50%);
-            height: 150px;
-            display: flex;
-            justify-content: center;
-            z-index: 10;
-        }
-
-        .student-mascot {
-            position: relative;
-            width: 120px;
-            height: 120px;
-        }
-
-        .cap {
-            position: absolute;
-            top: -15px;
-            left: -15px;
-            width: 150px;
-            height: 35px;
-            background: #1e293b;
-            border-radius: 8px;
-            transform: rotate(-8deg);
-            z-index: 3;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
-        
-        .cap::after {
-            content: '';
-            position: absolute;
-            right: 25px;
-            top: 15px;
-            width: 5px;
-            height: 40px;
-            background: #f59e0b;
-            border-radius: 5px;
-        }
-
-        .face {
-            position: absolute;
-            width: 120px;
-            height: 120px;
-            background: #fcd5ce;
-            border-radius: 50%;
-            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            z-index: 2;
-        }
-
-        .glass-frame {
-            width: 42px;
-            height: 42px;
-            border: 4px solid #334155;
-            border-radius: 50%;
-            background: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            margin-top: 10px;
-        }
-
-        .pupil {
-            width: 12px;
-            height: 12px;
-            background: #0f172a;
-            border-radius: 50%;
-            transition: transform 0.1s ease-out;
-        }
-
-        .hands {
-            position: absolute;
-            bottom: -25px;
-            width: 140px;
-            left: -10px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 4;
-        }
-
-        .hand {
-            width: 35px;
-            height: 40px;
-            background: #fcd5ce;
-            border-radius: 20px;
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 5px 10px rgba(0,0,0,0.15);
-        }
-
-        .student-mascot.hide-eyes .left-hand { transform: translateY(-85px) translateX(30px) rotate(25deg); }
-        .student-mascot.hide-eyes .right-hand { transform: translateY(-85px) translateX(-30px) rotate(-25deg); }
-
-        /* ==================== تنسيق الحقول ==================== */
         .form-header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 35px;
+        }
+
+        .form-header h2 {
             color: var(--text-main, #fff);
+            font-size: 26px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .form-header p {
+            color: var(--text-muted, #94a3b8);
+            font-size: 14px;
         }
 
         .form-group {
@@ -152,7 +60,7 @@
 
         .form-group input {
             width: 100%;
-            padding: 14px;
+            padding: 15px;
             background: rgba(0,0,0,0.2);
             border: 2px solid var(--input-border, #1e293b);
             border-radius: 12px;
@@ -166,11 +74,9 @@
             border-color: var(--primary-color, #3b82f6);
         }
 
-        /* ==================== زرار الدخول التفاعلي ==================== */
-        .animated-submit-btn {
-            position: relative;
+        .btn-submit {
             width: 100%;
-            height: 55px;
+            padding: 15px;
             background: var(--primary-color, #3b82f6);
             color: white;
             border: none;
@@ -178,86 +84,26 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: background 0.3s, transform 0.2s;
             box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+            margin-top: 10px;
         }
 
-        .animated-submit-btn:hover {
+        .btn-submit:hover {
+            background: #2563eb;
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
         }
-
-        /* النصوص جوه الزرار */
-        .btn-text {
-            transition: opacity 0.3s, transform 0.3s;
-            position: absolute;
-        }
-        .text-default { opacity: 1; transform: translateY(0); }
-        .text-processing { opacity: 0; transform: translateY(30px); }
-        .text-success { opacity: 0; transform: translateY(30px); color: #fff;}
-
-        /* مؤشر التحميل */
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top: 3px solid #ffffff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            display: none;
-            margin-left: 10px;
-        }
-
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        /* حالة التحميل (Processing) */
-        .animated-submit-btn.processing {
-            background: #1e1b4b;
-            pointer-events: none;
-        }
-        .animated-submit-btn.processing .text-default { opacity: 0; transform: translateY(-30px); }
-        .animated-submit-btn.processing .text-processing { opacity: 1; transform: translateY(0); display: flex; align-items: center;}
-        .animated-submit-btn.processing .spinner { display: block; }
-
-        /* حالة النجاح (Success) */
-        .animated-submit-btn.success {
-            background: #10b981;
-            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
-            pointer-events: none;
-        }
-        .animated-submit-btn.success .text-processing { opacity: 0; transform: translateY(-30px); }
-        .animated-submit-btn.success .text-success { opacity: 1; transform: translateY(0); display: flex; align-items: center; gap: 5px;}
     </style>
 </head>
 <body>
 
-    <div class="centered-login-box">
-        
-        <!-- شخصية الطالب -->
-        <div class="student-wrapper">
-            <div class="student-mascot" id="studentChar">
-                <div class="cap"></div>
-                <div class="face">
-                    <div class="glass-frame"><div class="pupil"></div></div>
-                    <div class="glass-frame"><div class="pupil"></div></div>
-                </div>
-                <div class="hands">
-                    <div class="hand left-hand"></div>
-                    <div class="hand right-hand"></div>
-                </div>
-            </div>
-        </div>
-
+    <div class="clean-login-box">
         <div class="form-header">
-            <h2 style="margin: 0; font-weight: 900;">تسجيل الدخول</h2>
-            <p style="margin-top: 5px; color: var(--text-muted, #94a3b8); font-size: 14px;">مرحباً بك في Primee Academy</p>
+            <h2>تسجيل الدخول</h2>
+            <p>أهلاً بك مجدداً في Primee Academy</p>
         </div>
 
+        <!-- الفورم مربوط مباشرة بـ login-script.js بتاعك -->
         <form id="loginForm">
             <div class="form-group">
                 <label>رقمك الشخصي (واتساب)</label>
@@ -267,19 +113,14 @@
             <div class="form-group" style="position: relative;">
                 <label>كلمة المرور</label>
                 <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required style="padding-left: 45px;">
-                <span id="togglePassword" style="position: absolute; left: 15px; top: 42px; font-size: 20px; cursor: pointer;">👁️</span>
+                <span id="togglePassword" style="position: absolute; left: 15px; top: 42px; font-size: 18px; cursor: pointer; user-select: none;">👁️</span>
             </div>
 
             <div style="text-align: left; margin-bottom: 25px;">
                 <a href="forgot-password.html" style="color: var(--primary-color, #3b82f6); font-size: 14px; text-decoration: none; font-weight: 600;">نسيت كلمة المرور؟</a>
             </div>
 
-            <!-- الزرار التفاعلي -->
-            <button type="submit" class="animated-submit-btn" id="submitBtn">
-                <span class="btn-text text-default">دخول للمنصة 🚀</span>
-                <span class="btn-text text-processing"><div class="spinner"></div> جاري التحقق...</span>
-                <span class="btn-text text-success">تم الدخول بنجاح ✔️</span>
-            </button>
+            <button type="submit" class="btn-submit">دخول للمنصة 🚀</button>
         </form>
 
         <p style="text-align: center; margin-top: 25px; color: var(--text-muted, #94a3b8); font-size: 15px;">
@@ -287,63 +128,15 @@
         </p>
     </div>
 
-    <!-- سكربت التحكم في شخصية الطالب وزرار الدخول -->
-    <script>
-        const phoneInput = document.getElementById('loginPhone');
-        const passInput = document.getElementById('loginPassword');
-        const studentChar = document.getElementById('studentChar');
-        const pupils = document.querySelectorAll('.pupil');
-        const loginForm = document.getElementById('loginForm');
-        const submitBtn = document.getElementById('submitBtn');
+    <!-- نافذة التنبيهات المنبثقة الخاصة بـ script بتاعك -->
+    <div class="modal-overlay" id="alertModal" style="display:none;">
+        <div class="modal-content">
+            <h3 id="alertTitle">تنبيه</h3>
+            <p id="alertMessage">رسالة التنبيه هنا</p>
+            <button class="btn-close-modal" onclick="closeAlertModal()">حسناً</button>
+        </div>
+    </div>
 
-        // --- 1. تفاعل شخصية الطالب ---
-        phoneInput.addEventListener('focus', () => {
-            pupils.forEach(p => p.style.transform = 'translateY(6px)');
-        });
-
-        phoneInput.addEventListener('input', (e) => {
-            let moveX = Math.min(Math.max(e.target.value.length * 1.5 - 10, -10), 10); 
-            pupils.forEach(p => p.style.transform = `translate(${moveX}px, 6px)`);
-        });
-
-        phoneInput.addEventListener('blur', () => {
-            pupils.forEach(p => p.style.transform = 'translate(0px, 0px)');
-        });
-
-        passInput.addEventListener('focus', () => studentChar.classList.add('hide-eyes'));
-        passInput.addEventListener('blur', () => studentChar.classList.remove('hide-eyes'));
-
-        // إظهار/إخفاء الباسورد
-        const togglePassword = document.getElementById('togglePassword');
-        togglePassword.addEventListener('click', function () {
-            const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passInput.setAttribute('type', type);
-            // لما بيظهر الباسورد بنخلي الطالب يشيل إيده
-            if(type === 'text') {
-                studentChar.classList.remove('hide-eyes');
-            } else {
-                studentChar.classList.add('hide-eyes');
-            }
-        });
-
-        // --- 2. تفاعل زرار الدخول (Submit Animation) ---
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // منع إعادة تحميل الصفحة فوراً
-            
-            // إضافة حالة التحميل
-            submitBtn.classList.add('processing');
-
-            // محاكاة وقت الاتصال بقاعدة البيانات (مثلاً ثانيتين)
-            setTimeout(() => {
-                submitBtn.classList.remove('processing');
-                submitBtn.classList.add('success'); // تحويل الزرار للأخضر
-
-                // هنا بتحط كود الجافاسكريبت بتاعك الفعلي اللي بيحول الطالب للصفحة اللي بعدها
-                // setTimeout(() => { window.location.href = 'student-dashboard.html'; }, 1000);
-                
-            }, 2000);
-        });
-    </script>
-
+    <script type="module" src="login-script.js"></script>
 </body>
 </html>
