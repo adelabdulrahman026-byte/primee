@@ -5,24 +5,145 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول - Primee Academy</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
-    <!-- هنستخدم نفس ملف الستايل بتاع التسجيل عشان نوفر أكواد -->
     <link rel="stylesheet" href="style.css">
-    <script src="https://lottie.host/6bc24f6a-10be-40e0-b7e2-7b0fc44e2512/zP2Kc77nro.lottie.json"></script>
+    
+    <!-- ستايل الروبوت (يفضل نقله لملف style.css لاحقاً للحفاظ على نظافة الكود) -->
+    <style>
+        /* مساحة الروبوت فوق الفورم */
+        .robot-wrapper {
+            position: relative;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+
+        .robot-mascot {
+            position: relative;
+            width: 140px;
+            height: 110px;
+        }
+
+        /* رأس الروبوت */
+        .robot-head {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #e2e8f0, #94a3b8);
+            border-radius: 40px 40px 30px 30px;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+
+        /* الأنتنا (القرن اللي فوق) */
+        .robot-head::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 20px;
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        .robot-head::after {
+            content: '';
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 14px;
+            height: 14px;
+            background: var(--primary-color, #0ea5e9);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary-color, #0ea5e9);
+            transition: background 0.4s;
+        }
+
+        /* شاشة الوجه السوداء */
+        .robot-visor {
+            width: 110px;
+            height: 55px;
+            background: #020617;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            border: 2px solid #334155;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* العيون الرقمية */
+        .robot-eye {
+            width: 16px;
+            height: 20px;
+            background: var(--primary-color, #0ea5e9);
+            border-radius: 8px;
+            box-shadow: 0 0 15px var(--primary-color, #0ea5e9);
+            transition: all 0.2s ease-out;
+        }
+
+        /* أيدي الروبوت */
+        .robot-hand {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(145deg, #cbd5e1, #94a3b8);
+            border-radius: 50%;
+            position: absolute;
+            bottom: -15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 3;
+        }
+
+        .robot-hand.left { left: -10px; }
+        .robot-hand.right { right: -10px; }
+
+        /* حالة الباسورد (الروبوت يغطي عينه) */
+        .robot-mascot.secure-mode .robot-hand.left {
+            bottom: 45px;
+            left: 20px;
+            transform: scale(1.1);
+        }
+
+        .robot-mascot.secure-mode .robot-hand.right {
+            bottom: 45px;
+            right: 20px;
+            transform: scale(1.1);
+        }
+
+        .robot-mascot.secure-mode .robot-eye {
+            background: #ef4444;
+            box-shadow: 0 0 15px #ef4444;
+            height: 6px;
+            border-radius: 4px;
+        }
+
+        .robot-mascot.secure-mode .robot-head::after {
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+        }
+    </style>
 </head>
 <body>
 
     <div class="split-container">
-        
+
         <!-- الجانب الأيمن: البراند -->
         <div class="brand-side">
-            <img src="https://adelabdulrahman026-byte.github.io/primee/white%20logo.png" alt="Primee Text Logo">
             <h2>أهلاً بعودتك يا بطل 👋</h2>
             <p>استعد لاستكمال رحلتك التعليمية معنا.</p>
-            
+
             <!-- أنيميشن Lottie معبر عن الدخول والأمان -->
-<!-- أنيميشن Lottie معبر عن الدخول والأمان -->
-<script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.4/dist/dotlottie-wc.js" type="module"></script>
-<dotlottie-wc src="https://lottie.host/6bc24f6a-10be-40e0-b7e2-7b0fc44e2512/zP2Kc77nro.lottie" style="width: 300px;height: 300px" autoplay loop></dotlottie-wc>
+            <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.4/dist/dotlottie-wc.js" type="module"></script>
+            <dotlottie-wc src="https://lottie.host/6bc24f6a-10be-40e0-b7e2-7b0fc44e2512/zP2Kc77nro.lottie" style="width: 300px;height: 300px" autoplay loop></dotlottie-wc>
         </div>
 
         <!-- الجانب الأيسر: فورم الدخول -->
@@ -32,27 +153,41 @@
                 <button class="theme-toggle" id="themeBtn" title="تغيير المظهر">🌙</button>
             </div>
 
+            <!-- إضافة الروبوت هنا فوق الفورم -->
+            <div class="robot-wrapper">
+                <div class="robot-mascot" id="robot">
+                    <div class="robot-head">
+                        <div class="robot-visor">
+                            <div class="robot-eye" id="eyeLeft"></div>
+                            <div class="robot-eye" id="eyeRight"></div>
+                        </div>
+                    </div>
+                    <div class="robot-hand left"></div>
+                    <div class="robot-hand right"></div>
+                </div>
+            </div>
+
             <form id="loginForm">
                 <div class="form-group">
                     <label>رقمك الشخصي (واتساب)</label>
                     <input type="tel" id="loginPhone" placeholder="أدخل رقم الهاتف" required>
                 </div>
 
-<div class="form-group" style="position: relative;">
-    <label>كلمة المرور</label>
-    <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required style="padding-left: 45px;">
-    <!-- أيقونة إظهار/إخفاء الباسوورد -->
-    <span id="togglePassword" style="position: absolute; left: 15px; top: 42px; font-size: 20px; cursor: pointer;">👁️</span>
-</div>
+                <div class="form-group" style="position: relative;">
+                    <label>كلمة المرور</label>
+                    <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required style="padding-left: 45px;">
+                    <!-- أيقونة إظهار/إخفاء الباسوورد -->
+                    <span id="togglePassword" style="position: absolute; left: 15px; top: 42px; font-size: 20px; cursor: pointer;">👁️</span>
+                </div>
 
-<!-- رابط نسيت كلمة المرور -->
-<div style="text-align: left; margin-bottom: 20px;">
-    <a href="forgot-password.html" style="color: var(--primary-color); font-size: 14px; text-decoration: none; font-weight: 600;">نسيت كلمة المرور؟</a>
-</div>
+                <!-- رابط نسيت كلمة المرور -->
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <a href="forgot-password.html" style="color: var(--primary-color); font-size: 14px; text-decoration: none; font-weight: 600;">نسيت كلمة المرور؟</a>
+                </div>
 
                 <button type="submit" class="btn-submit">دخول للمنصة</button>
             </form>
-            
+
             <p style="text-align: center; margin-top: 20px; color: var(--text-muted);">
                 ليس لديك حساب؟ <a href="register.html" style="color: var(--primary-color); font-weight: 800;">سجل الآن</a>
             </p>
@@ -67,6 +202,42 @@
             <button class="btn-close-modal" onclick="closeAlertModal()">حسناً</button>
         </div>
     </div>
+
+    <!-- سكربت التحكم في حركة الروبوت -->
+    <script>
+        const phoneInput = document.getElementById('loginPhone');
+        const passInput = document.getElementById('loginPassword');
+        const robot = document.getElementById('robot');
+        const eyes = document.querySelectorAll('.robot-eye');
+
+        // 1. حركة العيون يمين وشمال مع كتابة رقم التليفون
+        phoneInput.addEventListener('input', (e) => {
+            let textLength = e.target.value.length;
+            // حساب المسافة عشان العين تتحرك مع الرقم (لحد 12 بيكسل)
+            let moveX = Math.min(Math.max(textLength * 1.5 - 12, -12), 12); 
+            
+            eyes.forEach(eye => {
+                eye.style.transform = `translateX(${moveX}px)`;
+            });
+        });
+
+        // رجوع العيون للمنتصف لما يخرج من حقل الرقم
+        phoneInput.addEventListener('blur', () => {
+            eyes.forEach(eye => {
+                eye.style.transform = `translateX(0px)`;
+            });
+        });
+
+        // 2. لما يضغط على الباسورد (الروبوت يغطي عينه)
+        passInput.addEventListener('focus', () => {
+            robot.classList.add('secure-mode');
+        });
+
+        // 3. لما يخرج من الباسورد (الروبوت يفتح عينه تاني)
+        passInput.addEventListener('blur', () => {
+            robot.classList.remove('secure-mode');
+        });
+    </script>
 
     <script type="module" src="login-script.js"></script>
 </body>
