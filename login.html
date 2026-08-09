@@ -4,131 +4,214 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول - Primee Academy</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     
-    <!-- ستايل الروبوت (يفضل نقله لملف style.css لاحقاً للحفاظ على نظافة الكود) -->
+    <!-- ستايل شخصية الطالب والجانب الأيمن الجديد -->
     <style>
-        /* مساحة الروبوت فوق الفورم */
-        .robot-wrapper {
+        /* ==================== شخصية الطالب (مكان الروبوت) ==================== */
+        .student-wrapper {
             position: relative;
-            height: 120px;
+            height: 150px;
             display: flex;
             justify-content: center;
             margin-bottom: 20px;
             z-index: 10;
         }
 
-        .robot-mascot {
+        .student-mascot {
             position: relative;
-            width: 140px;
-            height: 110px;
+            width: 120px;
+            height: 120px;
+            margin-top: 20px;
         }
 
-        /* رأس الروبوت */
-        .robot-head {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(145deg, #e2e8f0, #94a3b8);
-            border-radius: 40px 40px 30px 30px;
-            position: relative;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        /* طاقية التخرج */
+        .cap {
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            width: 150px;
+            height: 35px;
+            background: #1e293b;
+            border-radius: 8px;
+            transform: rotate(-8deg);
+            z-index: 3;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        
+        .cap::after {
+            content: '';
+            position: absolute;
+            right: 25px;
+            top: 15px;
+            width: 5px;
+            height: 40px;
+            background: #f59e0b; /* لون الشراشيب */
+            border-radius: 5px;
+        }
+
+        /* الوجه */
+        .face {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: #fcd5ce; /* لون البشرة */
+            border-radius: 50%;
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.1);
             display: flex;
             justify-content: center;
             align-items: center;
+            gap: 12px;
             z-index: 2;
         }
 
-        /* الأنتنا (القرن اللي فوق) */
-        .robot-head::before {
-            content: '';
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 6px;
-            height: 20px;
-            background: #94a3b8;
-            border-radius: 10px;
-        }
-        .robot-head::after {
-            content: '';
-            position: absolute;
-            top: -28px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 14px;
-            height: 14px;
-            background: var(--primary-color, #0ea5e9);
+        /* النظارة (إطارات العيون) */
+        .glass-frame {
+            width: 42px;
+            height: 42px;
+            border: 4px solid #334155;
             border-radius: 50%;
-            box-shadow: 0 0 10px var(--primary-color, #0ea5e9);
-            transition: background 0.4s;
-        }
-
-        /* شاشة الوجه السوداء */
-        .robot-visor {
-            width: 110px;
-            height: 55px;
-            background: #020617;
-            border-radius: 20px;
+            background: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 25px;
-            border: 2px solid #334155;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        /* عدسة العين الداخلية */
+        .pupil {
+            width: 12px;
+            height: 12px;
+            background: #0f172a;
+            border-radius: 50%;
+            transition: transform 0.1s ease-out;
+        }
+
+        /* الأيدي */
+        .hands {
+            position: absolute;
+            bottom: -25px;
+            width: 140px;
+            left: -10px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 4;
+        }
+
+        .hand {
+            width: 35px;
+            height: 40px;
+            background: #fcd5ce;
+            border-radius: 20px;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+        }
+
+        /* حالة الباسورد (تغطية الوجه بالأيدي) */
+        .student-mascot.hide-eyes .left-hand {
+            transform: translateY(-85px) translateX(30px) rotate(25deg);
+        }
+
+        .student-mascot.hide-eyes .right-hand {
+            transform: translateY(-85px) translateX(-30px) rotate(-25deg);
+        }
+
+        /* ==================== الجانب الأيمن الجديد (بدون Lottie) ==================== */
+        .modern-brand-side {
+            background: linear-gradient(135deg, var(--primary-color, #3b82f6), #1e1b4b);
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px;
+            color: white;
+            min-height: 100vh;
         }
 
-        /* العيون الرقمية */
-        .robot-eye {
-            width: 16px;
-            height: 20px;
-            background: var(--primary-color, #0ea5e9);
-            border-radius: 8px;
-            box-shadow: 0 0 15px var(--primary-color, #0ea5e9);
-            transition: all 0.2s ease-out;
-        }
-
-        /* أيدي الروبوت */
-        .robot-hand {
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(145deg, #cbd5e1, #94a3b8);
-            border-radius: 50%;
+        /* خلفية منقطة بتتحرك ببطء */
+        .modern-brand-side::before {
+            content: '';
             position: absolute;
-            bottom: -15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            z-index: 3;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 10%, transparent 10%);
+            background-size: 40px 40px;
+            opacity: 0.4;
+            animation: moveBg 30s linear infinite;
         }
 
-        .robot-hand.left { left: -10px; }
-        .robot-hand.right { right: -10px; }
-
-        /* حالة الباسورد (الروبوت يغطي عينه) */
-        .robot-mascot.secure-mode .robot-hand.left {
-            bottom: 45px;
-            left: 20px;
-            transform: scale(1.1);
+        @keyframes moveBg {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100px); }
         }
 
-        .robot-mascot.secure-mode .robot-hand.right {
-            bottom: 45px;
-            right: 20px;
-            transform: scale(1.1);
+        /* العناصر الطايرة */
+        .floating-item {
+            position: absolute;
+            font-size: 50px;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+            animation: float 4s ease-in-out infinite;
+            z-index: 1;
         }
 
-        .robot-mascot.secure-mode .robot-eye {
-            background: #ef4444;
-            box-shadow: 0 0 15px #ef4444;
-            height: 6px;
-            border-radius: 4px;
+        .item-1 { top: 15%; right: 15%; animation-delay: 0s; font-size: 55px; }
+        .item-2 { top: 30%; left: 10%; animation-delay: 1.5s; font-size: 40px; }
+        .item-3 { bottom: 20%; right: 20%; animation-delay: 2s; font-size: 45px; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
         }
 
-        .robot-mascot.secure-mode .robot-head::after {
-            background: #ef4444;
-            box-shadow: 0 0 10px #ef4444;
+        /* محتوى البراند */
+        .brand-content {
+            position: relative;
+            z-index: 2;
+            max-width: 400px;
+        }
+
+        .brand-title {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 15px;
+            line-height: 1.2;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .brand-title span {
+            color: #f59e0b; /* لون ذهبي للتميز */
+        }
+
+        .brand-desc {
+            font-size: 18px;
+            color: #e2e8f0;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        /* كارت زجاجي للاقتباس */
+        .glass-quote {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 25px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: 800;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .glass-quote i {
+            color: #f59e0b;
+            font-size: 24px;
+            margin-bottom: 10px;
+            display: block;
         }
     </style>
 </head>
@@ -136,14 +219,22 @@
 
     <div class="split-container">
 
-        <!-- الجانب الأيمن: البراند -->
-        <div class="brand-side">
-            <h2>أهلاً بعودتك يا بطل 👋</h2>
-            <p>استعد لاستكمال رحلتك التعليمية معنا.</p>
-
-            <!-- أنيميشن Lottie معبر عن الدخول والأمان -->
-            <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.4/dist/dotlottie-wc.js" type="module"></script>
-            <dotlottie-wc src="https://lottie.host/6bc24f6a-10be-40e0-b7e2-7b0fc44e2512/zP2Kc77nro.lottie" style="width: 300px;height: 300px" autoplay loop></dotlottie-wc>
+        <!-- الجانب الأيمن المحدث: تصميم تفاعلي زجاجي -->
+        <div class="brand-side modern-brand-side">
+            <!-- العناصر الطائرة اللي بتدي شكل مرح -->
+            <div class="floating-item item-1">🎓</div>
+            <div class="floating-item item-2">⭐</div>
+            <div class="floating-item item-3">🚀</div>
+            
+            <div class="brand-content">
+                <h1 class="brand-title">أهلاً بعودتك<br><span>يا بطل</span> 👋</h1>
+                <p class="brand-desc">استعد لاستكمال رحلتك التعليمية معنا في Primee Academy، حيث نصنع التفوق بمتعة.</p>
+                
+                <div class="glass-quote">
+                    <i>✨</i>
+                    "النجاح لا يأتي لمن ينتظر، بل لمن يقرر أن يبدأ الآن."
+                </div>
+            </div>
         </div>
 
         <!-- الجانب الأيسر: فورم الدخول -->
@@ -153,17 +244,22 @@
                 <button class="theme-toggle" id="themeBtn" title="تغيير المظهر">🌙</button>
             </div>
 
-            <!-- إضافة الروبوت هنا فوق الفورم -->
-            <div class="robot-wrapper">
-                <div class="robot-mascot" id="robot">
-                    <div class="robot-head">
-                        <div class="robot-visor">
-                            <div class="robot-eye" id="eyeLeft"></div>
-                            <div class="robot-eye" id="eyeRight"></div>
+            <!-- إضافة شخصية الطالب هنا -->
+            <div class="student-wrapper">
+                <div class="student-mascot" id="studentChar">
+                    <div class="cap"></div>
+                    <div class="face">
+                        <div class="glass-frame">
+                            <div class="pupil"></div>
+                        </div>
+                        <div class="glass-frame">
+                            <div class="pupil"></div>
                         </div>
                     </div>
-                    <div class="robot-hand left"></div>
-                    <div class="robot-hand right"></div>
+                    <div class="hands">
+                        <div class="hand left-hand"></div>
+                        <div class="hand right-hand"></div>
+                    </div>
                 </div>
             </div>
 
@@ -176,11 +272,9 @@
                 <div class="form-group" style="position: relative;">
                     <label>كلمة المرور</label>
                     <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required style="padding-left: 45px;">
-                    <!-- أيقونة إظهار/إخفاء الباسوورد -->
                     <span id="togglePassword" style="position: absolute; left: 15px; top: 42px; font-size: 20px; cursor: pointer;">👁️</span>
                 </div>
 
-                <!-- رابط نسيت كلمة المرور -->
                 <div style="text-align: left; margin-bottom: 20px;">
                     <a href="forgot-password.html" style="color: var(--primary-color); font-size: 14px; text-decoration: none; font-weight: 600;">نسيت كلمة المرور؟</a>
                 </div>
@@ -194,7 +288,7 @@
         </div>
     </div>
 
-    <!-- نافذة التنبيهات المنبثقة -->
+    <!-- نافذة التنبيهات -->
     <div class="modal-overlay" id="alertModal">
         <div class="modal-content">
             <h3 id="alertTitle">تنبيه</h3>
@@ -203,39 +297,46 @@
         </div>
     </div>
 
-    <!-- سكربت التحكم في حركة الروبوت -->
+    <!-- سكربت التحكم في شخصية الطالب -->
     <script>
         const phoneInput = document.getElementById('loginPhone');
         const passInput = document.getElementById('loginPassword');
-        const robot = document.getElementById('robot');
-        const eyes = document.querySelectorAll('.robot-eye');
+        const studentChar = document.getElementById('studentChar');
+        const pupils = document.querySelectorAll('.pupil');
 
-        // 1. حركة العيون يمين وشمال مع كتابة رقم التليفون
+        // 1. عند التركيز على الرقم (العيون تنزل لتحت شوية)
+        phoneInput.addEventListener('focus', () => {
+            pupils.forEach(pupil => {
+                pupil.style.transform = 'translateY(6px)';
+            });
+        });
+
+        // 2. حركة العيون يمين وشمال مع كتابة الرقم
         phoneInput.addEventListener('input', (e) => {
             let textLength = e.target.value.length;
-            // حساب المسافة عشان العين تتحرك مع الرقم (لحد 12 بيكسل)
-            let moveX = Math.min(Math.max(textLength * 1.5 - 12, -12), 12); 
+            // حساب المسافة عشان العين تتحرك مع الرقم
+            let moveX = Math.min(Math.max(textLength * 1.5 - 10, -10), 10); 
             
-            eyes.forEach(eye => {
-                eye.style.transform = `translateX(${moveX}px)`;
+            pupils.forEach(pupil => {
+                pupil.style.transform = `translate(${moveX}px, 6px)`;
             });
         });
 
-        // رجوع العيون للمنتصف لما يخرج من حقل الرقم
+        // 3. رجوع العيون للمنتصف لما يخرج من حقل الرقم
         phoneInput.addEventListener('blur', () => {
-            eyes.forEach(eye => {
-                eye.style.transform = `translateX(0px)`;
+            pupils.forEach(pupil => {
+                pupil.style.transform = 'translate(0px, 0px)';
             });
         });
 
-        // 2. لما يضغط على الباسورد (الروبوت يغطي عينه)
+        // 4. لما يضغط على الباسورد (الطالب يرفع إيده ويغطي عينه)
         passInput.addEventListener('focus', () => {
-            robot.classList.add('secure-mode');
+            studentChar.classList.add('hide-eyes');
         });
 
-        // 3. لما يخرج من الباسورد (الروبوت يفتح عينه تاني)
+        // 5. لما يخرج من الباسورد (الطالب ينزل إيده)
         passInput.addEventListener('blur', () => {
-            robot.classList.remove('secure-mode');
+            studentChar.classList.remove('hide-eyes');
         });
     </script>
 
