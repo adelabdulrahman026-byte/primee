@@ -1,165 +1,234 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 | الصفحة غير متوفرة</title>
 
+    <!-- مكتبة Lottie -->
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- خط Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
 
     <style>
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-            font-family:'Cairo',sans-serif;
+        /* ==================== الإعدادات الأساسية ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
         }
 
-        body{
-            background:linear-gradient(135deg,#0f172a,#1e293b);
-            color:#fff;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            min-height:100vh;
-            overflow:hidden;
+        body {
+            background-color: #050812; /* لون داكن فخم جداً */
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
         }
 
-        .container{
-            width:90%;
-            max-width:650px;
-            text-align:center;
-            background:rgba(255,255,255,.05);
-            backdrop-filter:blur(15px);
-            border:1px solid rgba(255,255,255,.08);
-            border-radius:25px;
-            padding:40px;
-            box-shadow:0 20px 50px rgba(0,0,0,.35);
+        /* ==================== تأثير إضاءة الماوس (الكشاف) ==================== */
+        .cursor-glow {
+            position: fixed;
+            top: 0; left: 0;
+            width: 800px; 
+            height: 800px;
+            background: radial-gradient(circle closest-side, rgba(59, 130, 246, 0.08), transparent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none; /* عشان ما يعطلش الضغط على الزراير */
+            z-index: 0;
+            transition: width 0.3s, height 0.3s;
         }
 
-        lottie-player{
-            width:320px;
-            height:320px;
-            margin:auto;
+        /* ==================== الهيكل الأساسي (Split Screen) ==================== */
+        .wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1100px;
+            padding: 40px;
+            gap: 60px;
+            z-index: 1; /* عشان يكون فوق الإضاءة */
         }
 
-        h1{
-            font-size:65px;
-            font-weight:800;
-            margin-top:-20px;
+        .text-side {
+            flex: 1;
         }
 
-        h2{
-            margin-top:10px;
-            font-size:30px;
-            font-weight:700;
+        .lottie-side {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            animation: softFloat 6s ease-in-out infinite;
         }
 
-        p{
-            margin-top:15px;
-            color:#d1d5db;
-            line-height:1.9;
-            font-size:18px;
+        /* حركة طفو ناعمة للأنيميشن */
+        @keyframes softFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
         }
 
-        .buttons{
-            margin-top:35px;
-            display:flex;
-            justify-content:center;
-            gap:15px;
-            flex-wrap:wrap;
+        lottie-player {
+            width: 100%;
+            max-width: 450px;
+            filter: drop-shadow(0 20px 30px rgba(59, 130, 246, 0.2));
         }
 
-        .btn{
-            text-decoration:none;
-            padding:14px 35px;
-            border-radius:12px;
-            transition:.3s;
-            font-weight:700;
+        /* ==================== النصوص ==================== */
+        .huge-404 {
+            font-size: clamp(100px, 12vw, 180px);
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 10px;
+            /* لون متدرج شيك للرقم */
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
         }
 
-        .home{
-            background:#ffffff;
-            color:#111827;
+        .text-side h2 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            color: #f8fafc;
         }
 
-        .home:hover{
-            transform:translateY(-3px);
+        .text-side p {
+            font-size: 17px;
+            color: #94a3b8;
+            line-height: 1.8;
+            margin-bottom: 40px;
+            max-width: 90%;
         }
 
-        .back{
-            border:1px solid rgba(255,255,255,.3);
-            color:white;
+        /* ==================== الأزرار المغناطيسية ==================== */
+        .buttons-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
-        .back:hover{
-            background:white;
-            color:#111827;
+        .magnetic-btn {
+            padding: 16px 35px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 800;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s;
+            cursor: pointer;
         }
 
-        .code{
-            margin-top:20px;
-            color:#64748b;
-            font-size:90px;
-            font-weight:800;
-            opacity:.15;
-            letter-spacing:10px;
+        .btn-primary {
+            background-color: #3b82f6;
+            color: #ffffff;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+            border: none;
         }
 
-        @media(max-width:600px){
+        .btn-secondary {
+            background-color: transparent;
+            color: #e2e8f0;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-secondary:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
 
-            h1{
-                font-size:45px;
+        /* ==================== تصميم الموبايل ==================== */
+        @media (max-width: 900px) {
+            .wrapper {
+                flex-direction: column-reverse; /* يخلي الأنيميشن فوق والكلام تحت */
+                text-align: center;
+                gap: 30px;
+                padding: 20px;
             }
-
-            h2{
-                font-size:24px;
+            .text-side p {
+                max-width: 100%;
             }
-
-            p{
-                font-size:16px;
+            .buttons-container {
+                justify-content: center;
             }
-
-            lottie-player{
-                width:240px;
-                height:240px;
+            .magnetic-btn {
+                width: 100%;
+            }
+            .cursor-glow {
+                display: none; /* نقفل الكشاف في الموبايل عشان ملوش لازمة بدون ماوس */
             }
         }
     </style>
-
 </head>
-
 <body>
 
-<div class="container">
+    <!-- كشاف الإضاءة اللي بيمشي ورا الماوس -->
+    <div class="cursor-glow" id="glow"></div>
 
-    <lottie-player
-        src="https://assets7.lottiefiles.com/packages/lf20_kcsr6fcp.json"
-        background="transparent"
-        speed="1"
-        loop
-        autoplay>
-    </lottie-player>
+    <div class="wrapper">
+        <!-- الجانب الأيمن (النصوص والأزرار) -->
+        <div class="text-side">
+            <div class="huge-404">404</div>
+            <h2>يبدو أنك وصلت لنهاية الخريطة!</h2>
+            <p>الصفحة التي تبحث عنها غير متوفرة. ربما تم نقلها، أو حذفها، أو أنك أدخلت رابطاً غير صحيح. دعنا نعود بك إلى الطريق الصحيح.</p>
+            
+            <div class="buttons-container">
+                <a href="/" class="magnetic-btn btn-primary">العودة للرئيسية 🏠</a>
+                <a href="javascript:history.back()" class="magnetic-btn btn-secondary">الرجوع للخلف ↩️</a>
+            </div>
+        </div>
 
-    <h1>404</h1>
-
-    <h2>الصفحة غير متوفرة</h2>
-
-    <p>
-        عذرًا، يبدو أن الصفحة التي تحاول الوصول إليها غير موجودة أو ربما تم نقلها أو حذفها.
-    </p>
-
-    <div class="buttons">
-        <a href="/" class="btn home">العودة للرئيسية</a>
-        <a href="javascript:history.back()" class="btn back">الرجوع للخلف</a>
+        <!-- الجانب الأيسر (الأنيميشن) -->
+        <div class="lottie-side">
+            <lottie-player
+                src="https://assets7.lottiefiles.com/packages/lf20_kcsr6fcp.json"
+                background="transparent"
+                speed="1"
+                loop
+                autoplay>
+            </lottie-player>
+        </div>
     </div>
 
-    <div class="code">404</div>
+    <!-- الجافاسكريبت للحركات التفاعلية -->
+    <script>
+        // 1. حركة الكشاف (Glow) ورا الماوس
+        const glow = document.getElementById('glow');
+        
+        document.addEventListener('mousemove', (e) => {
+            // تحريك الكشاف لمكان الماوس
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
+        });
 
-</div>
+        // 2. حركة الأزرار المغناطيسية (Magnetic Effect)
+        const magneticBtns = document.querySelectorAll('.magnetic-btn');
+
+        magneticBtns.forEach(btn => {
+            btn.addEventListener('mousemove', (e) => {
+                const rect = btn.getBoundingClientRect();
+                // حساب المسافة بين الماوس ومنتصف الزرار
+                const x = (e.clientX - rect.left - rect.width / 2) * 0.4;
+                const y = (e.clientY - rect.top - rect.height / 2) * 0.4;
+                
+                // تحريك الزرار ناحية الماوس
+                btn.style.transform = `translate(${x}px, ${y}px) scale(1.05)`;
+            });
+
+            // إرجاع الزرار لمكانه الطبيعي لما الماوس يبعد
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = `translate(0px, 0px) scale(1)`;
+            });
+        });
+    </script>
 
 </body>
 </html>
