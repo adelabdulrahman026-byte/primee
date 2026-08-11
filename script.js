@@ -1,3 +1,11 @@
+const MAINTENANCE_MODE = true;
+
+if (
+    MAINTENANCE_MODE &&
+    !window.location.pathname.endsWith("maintenance.html")
+) {
+    window.location.replace("maintenance.html");
+}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
