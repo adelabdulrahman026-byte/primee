@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,11 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
 
     <script
         src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.6.2/dist/dotlottie-wc.js"
@@ -16,6 +21,7 @@
     </script>
 
     <style>
+
         * {
             margin: 0;
             padding: 0;
@@ -23,36 +29,46 @@
         }
 
         :root {
-            --purple: #7c3aed;
-            --purple-dark: #5b21b6;
-            --purple-light: #a855f7;
-            --text: #21152d;
-            --muted: #81758c;
+            --purple: #8b5cf6;
+            --purple-dark: #6d28d9;
+            --purple-light: #c084fc;
+            --white: #ffffff;
+            --text: #17111f;
+            --muted: #766a80;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
         }
 
         body {
             min-height: 100vh;
             font-family: "Cairo", sans-serif;
+            color: var(--text);
+            overflow: hidden;
+
             background:
                 radial-gradient(
-                    circle at 15% 15%,
+                    circle at 10% 15%,
                     rgba(168, 85, 247, .20),
                     transparent 30%
                 ),
                 radial-gradient(
                     circle at 90% 85%,
                     rgba(124, 58, 237, .18),
-                    transparent 32%
+                    transparent 30%
                 ),
                 linear-gradient(
                     135deg,
                     #ffffff 0%,
-                    #fbf9ff 45%,
-                    #f4edff 100%
+                    #faf7ff 48%,
+                    #f2eaff 100%
                 );
-            color: var(--text);
-            overflow: hidden;
         }
+
+        /* الخلفية */
 
         .background {
             position: fixed;
@@ -61,316 +77,479 @@
             pointer-events: none;
         }
 
-        .orb {
+        .grid {
             position: absolute;
-            border-radius: 50%;
-            filter: blur(70px);
-            opacity: .25;
+            inset: 0;
+
+            background-image:
+                linear-gradient(
+                    rgba(124, 58, 237, .035) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(124, 58, 237, .035) 1px,
+                    transparent 1px
+                );
+
+            background-size: 55px 55px;
+
+            mask-image: radial-gradient(
+                ellipse at center,
+                black 20%,
+                transparent 78%
+            );
         }
 
-        .orb.one {
-            width: 350px;
-            height: 350px;
+        .blur {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: .30;
+        }
+
+        .blur-one {
+            width: 380px;
+            height: 380px;
             background: #a855f7;
-            top: -170px;
+            top: -200px;
             right: -100px;
         }
 
-        .orb.two {
-            width: 300px;
-            height: 300px;
+        .blur-two {
+            width: 350px;
+            height: 350px;
             background: #7c3aed;
-            bottom: -150px;
+            bottom: -200px;
             left: -100px;
         }
 
-        .orb.three {
-            width: 180px;
-            height: 180px;
-            background: #c084fc;
-            top: 40%;
-            left: 38%;
-            opacity: .10;
-        }
+        /* الصفحة */
 
-        .wrapper {
+        .page {
             min-height: 100vh;
-            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 30px;
+            padding: 25px;
             position: relative;
             z-index: 2;
         }
 
-        .container {
-            width: min(1180px, 100%);
-            min-height: 650px;
-            padding: 55px;
-            display: flex;
+        /* الكارت الرئيسي */
+
+        .card-main {
+            width: min(1200px, 100%);
+            min-height: 680px;
+
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             align-items: center;
-            gap: 65px;
-            background: rgba(255,255,255,.65);
-            border: 1px solid rgba(255,255,255,.9);
-            border-radius: 38px;
+
+            position: relative;
+            overflow: hidden;
+
+            padding: 60px;
+
+            background: rgba(255, 255, 255, .68);
+
+            border: 1px solid rgba(255, 255, 255, .95);
+
+            border-radius: 40px;
+
             box-shadow:
-                0 35px 100px rgba(76, 29, 110, .12),
-                inset 0 1px 0 rgba(255,255,255,.95);
+                0 35px 100px rgba(76, 29, 110, .13),
+                inset 0 1px 0 rgba(255, 255, 255, .95);
+
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
         }
 
-        .content {
-            flex: 1;
-            max-width: 560px;
+        .card-main::before {
+            content: "";
+
+            position: absolute;
+
+            width: 500px;
+            height: 500px;
+
+            border-radius: 50%;
+
+            border: 1px solid rgba(124, 58, 237, .08);
+
+            top: 50%;
+            left: 58%;
+
+            transform: translate(-50%, -50%);
         }
 
-        .status {
+        /* المحتوى */
+
+        .content {
+            position: relative;
+            z-index: 5;
+
+            padding-left: 35px;
+        }
+
+        .badge {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            padding: 10px 18px;
-            border-radius: 50px;
-            background: rgba(124,58,237,.08);
-            border: 1px solid rgba(124,58,237,.12);
+
+            padding: 9px 16px;
+
+            background: rgba(124, 58, 237, .08);
+
+            border: 1px solid rgba(124, 58, 237, .13);
+
+            border-radius: 100px;
+
             color: var(--purple-dark);
-            font-size: 14px;
+
+            font-size: 13px;
             font-weight: 700;
+
             margin-bottom: 25px;
         }
 
-        .status-dot {
-            width: 9px;
-            height: 9px;
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+
             border-radius: 50%;
-            background: #8b5cf6;
-            box-shadow: 0 0 0 6px rgba(139,92,246,.12);
-            animation: pulse 1.8s infinite;
+
+            background: var(--purple);
+
+            box-shadow:
+                0 0 0 5px rgba(139, 92, 246, .10),
+                0 0 20px rgba(139, 92, 246, .45);
+
+            animation: pulse 1.7s infinite;
         }
 
         h1 {
-            font-size: clamp(42px, 5.5vw, 72px);
-            line-height: 1.12;
-            font-weight: 800;
+            font-size: clamp(46px, 5vw, 74px);
+            line-height: 1.1;
+
+            font-weight: 900;
+
             letter-spacing: -2px;
+
             margin-bottom: 22px;
         }
 
-        h1 span {
+        h1 .first {
             display: block;
-            background: linear-gradient(
-                100deg,
-                #5b21b6,
-                #8b5cf6,
-                #c026d3
-            );
+            color: #201526;
+        }
+
+        h1 .second {
+            display: block;
+
+            background:
+                linear-gradient(
+                    100deg,
+                    #5b21b6,
+                    #8b5cf6,
+                    #c026d3
+                );
+
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+
             background-clip: text;
         }
 
         .description {
+            max-width: 520px;
+
             color: var(--muted);
-            font-size: 18px;
+
+            font-size: 17px;
             line-height: 2;
-            max-width: 500px;
-            margin-bottom: 32px;
+
+            margin-bottom: 35px;
         }
 
-        .progress-wrapper {
-            max-width: 480px;
+        /* شريط التقدم */
+
+        .progress-area {
+            width: min(500px, 100%);
         }
 
-        .progress-top {
+        .progress-info {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            margin-bottom: 11px;
-            color: #74677d;
-            font-size: 14px;
+            align-items: center;
+
+            margin-bottom: 10px;
+
+            color: #75677d;
+
+            font-size: 13px;
             font-weight: 600;
         }
 
-        .progress-top strong {
+        .progress-info strong {
             color: var(--purple-dark);
+            font-size: 14px;
         }
 
         .progress {
-            height: 9px;
             width: 100%;
+            height: 8px;
+
             background: #eee7f5;
-            border-radius: 50px;
+
+            border-radius: 100px;
+
             overflow: hidden;
         }
 
         .progress-bar {
-            width: 76%;
+            width: 78%;
             height: 100%;
+
             border-radius: inherit;
-            background: linear-gradient(
-                90deg,
-                #6d28d9,
-                #8b5cf6,
-                #c026d3
-            );
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #6d28d9,
+                    #8b5cf6,
+                    #c026d3
+                );
+
+            box-shadow:
+                0 0 18px rgba(139, 92, 246, .35);
+
             position: relative;
             overflow: hidden;
         }
 
         .progress-bar::after {
             content: "";
+
             position: absolute;
-            inset: 0;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(255,255,255,.55),
-                transparent
-            );
+            top: 0;
+            bottom: 0;
+
+            width: 100px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255,255,255,.6),
+                    transparent
+                );
+
             animation: shine 2.2s infinite;
         }
 
+        /* منطقة الـ Lottie */
+
         .visual {
-            width: 450px;
-            height: 450px;
-            min-width: 450px;
+            height: 560px;
+
             display: flex;
             align-items: center;
             justify-content: center;
+
             position: relative;
         }
 
-        .visual-circle {
+        .circle {
             position: absolute;
-            width: 400px;
-            height: 400px;
+
+            width: 430px;
+            height: 430px;
+
             border-radius: 50%;
+
             background:
                 radial-gradient(
-                    circle at 35% 30%,
+                    circle at 35% 25%,
                     #ffffff,
-                    #f8f2ff 60%,
-                    #eee3ff
+                    #faf4ff 52%,
+                    #eee2ff 100%
                 );
+
             box-shadow:
-                0 30px 80px rgba(91,33,182,.12),
+                0 35px 90px rgba(91, 33, 182, .15),
                 inset 0 0 0 1px rgba(255,255,255,.95);
         }
 
-        .visual-circle::before {
+        .circle::before {
             content: "";
+
             position: absolute;
-            inset: 24px;
-            border: 1px dashed rgba(124,58,237,.20);
+
+            inset: 22px;
+
             border-radius: 50%;
+
+            border: 1px dashed rgba(124, 58, 237, .20);
+
             animation: rotate 18s linear infinite;
         }
 
-        .visual-circle::after {
+        .circle::after {
             content: "";
+
             position: absolute;
-            width: 15px;
-            height: 15px;
+
+            width: 14px;
+            height: 14px;
+
             border-radius: 50%;
+
             background: #8b5cf6;
-            top: 18px;
+
+            top: 10px;
             left: 50%;
-            box-shadow: 0 0 20px rgba(139,92,246,.7);
+
+            box-shadow:
+                0 0 25px rgba(139, 92, 246, .7);
         }
 
         dotlottie-wc {
             width: 350px;
             height: 350px;
+
             position: relative;
+
             z-index: 3;
         }
 
+        /* الكروت الصغيرة */
+
         .floating {
             position: absolute;
-            z-index: 5;
+
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 13px 17px;
-            background: rgba(255,255,255,.88);
+
+            padding: 12px 15px;
+
+            background: rgba(255,255,255,.90);
+
             border: 1px solid rgba(255,255,255,.95);
-            border-radius: 18px;
-            box-shadow: 0 18px 40px rgba(71,35,95,.12);
+
+            border-radius: 17px;
+
+            box-shadow:
+                0 20px 45px rgba(71,35,95,.13);
+
             backdrop-filter: blur(15px);
+
             color: #4e4057;
-            font-size: 13px;
+
+            font-size: 12px;
             font-weight: 700;
+
+            z-index: 8;
         }
 
         .floating-icon {
-            width: 36px;
-            height: 36px;
+            width: 35px;
+            height: 35px;
+
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 12px;
+
+            border-radius: 11px;
+
             background: #f1e8ff;
+
             color: #7c3aed;
-            font-size: 18px;
+
+            font-size: 17px;
         }
 
-        .floating.one {
-            top: 55px;
+        .floating-one {
+            top: 80px;
             right: 0;
+
             animation: float 4s ease-in-out infinite;
         }
 
-        .floating.two {
-            bottom: 45px;
+        .floating-two {
+            bottom: 80px;
             left: 0;
+
             animation: float 4s ease-in-out infinite 1.3s;
         }
 
-        .footer {
-            position: fixed;
-            bottom: 18px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: #a297aa;
-            font-size: 12px;
-            z-index: 10;
+        .floating-three {
+            bottom: 35px;
+            right: 30px;
+
+            animation: float 4.5s ease-in-out infinite 2s;
         }
 
+        /* الفوتر */
+
+        .footer {
+            position: fixed;
+
+            bottom: 15px;
+            left: 0;
+            right: 0;
+
+            text-align: center;
+
+            color: rgba(83, 68, 92, .55);
+
+            font-size: 11px;
+
+            z-index: 20;
+        }
+
+        /* الحركات */
+
         @keyframes float {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translateY(0);
             }
 
             50% {
-                transform: translateY(-11px);
+                transform: translateY(-12px);
             }
         }
 
         @keyframes pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: scale(1);
                 opacity: 1;
             }
 
             50% {
                 transform: scale(1.35);
-                opacity: .6;
+                opacity: .55;
             }
         }
 
         @keyframes shine {
-            from {
-                transform: translateX(-100%);
+
+            0% {
+                transform: translateX(-130%);
             }
 
-            to {
-                transform: translateX(100%);
+            100% {
+                transform: translateX(500%);
             }
         }
 
         @keyframes rotate {
+
             from {
                 transform: rotate(0deg);
             }
@@ -380,26 +559,37 @@
             }
         }
 
-        @media (max-width: 950px) {
+        /* التابلت */
+
+        @media (max-width: 1000px) {
 
             body {
                 overflow-y: auto;
             }
 
-            .wrapper {
-                padding: 25px 15px 60px;
+            .page {
+                padding: 20px;
             }
 
-            .container {
+            .card-main {
+                grid-template-columns: 1fr;
+
+                padding: 35px 30px 50px;
+
                 min-height: auto;
-                flex-direction: column-reverse;
-                padding: 40px 25px 45px;
-                gap: 20px;
+
                 text-align: center;
             }
 
             .content {
-                max-width: 650px;
+                padding: 0;
+                order: 2;
+            }
+
+            .visual {
+                order: 1;
+
+                height: 430px;
             }
 
             .description {
@@ -407,20 +597,16 @@
                 margin-right: auto;
             }
 
-            .progress-wrapper {
-                margin: auto;
+            .progress-area {
+                margin-left: auto;
+                margin-right: auto;
+
                 text-align: right;
             }
 
-            .visual {
-                width: 350px;
-                min-width: 350px;
-                height: 350px;
-            }
-
-            .visual-circle {
-                width: 320px;
-                height: 320px;
+            .circle {
+                width: 340px;
+                height: 340px;
             }
 
             dotlottie-wc {
@@ -428,120 +614,211 @@
                 height: 290px;
             }
 
-            .floating.one {
-                right: -5px;
-                top: 20px;
+            .floating-one {
+                right: 5%;
+                top: 30px;
             }
 
-            .floating.two {
-                left: -5px;
-                bottom: 20px;
+            .floating-two {
+                left: 5%;
+                bottom: 35px;
             }
         }
 
-        @media (max-width: 500px) {
+        /* الموبايل */
 
-            .container {
+        @media (max-width: 550px) {
+
+            body {
+                overflow-y: auto;
+            }
+
+            .page {
+                padding: 12px;
+            }
+
+            .card-main {
                 border-radius: 28px;
-                padding: 30px 18px 40px;
+
+                padding:
+                    25px
+                    16px
+                    40px;
             }
 
             .visual {
-                width: 285px;
-                min-width: 285px;
-                height: 285px;
+                height: 310px;
             }
 
-            .visual-circle {
-                width: 260px;
-                height: 260px;
+            .circle {
+                width: 250px;
+                height: 250px;
             }
 
             dotlottie-wc {
-                width: 235px;
-                height: 235px;
+                width: 215px;
+                height: 215px;
             }
 
             h1 {
-                font-size: 40px;
+                font-size: 42px;
+                letter-spacing: -1px;
             }
 
             .description {
-                font-size: 15px;
+                font-size: 14px;
+                line-height: 1.9;
+            }
+
+            .badge {
+                font-size: 11px;
             }
 
             .floating {
-                padding: 9px 11px;
-                font-size: 10px;
+                padding: 8px 10px;
+                font-size: 9px;
             }
 
             .floating-icon {
-                width: 29px;
-                height: 29px;
-                font-size: 14px;
+                width: 28px;
+                height: 28px;
+                font-size: 13px;
+            }
+
+            .floating-one {
+                top: 5px;
+                right: 0;
+            }
+
+            .floating-two {
+                left: 0;
+                bottom: 15px;
+            }
+
+            .floating-three {
+                right: 5px;
+                bottom: -5px;
             }
         }
+
     </style>
 </head>
 
 <body>
 
     <div class="background">
-        <div class="orb one"></div>
-        <div class="orb two"></div>
-        <div class="orb three"></div>
+
+        <div class="grid"></div>
+
+        <div class="blur blur-one"></div>
+        <div class="blur blur-two"></div>
+
     </div>
 
-    <main class="wrapper">
 
-        <div class="container">
+    <main class="page">
+
+        <div class="card-main">
+
+
+            <!-- النص -->
 
             <section class="content">
 
-                <div class="status">
-                    <span class="status-dot"></span>
+                <div class="badge">
+                    <span class="badge-dot"></span>
                     المنصة قيد التجهيز
                 </div>
 
+
                 <h1>
-                    حاجة كبيرة
-                    <span>بتتجهزلك ✦</span>
+
+                    <span class="first">
+                        المنصة
+                    </span>
+
+                    <span class="second">
+                        تحت الإنشاء
+                    </span>
+
                 </h1>
 
+
                 <p class="description">
-                    بنشتغل حاليًا على تجهيز المنصة وتطوير كل التفاصيل
-                    عشان نقدم لك تجربة أفضل وأسرع وأسهل.
-                    خليك قريب... هنكون معاك قريب جدًا.
+
+                    بنجهز لك تجربة تعليمية مختلفة ومميزة.
+                    شغالين حاليًا على تطوير المنصة وتجهيز
+                    كل التفاصيل عشان نقدم لك تجربة أسرع
+                    وأسهل وأفضل.
+
                 </p>
 
-                <div class="progress-wrapper">
 
-                    <div class="progress-top">
-                        <span>نسبة اكتمال التجهيز</span>
-                        <strong>76%</strong>
+                <div class="progress-area">
+
+                    <div class="progress-info">
+
+                        <span>
+                            نسبة اكتمال التجهيز
+                        </span>
+
+                        <strong>
+                            78%
+                        </strong>
+
                     </div>
 
+
                     <div class="progress">
+
                         <div class="progress-bar"></div>
+
                     </div>
 
                 </div>
 
             </section>
 
+
+            <!-- الصورة والحركة -->
+
             <section class="visual">
 
-                <div class="visual-circle"></div>
+                <div class="circle"></div>
 
-                <div class="floating one">
-                    <div class="floating-icon">✦</div>
+
+                <div class="floating floating-one">
+
+                    <div class="floating-icon">
+                        ✦
+                    </div>
+
                     تجربة جديدة
+
                 </div>
 
-                <div class="floating two">
-                    <div class="floating-icon">✓</div>
-                    قريبًا جدًا
+
+                <div class="floating floating-two">
+
+                    <div class="floating-icon">
+                        ✓
+                    </div>
+
+                    كل شيء بيتجهز
+
                 </div>
+
+
+                <div class="floating floating-three">
+
+                    <div class="floating-icon">
+                        ∞
+                    </div>
+
+                    قريبًا جدًا
+
+                </div>
+
 
                 <dotlottie-wc
                     src="https://lottie.host/9c2f6b3b-5b7e-4e6e-8f7a-6e2d3f6b4b7e/7Vx7Y5L2XG.lottie"
@@ -555,9 +832,13 @@
 
     </main>
 
+
     <div class="footer">
+
         © 2026 — جميع الحقوق محفوظة
+
     </div>
 
 </body>
+
 </html>
