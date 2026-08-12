@@ -84,22 +84,27 @@ const nightLottieUrl = "https://lottie.host/80e3da11-dfab-40a2-9b24-9ad9828e1c66
 
 function applyThemeColors(isDark) {
     if (heroLottieBg) heroLottieBg.src = isDark ? nightLottieUrl : dayLottieUrl;
-    if (heroOverlayColor) heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.4)' : 'rgba(255, 255, 255, 0.2)';
+    if (heroOverlayColor) heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(255, 255, 255, 0.4)';
 }
 
 if(themeBtn) {
     const icon = themeBtn.querySelector('i');
-    if(localStorage.getItem('theme')==='dark') { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
-    applyThemeColors(localStorage.getItem('theme') === 'dark');
+    const isDark = document.body.getAttribute('data-theme') === 'dark' || localStorage.getItem('theme') === 'dark';
+    
+    if(isDark) { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
+    applyThemeColors(isDark);
 
     themeBtn.addEventListener('click', () => {
-        if(document.body.getAttribute('data-theme')==='dark') { 
-            document.body.removeAttribute('data-theme'); localStorage.setItem('theme','light'); 
-            icon.classList.replace('fa-sun','fa-moon'); applyThemeColors(false);
-        } else { 
-            document.body.setAttribute('data-theme','dark'); localStorage.setItem('theme','dark'); 
-            icon.classList.replace('fa-moon','fa-sun'); applyThemeColors(true);
-        }
+        setTimeout(() => {
+            const currentlyDark = document.body.getAttribute('data-theme') === 'dark';
+            if(currentlyDark) { 
+                document.body.removeAttribute('data-theme'); localStorage.setItem('theme','light'); 
+                icon.classList.replace('fa-sun','fa-moon'); applyThemeColors(false);
+            } else { 
+                document.body.setAttribute('data-theme','dark'); localStorage.setItem('theme','dark'); 
+                icon.classList.replace('fa-moon','fa-sun'); applyThemeColors(true);
+            }
+        }, 50);
     });
 }
 
@@ -158,59 +163,50 @@ function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
                     });
                     subContainer.style.display = 'flex';
                 }
-                onFilterCallback(mainFilter); 
+                onFilterCallback(mainFilter); // تصفية عامة للمرحلة الأول
             }
         });
     });
 }
 
 // ==========================================
-// 4. المدرسين: دوائر، سلايدر، وفلاتر
+// 4. المدرسين: سلايدر Fade الشفاف
 // ==========================================
 let allTeachersData = [];
 let teachersSwiperInstance = null;
+let heroFadeSwiperInstance = null; 
 
 async function fetchTeachers() {
     try {
         const snap = await getDocs(collection(db, "teachers"));
         if(snap.empty) return;
         
-        const grid = document.getElementById('teachersGrid');
-        const avatarsRow = document.getElementById('teachersAvatarsRow');
-        let html = ''; let avHtml = '';
-        
-        let hero3DGrid = document.getElementById('heroTeachers3DGrid');
-        let hero3DHtml = '';
+        let heroFadeGrid = document.getElementById('heroTeachersFadeGrid');
+        let heroFadeHtml = '';
         
         snap.forEach(doc => {
             const t = { id: doc.id, ...doc.data() };
             allTeachersData.push(t);
             
-            // الدوائر
-            avHtml += `<img src="${t.imageUrl}" class="teacher-avatar-circle" title="${t.name}" onclick="openTeacherCourses('${t.name}')">`;
-            
-            // سلايدر הـ Hero الـ 3D المفرغ
-            hero3DHtml += `
-            <div class="swiper-slide hero-slide-transparent" onclick="openTeacherCourses('${t.name}')">
+            // 🚨 سلايدر הـ Hero الـ Fade المفرغ مع أيقونة الـ Glow 🚨
+            heroFadeHtml += `
+            <div class="swiper-slide hero-slide-fade" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
+                <div class="teacher-glow-icon"></div> <!-- الهالة المضيئة -->
                 <img src="${t.imageUrl}" alt="${t.name}" class="teacher-png">
-                <div class="hero-teacher-info">
-                    <h4 class="hero-teacher-name">${t.name}</h4>
-                    <span class="hero-teacher-subject">${t.subject}</span>
-                </div>
+                <h4 class="hero-teacher-name">${t.name}</h4>
+                <span class="hero-teacher-subject">${t.subject}</span>
             </div>`;
         });
         
-        if(avatarsRow) avatarsRow.innerHTML = avHtml;
-        
-        if(hero3DGrid) {
-            hero3DGrid.innerHTML = hero3DHtml;
+        if(heroFadeGrid) {
+            heroFadeGrid.innerHTML = heroFadeHtml;
             if(typeof Swiper !== 'undefined') {
-                new Swiper('.hero-3d-slider', {
-                    effect: 'cards',
+                heroFadeSwiperInstance = new Swiper('.hero-fade-slider', {
+                    effect: 'fade', // التأثير المطلوب للمدرسين
+                    fadeEffect: { crossFade: true },
                     grabCursor: true,
                     loop: true,
-                    autoplay: { delay: 2500, disableOnInteraction: false },
-                    cardsEffect: { slideShadows: false, perSlideOffset: 15, perSlideRotate: 3, rotate: true }
+                    autoplay: { delay: 3000, disableOnInteraction: false }
                 });
             }
         }
@@ -423,7 +419,7 @@ window.buyCourseAction = async function(courseId, price, title) {
         const userData = userSnap.docs[0].data();
         window.currentUserId = userSnap.docs[0].id;
         window.currentUserBalance = parseInt(userData.walletBalance) || 0;
-        window.currentUserCourses = userData.myCourses || []; 
+        window.currentUserCourses = userData.myCourses || []; // جبنا الكورسات اللي معاه
 
         window.pendingCourseId = courseId;
         window.pendingCoursePrice = parseInt(price) || 0;
