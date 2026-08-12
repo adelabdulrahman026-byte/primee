@@ -98,7 +98,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .modern-table th { background: var(--input-bg); font-weight: 900; font-size: 16px; }
 
 /* ==========================================================================
-   5. الصفحة الرئيسية (الـ Hero Section القديم مخفي، الجديد تحت)
+   5. الصفحة الرئيسية (الـ Hero Section والفيديوهات)
 ========================================================================== */
 .hero-section { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 50px auto; padding: 0 20px; gap: 40px; }
 .hero-content { flex: 1; }
@@ -127,6 +127,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .section-header h2 { font-size: 32px; font-weight: 900; color: var(--text-main); margin: 0; }
 .view-all { color: var(--primary-color); font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 8px; }
 
+/* الفلاتر المزدوجة */
 .packages-filters-container { display: flex; justify-content: center; gap: 15px; margin: 40px auto; flex-wrap: wrap; padding: 0 20px; }
 .modern-filter-btn { background: var(--bg-card); border: 2px solid var(--input-border); color: var(--text-muted); padding: 12px 25px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; }
 .modern-filter-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: translateY(-3px); }
@@ -151,10 +152,12 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .cover-card-btn { background: #f59e0b; color: #fff; border: none; padding: 12px; border-radius: 12px; font-family: 'Cairo'; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.3s; }
 .cover-card-btn:hover { background: #d97706; transform: translateY(-2px); }
 
+/* أزرار تقليب سلايدر المدرسين */
 .swiper-button-next, .swiper-button-prev { color: #3b82f6 !important; background: #fff; width: 45px !important; height: 45px !important; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); top: auto !important; bottom: 0px !important; }
 .swiper-button-next::after, .swiper-button-prev::after { font-size: 20px !important; font-weight: bold; }
 .swiper-pagination-bullet-active { background-color: var(--primary-color) !important; }
 
+/* حالة إلغاء السلايدر وعرض الجميع כشبكة */
 .teachers-grid-active .swiper-wrapper { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important; gap: 30px !important; transform: none !important; }
 .teachers-grid-active .swiper-slide { width: 100% !important; margin-right: 0 !important; opacity: 1 !important; height: auto !important; aspect-ratio: 1/1; transform: none !important; }
 .teachers-grid-active .swiper-pagination, .teachers-grid-active .swiper-button-next, .teachers-grid-active .swiper-button-prev { display: none !important; }
@@ -336,7 +339,7 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .parent-report-body .student-info p { margin: 0 0 5px 0; color: var(--text-muted); font-weight: 700; display: flex; align-items: center; gap: 8px;}
 
 /* ==========================================================================
-   11. الموبايل الشامل (Responsive) 📱 (تم توحيده مع اللاب)
+   11. الموبايل الشامل (Responsive) 📱
 ========================================================================== */
 .mobile-dash-header { display: none; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-card); border-bottom: 1px solid var(--input-border); }
 .close-mobile-sidebar { display: none; background: none; border: none; font-size: 24px; color: var(--text-muted); position: absolute; top: 20px; left: 20px; cursor: pointer; z-index: 1002;}
