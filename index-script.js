@@ -79,14 +79,16 @@ const themeBtn = document.getElementById('themeToggleBtn');
 const heroLottieBg = document.getElementById('heroLottieBg');
 const heroOverlayColor = document.getElementById('heroOverlayColor');
 
-// روابط الأنيميشن الجبارة (النهار صحرا وشمس / الليل قمر ونجوم)
+// روابط اللوتي الجبارة (النهار: طبيعة وشمس / الليل: قمر وسماء)
 const dayLottieUrl = "https://lottie.host/1c4d92eb-5986-455b-bf42-e56230f81d18/sYpZzB4H9m.json"; 
 const nightLottieUrl = "https://lottie.host/80e3da11-dfab-40a2-9b24-9ad9828e1c66/hT9s76G5R2.json"; 
 
 function applyThemeColors(isDark) {
     if (heroLottieBg) heroLottieBg.src = isDark ? nightLottieUrl : dayLottieUrl;
-    // خلينا الطبقة شفافة جداً عشان الأنيميشن ينطق ويكون واضح
-    if (heroOverlayColor) heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.4)' : 'rgba(255, 255, 255, 0.2)';
+    // Overlay خفيف عشان الأنيميشن ينطق
+    if (heroOverlayColor) {
+        heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(255, 255, 255, 0.4)';
+    }
 }
 
 if(themeBtn) {
@@ -107,20 +109,6 @@ if(themeBtn) {
         }
     });
 }
-
-// بحث المدرسين
-document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', () => {
-    const term = document.getElementById('searchTeacherInput').value.trim().toLowerCase();
-    document.getElementById('searchTeacherModal').classList.remove('active');
-    document.getElementById('viewAllTeachersBtn').click(); 
-    setTimeout(() => {
-        document.querySelectorAll('.modern-teacher-card').forEach(card => {
-            const name = card.querySelector('h3').innerText.toLowerCase();
-            card.parentElement.style.display = name.includes(term) ? 'block' : 'none';
-        });
-        document.getElementById('teachersSection').scrollIntoView({behavior: 'smooth'});
-    }, 500);
-});
 
 // ==========================================
 // 3. الفلترة المزدوجة (المراحل الفرعية)
@@ -196,14 +184,12 @@ async function fetchTeachers() {
             
             // كروت الـ 3D
            hero3DHtml += `
-            <div class="swiper-slide">
-                <div class="hero-slide-card" onclick="openTeacherCourses('${t.name}')">
-                    <img src="${t.imageUrl}" alt="${t.name}">
-                    <div class="cloud-fade"></div> <!-- السحابة -->
-                    <div class="hero-slide-info">
-                        <h4>${t.name}</h4>
-                        <span>${t.subject}</span>
-                    </div>
+            <div class="swiper-slide transparent-slide" onclick="openTeacherCourses('${t.name}')">
+                <img src="${t.imageUrl}" alt="${t.name}" class="teacher-png">
+                <div class="cloud-fade"></div> <!-- الضباب اللي المدرس طالع منه -->
+                <div class="teacher-info">
+                    <h4>${t.name}</h4>
+                    <span>${t.subject}</span>
                 </div>
             </div>`;
         });
@@ -211,14 +197,18 @@ async function fetchTeachers() {
         if(sidebarAvatars) sidebarAvatars.innerHTML = avHtml;
         if(hero3DGrid) {
             hero3DGrid.innerHTML = hero3DHtml;
-            // تشغيل تأثير الـ Cards
             if(typeof Swiper !== 'undefined') {
                 hero3DSwiperInstance = new Swiper('.hero-3d-slider', {
                     effect: 'cards',
                     grabCursor: true,
                     loop: true,
                     autoplay: { delay: 2500, disableOnInteraction: false },
-                    cardsEffect: { perSlideOffset: 10, perSlideRotate: 3, rotate: true, slideShadows: true }
+                    cardsEffect: { 
+                        slideShadows: false, // دي اللي كانت بتعمل المربع الأسود!
+                        perSlideOffset: 12, 
+                        perSlideRotate: 4,
+                        rotate: true
+                    }
                 });
             }
         }
