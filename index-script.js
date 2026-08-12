@@ -79,12 +79,14 @@ const themeBtn = document.getElementById('themeToggleBtn');
 const heroLottieBg = document.getElementById('heroLottieBg');
 const heroOverlayColor = document.getElementById('heroOverlayColor');
 
-const dayLottieUrl = "https://lottie.host/734c5688-df0e-4ff7-b648-fb9e2fdebc62/Lg91zXv8Uv.json"; 
+// روابط الأنيميشن الجبارة (النهار صحرا وشمس / الليل قمر ونجوم)
+const dayLottieUrl = "https://lottie.host/1c4d92eb-5986-455b-bf42-e56230f81d18/sYpZzB4H9m.json"; 
 const nightLottieUrl = "https://lottie.host/80e3da11-dfab-40a2-9b24-9ad9828e1c66/hT9s76G5R2.json"; 
 
 function applyThemeColors(isDark) {
     if (heroLottieBg) heroLottieBg.src = isDark ? nightLottieUrl : dayLottieUrl;
-    if (heroOverlayColor) heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255, 255, 255, 0.7)';
+    // خلينا الطبقة شفافة جداً عشان الأنيميشن ينطق ويكون واضح
+    if (heroOverlayColor) heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.4)' : 'rgba(255, 255, 255, 0.2)';
 }
 
 if(themeBtn) {
@@ -193,13 +195,14 @@ async function fetchTeachers() {
             avHtml += `<img src="${t.imageUrl}" title="${t.name}" onclick="openTeacherCourses('${t.name}'); closeDrawer();" style="width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--primary-color); cursor: pointer; flex-shrink: 0; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">`;
             
             // كروت الـ 3D
-            hero3DHtml += `
+           hero3DHtml += `
             <div class="swiper-slide">
                 <div class="hero-slide-card" onclick="openTeacherCourses('${t.name}')">
                     <img src="${t.imageUrl}" alt="${t.name}">
+                    <div class="cloud-fade"></div> <!-- السحابة -->
                     <div class="hero-slide-info">
-                        <h4 style="margin: 0 0 5px 0; font-weight: 900; font-size: 20px;">${t.name}</h4>
-                        <span style="background: var(--primary-color); padding: 3px 10px; border-radius: 6px; font-size: 13px; font-weight: bold;">${t.subject}</span>
+                        <h4>${t.name}</h4>
+                        <span>${t.subject}</span>
                     </div>
                 </div>
             </div>`;
