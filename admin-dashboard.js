@@ -86,9 +86,6 @@ document.getElementById('enableSoundBtn')?.addEventListener('click', function() 
     this.style.color = '#10b981';
 });
 
-// ==========================================
-// جلب مفاتيح الأمان والواتساب
-// ==========================================
 let SECURE_API_KEYS = null;
 async function getSecureApiKeys() {
     if (SECURE_API_KEYS) return SECURE_API_KEYS; 
@@ -146,7 +143,7 @@ async function uploadImageToR2(file) {
 }
 
 // ==========================================
-// 1. مراقبة الطلاب والأرباح (مفلترة للمساعدين)
+// 1. مراقبة الطلاب والأرباح
 // ==========================================
 let allStudentsData = [];
 let teacherCourseIds = []; 
@@ -200,10 +197,11 @@ onSnapshot(query(collection(db, "users")), (snapshot) => {
 });
 
 // ==========================================
-// 2. إدارة الطلاب
+// 2. إدارة الطلاب وتعديل الرصيد (وزرار الحظر)
 // ==========================================
 let currentStudentId = null;
 let currentStudentData = null;
+
 document.getElementById('btnSearchStudent')?.addEventListener('click', async () => {
     const phone = document.getElementById('searchPhoneInput').value.trim();
     if(!phone) return adminAlert("خطأ", "أدخل رقم الهاتف!", "error");
@@ -266,8 +264,39 @@ document.getElementById('btnDeductWallet')?.addEventListener('click', async () =
     } catch(e) {}
 });
 
+// 🔥 كود حظر الطالب (مكتمل) 🔥
+document.getElementById('btnToggleBlock')?.addEventListener('click', async () => {
+    if(!currentStudentId) return adminAlert("خطأ", "الرجاء البحث عن طالب أولاً", "error");
+    
+    const isCurrentlyBlocked = currentStudentData.isBlocked || false;
+    const newStatus = !isCurrentlyBlocked;
+    
+    if(!await adminConfirm(newStatus ? "هل أنت متأكد من حظر هذا الطالب؟ لن يتمكن من الدخول للمنصة." : "هل أنت متأكد من فك الحظر عن هذا الطالب؟")) return;
+    
+    try {
+        await updateDoc(doc(db, "users", currentStudentId), { isBlocked: newStatus });
+        currentStudentData.isBlocked = newStatus;
+        
+        const statusSpan = document.getElementById('resStudentStatus');
+        const btnToggleBlock = document.getElementById('btnToggleBlock');
+        
+        if(newStatus) {
+            statusSpan.textContent = 'محظور ⛔'; statusSpan.style.color = '#ef4444';
+            btnToggleBlock.innerHTML = '<i class="fas fa-unlock"></i> فك الحظر';
+            btnToggleBlock.style.color = '#10b981'; btnToggleBlock.style.borderColor = '#10b981'; btnToggleBlock.style.background = 'rgba(16, 185, 129, 0.1)';
+        } else {
+            statusSpan.textContent = 'نشط 🟢'; statusSpan.style.color = '#10b981';
+            btnToggleBlock.innerHTML = '<i class="fas fa-ban"></i> حظر الطالب';
+            btnToggleBlock.style.color = '#ef4444'; btnToggleBlock.style.borderColor = '#ef4444'; btnToggleBlock.style.background = 'rgba(239, 68, 68, 0.1)';
+        }
+        adminAlert("تم", newStatus ? "تم حظر الطالب بنجاح" : "تم فك الحظر بنجاح", "success");
+    } catch(e) {
+        adminAlert("خطأ", "حدث خطأ أثناء تعديل حالة الطالب", "error");
+    }
+});
+
 // ==========================================
-// 3. إدارة المدرسين (Teachers)
+// 3. إدارة المدرسين (إضافة المدرس للسلايدر بـ R2)
 // ==========================================
 const teachersRef = collection(db, "teachers");
 let editingTeacherId = null;
@@ -300,30 +329,35 @@ window.editTeacher = async function(id) {
 document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnSaveTeacher');
-    btn.innerHTML = "جاري الحفظ... ⏳"; btn.disabled = true;
+    btn.innerHTML = "جاري الحفظ والرفع... ⏳"; btn.disabled = true;
 
     try {
         const selectStages = document.getElementById('teacherStages');
         const selectedStages = Array.from(selectStages.selectedOptions).map(opt => opt.value).join(', ');
         const imageFile = document.getElementById('teacherImage').files[0];
-        let imageUrl = imageFile ? await uploadImageToR2(imageFile) : null;
+        
+        let imageUrl = null;
+        if(imageFile) {
+            imageUrl = await uploadImageToR2(imageFile); // بنرفع الصورة ونجيب اللينك
+        }
 
         const teacherData = {
             name: document.getElementById('teacherName').value.trim(),
             subject: document.getElementById('teacherSubject').value.trim(),
             stages: selectedStages
         };
+        
         if(imageUrl) teacherData.imageUrl = imageUrl;
 
         if(editingTeacherId) {
             await updateDoc(doc(db, "teachers", editingTeacherId), teacherData);
             editingTeacherId = null;
         } else {
-            if(!imageUrl) throw new Error("يجب رفع صورة المدرس");
+            if(!imageUrl) throw new Error("يجب رفع صورة للمدرس");
             teacherData.createdAt = new Date().toISOString();
             await addDoc(teachersRef, teacherData);
         }
-        adminAlert("تم", "تم الحفظ بنجاح", "success");
+        adminAlert("تم", "تم إضافة المدرس للسلايدر بنجاح", "success");
         document.getElementById('addTeacherForm').reset();
     } catch(err) { adminAlert("خطأ", err.message, "error"); }
     finally { btn.innerHTML = "<i class='fas fa-plus'></i> إضافة المدرس"; btn.disabled = false; }
@@ -337,9 +371,12 @@ onSnapshot(query(teachersRef), (snapshot) => {
 
     snapshot.forEach(docSnap => {
         const t = docSnap.data();
+        // بنستخدم imageUrl عشان نتأكد إن الصورة تظهر
+        const safeImageUrl = t.imageUrl || t.image || 'https://via.placeholder.com/150';
+        
         if(table) {
             table.innerHTML += `<tr>
-                <td><img src="${t.imageUrl}" style="width:30px; height:30px; border-radius:50%; margin-left:10px; vertical-align:middle;"><strong>${t.name}</strong></td>
+                <td><img src="${safeImageUrl}" style="width:30px; height:30px; border-radius:50%; margin-left:10px; object-fit:cover; vertical-align:middle;"><strong>${t.name}</strong></td>
                 <td>${t.subject}</td>
                 <td>${t.stages}</td>
                 <td style="display:flex; gap:5px; justify-content:center;">
@@ -366,28 +403,15 @@ window.deleteCourse = async function(id) {
 
 async function uploadToVimeo(file, progressCallback) {
     const keys = await getSecureApiKeys();
-
-    if (!keys || !keys.vimeo_token) {
-        throw new Error("مفتاح Vimeo غير موجود");
-    }
+    if (!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo غير موجود");
 
     const createResponse = await fetch("https://api.vimeo.com/me/videos", {
         method: "POST",
-        headers: {
-            Authorization: `Bearer ${keys.vimeo_token}`,
-            "Content-Type": "application/json",
-            Accept: "application/vnd.vimeo.*+json;version=3.4"
-        },
-        body: JSON.stringify({
-            upload: { approach: "tus", size: file.size.toString() }
-        })
+        headers: { Authorization: `Bearer ${keys.vimeo_token}`, "Content-Type": "application/json", Accept: "application/vnd.vimeo.*+json;version=3.4" },
+        body: JSON.stringify({ upload: { approach: "tus", size: file.size.toString() } })
     });
 
-    if (!createResponse.ok) {
-        const txt = await createResponse.text();
-        throw new Error(txt);
-    }
-
+    if (!createResponse.ok) { const txt = await createResponse.text(); throw new Error(txt); }
     const video = await createResponse.json();
 
     return new Promise((resolve, reject) => {
@@ -413,6 +437,7 @@ async function uploadToVimeo(file, progressCallback) {
         upload.start();
     });
 }
+
 document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnSaveCourse');
@@ -901,7 +926,6 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
 
         if(imageFile) imageUrl = await uploadImageToR2(imageFile);
 
-        // رفع الفيديوهات الجديدة وتحويلها لـ Objects (فيديو + امتحانه)
         if(videoFiles && videoFiles.length > 0) {
             document.getElementById('pkgVideoProgressContainer').style.display = 'block';
             for (let i = 0; i < videoFiles.length; i++) {
@@ -925,7 +949,6 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
         if(imageUrl) pkgData.imageUrl = imageUrl;
 
         if (editingId) {
-            // دمج القديم مع الجديد عند التعديل
             const existingDoc = await getDoc(doc(db, "packages", editingId));
             let currentVideos = existingDoc.data().videos || [];
             pkgData.videos = [...currentVideos, ...newVideosArray];
@@ -1051,76 +1074,4 @@ onSnapshot(query(assistantsRef), (snapshot) => {
             </td>
         </tr>`;
     });
-});
-
-onSnapshot(query(collection(db, "teachers")), (snapshot) => {
-    const select = document.getElementById('astTeacher');
-    if(select) {
-        select.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
-        snapshot.forEach(docSnap => {
-            select.innerHTML += `<option value="${docSnap.data().name}">${docSnap.data().name}</option>`;
-        });
-    }
-});
-// استدعاءات فايربيز لو مش موجودة عندك فوق
-// import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const btn = document.getElementById('btnSubmitTeacher');
-    const name = document.getElementById('teacherName').value.trim();
-    const subject = document.getElementById('teacherSubject').value.trim();
-    const stages = document.getElementById('teacherStages').value.trim();
-    const imageFile = document.getElementById('teacherImage').files[0];
-
-    if (!imageFile) {
-        alert("يرجى اختيار صورة للمدرس!");
-        return;
-    }
-
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري رفع الصورة وحفظ البيانات...';
-    btn.disabled = true;
-
-    try {
-        // 1. رفع الصورة على Cloudflare R2
-        const formData = new FormData();
-        formData.append("image", imageFile);
-
-        // ده رابط السيرفر بتاعك اللي بيرفع الصور
-        const uploadResponse = await fetch("https://primee-api.adelabdulrahman026.workers.dev/upload-image", {
-            method: "POST",
-            body: formData
-        });
-
-        const uploadData = await uploadResponse.json();
-
-        if (!uploadData.success) {
-            throw new Error("فشل رفع الصورة: " + uploadData.error);
-        }
-
-        const imageUrl = uploadData.url; // الرابط النهائي للصورة
-
-        // 2. حفظ بيانات المدرس في فايربيز (كوليكشن teachers)
-        await addDoc(collection(db, "teachers"), {
-            name: name,
-            subject: subject,
-            stages: stages,
-            imageUrl: imageUrl,
-            createdAt: new Date().toISOString()
-        });
-
-        alert("✅ تم إضافة المدرس بنجاح! روح شوف السلايدر في الصفحة الرئيسية.");
-        
-        // تفريغ الفورم بعد النجاح
-        document.getElementById('addTeacherForm').reset();
-
-    } catch (error) {
-        console.error(error);
-        alert("حدث خطأ أثناء الإضافة: " + error.message);
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
 });
