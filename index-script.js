@@ -73,27 +73,35 @@ document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); 
 document.getElementById('btnParentLogin')?.addEventListener('click', () => { const p = document.getElementById('parentStudentPhone').value; if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; else alert("رقم غير صحيح"); });
 
 // ==========================================
-// 2. زرار المود وتغيير خلفية Lottie (تحديث الـ Player)
+// 2. زرار المود وتغيير خلفية Lottie (الصحرا والقمر)
 // ==========================================
 const themeBtn = document.getElementById('themeToggleBtn');
 const heroLottieBg = document.getElementById('heroLottieBg');
 const heroOverlayColor = document.getElementById('heroOverlayColor');
 
-const dayLottieUrl = "https://lottie.host/1c4d92eb-5986-455b-bf42-e56230f81d18/sYpZzB4H9m.json"; 
-const nightLottieUrl = "https://lottie.host/80e3da11-dfab-40a2-9b24-9ad9828e1c66/hT9s76G5R2.json"; 
+// 🔥 لينكات Lottie شغالة 100% (من عندي) 🔥
+const dayLottieUrl = "https://assets9.lottiefiles.com/packages/lf20_U25Y1T.json"; // نهار وشمس وغيوم متحركة
+const nightLottieUrl = "https://assets3.lottiefiles.com/packages/lf20_yq3zchlw.json"; // ليل وقمر ونجوم
 
 function applyThemeColors(isDark) {
-    if (heroLottieBg) heroLottieBg.setAttribute("src", isDark ? nightLottieUrl : dayLottieUrl);
-    if (heroOverlayColor) heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(255, 255, 255, 0.4)';
+    if (heroLottieBg) {
+        heroLottieBg.setAttribute("src", isDark ? nightLottieUrl : dayLottieUrl);
+    }
+    if (heroOverlayColor) {
+        heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(255, 255, 255, 0.1)';
+    }
 }
 
 if(themeBtn) {
     const icon = themeBtn.querySelector('i');
-    if(localStorage.getItem('theme')==='dark') { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
-    applyThemeColors(localStorage.getItem('theme') === 'dark');
+    const isDark = document.body.getAttribute('data-theme') === 'dark' || localStorage.getItem('theme') === 'dark';
+    
+    if(isDark) { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
+    applyThemeColors(isDark);
 
     themeBtn.addEventListener('click', () => {
-        if(document.body.getAttribute('data-theme')==='dark') { 
+        const currentlyDark = document.body.getAttribute('data-theme') === 'dark';
+        if(currentlyDark) { 
             document.body.removeAttribute('data-theme'); localStorage.setItem('theme','light'); 
             icon.classList.replace('fa-sun','fa-moon'); applyThemeColors(false);
         } else { 
@@ -102,21 +110,6 @@ if(themeBtn) {
         }
     });
 }
-
-// بحث المدرسين
-document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', () => {
-    const term = document.getElementById('searchTeacherInput').value.trim().toLowerCase();
-    document.getElementById('searchTeacherModal').classList.remove('active');
-    document.getElementById('viewAllTeachersBtn').click(); // فرد الشبكة
-    setTimeout(() => {
-        document.querySelectorAll('.modern-teacher-card').forEach(card => {
-            const name = card.querySelector('h3').innerText.toLowerCase();
-            card.parentElement.style.display = name.includes(term) ? 'block' : 'none';
-        });
-        document.getElementById('teachersSection').scrollIntoView({behavior: 'smooth'});
-    }, 500);
-});
-
 // ==========================================
 // 3. الفلترة المزدوجة (المراحل الفرعية)
 // ==========================================
