@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// زودنا updateDoc هنا عشان نقدر نحدث بيانات الطالب ونحفظ بصمته
+import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -14,6 +15,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// دالة توليد بصمة الجهاز (تتنفذ وتتخزن في المتصفح)
+function getDeviceFingerprint() {
+    let deviceId = localStorage.getItem('primee_device_id');
+    if (!deviceId) {
+        deviceId = 'DEV-' + Math.random().toString(36).substr(2, 16);
+        localStorage.setItem('primee_device_id', deviceId);
+    }
+    return deviceId;
+}
 
 function showAlert(title, message) {
     document.getElementById('alertTitle').textContent = title;
@@ -50,13 +61,34 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         if (userDoc.exists()) {
             const userData = userDoc.data();
             
+            // 1. التحقق من الحظر
             if (userData.isBlocked) {
-                auth.signOut();
+                await auth.signOut();
                 btn.innerHTML = "دخول للمنصة"; btn.disabled = false;
                 return showAlert('عذراً', 'حسابك محظور حالياً، يرجى التواصل مع الإدارة.');
             }
 
-            // حفظ البيانات الأساسية سريعاً للتصفح
+            // =====================================
+            // 2. التحقق من بصمة الجهاز (الأمان العالي)
+            // =====================================
+            const currentDevice = getDeviceFingerprint();
+
+            if (userData.deviceId) {
+                // لو ليه بصمة متسجلة، لازم تتطابق مع الجهاز اللي في إيده دلوقتي
+                if (userData.deviceId !== currentDevice) {
+                    await auth.signOut(); // نطرده بره
+                    btn.innerHTML = "دخول للمنصة"; btn.disabled = false;
+                    return showAlert('مرفوض', 'عفواً! هذا الحساب مربوط بجهاز آخر. لا يمكنك الدخول من هنا.');
+                }
+            } else {
+                // لو دي أول مرة يسجل دخول، نحفظ بصمة الجهاز ده في الداتا بيز
+                await updateDoc(doc(db, "users", uid), {
+                    deviceId: currentDevice
+                });
+            }
+            // =====================================
+
+            // 3. حفظ البيانات الأساسية سريعاً للتصفح
             localStorage.setItem('loggedIn', 'true');
             localStorage.setItem('studentId', uid);
             localStorage.setItem('studentName', userData.fullName);
