@@ -478,65 +478,108 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 /* ==========================================================================
    🔥🔥🔥 تعديل حجم وتمركز المدرس (ليبدأ من حافة الكارت الأسفل ويكبر) 🔥🔥🔥
 ========================================================================== */
+
+/* 1. إزالة المسافات من أسفل الهيرو عشان المدرس يلمس الأرض تماماً */
+.hero-section { padding-bottom: 0 !important; }
 .hero-flex-container {
     position: relative; z-index: 2; width: 100%; max-width: 1300px; margin: 0 auto;
-    padding: 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 20px;
-    min-height: 580px; /* طول البوكس عشان المدرس ياخد راحته */
+    padding: 0 20px 0 20px; display: flex; align-items: flex-end !important; justify-content: space-between; flex-wrap: nowrap; gap: 20px;
+    min-height: 600px !important; /* طول البوكس عشان المدرس ياخد راحته */
 }
 
 /* الجزء اليمين: النص */
 .hero-content {
     flex: 1.2; text-align: right; z-index: 5; display: flex; flex-direction: column; justify-content: center;
+    padding-bottom: 60px; /* نرفع الكلام شوية عشان ميبقاش لازق تحت */
 }
 
-/* الجزء الشمال: المدرس واللوجو */
+/* 2. الجزء الشمال: حاوية المدرس واللوجو */
 .hero-image {
     flex: 1; display: flex; flex-direction: column; justify-content: flex-end !important; align-items: center; 
-    position: relative; z-index: 5; height: 100% !important; min-height: 580px; width: 100%; max-width: 450px;
+    position: relative; z-index: 5; height: 600px !important; width: 100%; max-width: 500px !important;
 }
 
-/* السلايدر المفرغ (العملاق اللي لامس الأرض) */
+.flying-logo { width: 160px !important; position: absolute; top: 40px !important; left: 0px; z-index: 15; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); animation: smoothFloat 4s ease-in-out infinite alternate; }
+
+/* 3. السلايدر المفرغ (العملاق اللي لامس الأرض) */
 .hero-fade-slider {
-    width: 100% !important; max-width: 450px !important; height: 580px !important; overflow: visible !important; 
-    position: absolute !important; bottom: -10px !important; left: 50%; transform: translateX(-50%);
+    width: 100% !important; height: 100% !important; overflow: visible !important; 
+    position: absolute !important; bottom: 0 !important; left: 0 !important;
 }
 
 .hero-slide-fade {
     background: transparent !important; box-shadow: none !important; border: none !important;
     height: 100% !important; display: flex !important; flex-direction: column !important; justify-content: flex-end !important; align-items: center !important; text-align: center;
+    padding-bottom: 40px !important; /* مساحة لاسم المدرس */
 }
 
-/* الأيقونة (Glow) اللي بتنور ورا المدرس */
+/* 4. الهالة (Glow) اللي بتنور ورا المدرس */
 .teacher-glow-bg {
-    position: absolute !important; bottom: 20% !important; width: 320px !important; height: 320px !important;
+    position: absolute !important; bottom: 10% !important; left: 50%; transform: translateX(-50%); width: 350px !important; height: 350px !important;
     background: radial-gradient(circle, var(--primary-color) 0%, transparent 70%);
     border-radius: 50%; z-index: 1; opacity: 0.6; animation: pulseGlow 3s infinite alternate;
 }
 
-@keyframes pulseGlow { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(1.1); opacity: 0.7; } }
-@keyframes smoothFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-15px); } }
-
-/* صورة المدرس المفرغة العملاقة */
+/* 5. صورة المدرس المفرغة (السر هنا: Position Absolute و Bottom 0) */
 .teacher-fade-png {
-    width: 100% !important; height: auto !important; max-height: 480px !important; object-fit: contain !important; object-position: bottom !important;
-    z-index: 2; filter: drop-shadow(0 20px 30px rgba(0,0,0,0.5)); transition: 0.4s; margin-bottom: -5px;
+    position: absolute !important;
+    bottom: -10px !important; /* لازق في أرضية الكارت بالظبط */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    height: 95% !important; /* حجم عملاق بيملى المكان */
+    width: auto !important;
+    min-width: 350px !important;
+    object-fit: contain !important;
+    object-position: bottom !important;
+    z-index: 2;
+    filter: drop-shadow(0 20px 30px rgba(0,0,0,0.5));
+    transition: 0.4s ease-out;
+    margin: 0 !important;
 }
-.hero-slide-fade:hover .teacher-fade-png { transform: scale(1.05) translateY(-10px); }
+/* تأثير الهوفر */
+.hero-slide-fade:hover .teacher-fade-png { transform: translateX(-50%) scale(1.05) !important; }
 
-/* تأثير السحاب اللي تحت المدرس عشان يندمج مع اللوتي */
+/* 6. تأثير السحاب اللي تحت المدرس عشان يندمج مع اللوتي */
 .bottom-cloud-fade {
-    position: absolute; bottom: 0; left: 0; width: 100%; height: 25%;
-    background: linear-gradient(to top, var(--bg-card) 5%, transparent 100%);
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 30%;
+    background: linear-gradient(to top, var(--bg-card) 10%, transparent 100%);
     z-index: 10; pointer-events: none; border-radius: 0 0 30px 30px;
 }
 
-/* إخفاء الأسامي للكل وإظهار اللي في الوش بس */
+/* 7. إخفاء الأسامي للكل وإظهار اللي في الوش بس */
 .hero-teacher-info {
-    text-align: center; width: 100%; opacity: 0; transform: translateY(20px); transition: 0.4s ease; z-index: 5; margin-bottom: 5px;
+    text-align: center; width: 100%; opacity: 0; transform: translateY(20px); transition: 0.4s ease; 
+    position: relative; z-index: 15 !important; margin-bottom: 10px;
 }
-.swiper-slide-active .hero-teacher-info {
-    opacity: 1; transform: translateY(0);
-}
+.swiper-slide-active .hero-teacher-info { opacity: 1; transform: translateY(0); }
 
-.hero-teacher-name { color: var(--text-main); font-size: 36px !important; font-weight: 900 !important; margin: 5px 0 2px 0 !important; z-index: 5; text-shadow: 0 4px 10px rgba(0,0,0,0.2); font-family: 'Cairo', sans-serif; }
-.hero-teacher-subject { background: var(--primary-color); color: #fff; padding: 6px 25px !important; border-radius: 20px; font-size: 16px !important; font-weight: bold; z-index: 5; box-shadow: 0 4px 15px rgba(91,33,182,0.4); margin-bottom: 10px; display: inline-block;}
+.hero-teacher-name { color: var(--text-main); font-size: 42px !important; font-weight: 900 !important; margin: 0 0 5px 0 !important; text-shadow: 0 4px 15px rgba(0,0,0,0.4); font-family: 'Cairo', sans-serif; }
+.hero-teacher-subject { background: var(--primary-color); color: #fff; padding: 8px 30px !important; border-radius: 20px; font-size: 18px !important; font-weight: bold; z-index: 15; box-shadow: 0 4px 15px rgba(91,33,182,0.6); display: inline-block;}
+
+@keyframes pulseGlow { 0% { transform: scale(1) translateX(-50%); opacity: 0.4; } 100% { transform: scale(1.1) translateX(-45%); opacity: 0.7; } }
+@keyframes smoothFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-15px); } }
+
+/* ==========================================================================
+   8. تظبيط الموبايل الشامل (Responsive) - اللاب زي الموبايل
+========================================================================== */
+@media (max-width: 991px) {
+    .hero-flex-container { flex-direction: row; flex-wrap: nowrap; align-items: stretch !important; gap: 10px; padding: 0 10px; min-height: 350px !important; }
+    .hero-content { flex: 1.2; text-align: right; padding: 20px 0; display: flex; flex-direction: column; justify-content: center;}
+    .hero-content h1 { font-size: 24px !important; margin: 10px 0; }
+    .hero-content p { font-size: 11px !important; margin-bottom: 15px; line-height: 1.4; }
+    .hero-badge { font-size: 10px; padding: 5px 10px; margin-bottom: 10px;}
+    
+    .hero-buttons { flex-direction: column; gap: 8px; flex-wrap: wrap;}
+    .btn-primary-hero, .btn-secondary-hero { padding: 8px; font-size: 12px; justify-content: center; width: 100%;}
+    
+    /* المدرس في الموبايل */
+    .hero-image { flex: 0.8; height: 350px !important; max-width: 100% !important; margin-top: 20px;}
+    .flying-logo { width: 70px !important; top: -10px !important; left: 10px !important; transform: none !important; }
+    .teacher-glow-bg { width: 180px !important; height: 180px !important; bottom: 20% !important; }
+    .hero-teacher-name { font-size: 22px !important; margin: 5px 0 2px !important; }
+    .hero-teacher-subject { font-size: 12px !important; padding: 4px 15px !important; margin-bottom: 5px !important; }
+    
+    /* تخلي المدرس يلمس الأرضية في الموبايل كمان */
+    .teacher-fade-png { height: 100% !important; min-width: 220px !important; bottom: -5px !important; }
+    .hero-slide-fade { padding-bottom: 20px !important; }
+}
