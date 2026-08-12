@@ -1062,3 +1062,65 @@ onSnapshot(query(collection(db, "teachers")), (snapshot) => {
         });
     }
 });
+// استدعاءات فايربيز لو مش موجودة عندك فوق
+// import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const btn = document.getElementById('btnSubmitTeacher');
+    const name = document.getElementById('teacherName').value.trim();
+    const subject = document.getElementById('teacherSubject').value.trim();
+    const stages = document.getElementById('teacherStages').value.trim();
+    const imageFile = document.getElementById('teacherImage').files[0];
+
+    if (!imageFile) {
+        alert("يرجى اختيار صورة للمدرس!");
+        return;
+    }
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري رفع الصورة وحفظ البيانات...';
+    btn.disabled = true;
+
+    try {
+        // 1. رفع الصورة على Cloudflare R2
+        const formData = new FormData();
+        formData.append("image", imageFile);
+
+        // ده رابط السيرفر بتاعك اللي بيرفع الصور
+        const uploadResponse = await fetch("https://primee-api.adelabdulrahman026.workers.dev/upload-image", {
+            method: "POST",
+            body: formData
+        });
+
+        const uploadData = await uploadResponse.json();
+
+        if (!uploadData.success) {
+            throw new Error("فشل رفع الصورة: " + uploadData.error);
+        }
+
+        const imageUrl = uploadData.url; // الرابط النهائي للصورة
+
+        // 2. حفظ بيانات المدرس في فايربيز (كوليكشن teachers)
+        await addDoc(collection(db, "teachers"), {
+            name: name,
+            subject: subject,
+            stages: stages,
+            imageUrl: imageUrl,
+            createdAt: new Date().toISOString()
+        });
+
+        alert("✅ تم إضافة المدرس بنجاح! روح شوف السلايدر في الصفحة الرئيسية.");
+        
+        // تفريغ الفورم بعد النجاح
+        document.getElementById('addTeacherForm').reset();
+
+    } catch (error) {
+        console.error(error);
+        alert("حدث خطأ أثناء الإضافة: " + error.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
