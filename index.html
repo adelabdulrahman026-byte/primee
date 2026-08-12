@@ -9,7 +9,7 @@
     
     <!-- مكتبة السلايدر CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-    <link rel="stylesheet" href="style.css?v=106">
+    <link rel="stylesheet" href="style.css?v=105">
 
     <!-- كود إشعارات OneSignal -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -19,8 +19,8 @@
         await OneSignal.init({ appId: "6f7ca840-5b06-4e85-81ec-00d53f2a5b9a" });
       });
     </script>
-
-    <!-- مكتبة Lottie -->
+    
+    <!-- مكتبة Lottie الأساسية -->
     <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.4/dist/dotlottie-wc.js" type="module"></script>
 </head>
 <body class="index-body">
@@ -126,11 +126,6 @@
             <a href="register.html" class="btn-secondary-mobile">إنشاء حساب</a>
         </div>
 
-        <div class="sidebar-avatars-container" style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(128,128,128,0.2);">
-            <h4 style="color: var(--text-muted); margin-bottom: 10px; font-size: 13px; font-weight: 800;">مدرسينك المفضلين للبدء السريع</h4>
-            <div class="avatars-wrapper" id="sidebarTeachersAvatars" style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none;"></div>
-        </div>
-
         <ul class="drawer-links">
             <li><a href="index.html"><i class="fas fa-home"></i> الرئيسية</a></li>
             <li><a href="#" onclick="document.getElementById('parentModal').classList.add('active'); closeDrawer();"><i class="fas fa-user-shield"></i> متابعة ولي الأمر</a></li>
@@ -145,7 +140,7 @@
     <div id="drawerOverlay" class="drawer-overlay"></div>
 
     <!-- الشريط العلوي -->
-    <nav class="main-navbar" style="position: relative; z-index: 10;">
+    <nav class="main-navbar">
         <div class="nav-right-side">
             <div class="nav-brand">Primee<span>.</span></div>
             <button id="openDrawer" class="btn-hamburger"><i class="fas fa-bars-staggered"></i> القائمة</button>
@@ -165,10 +160,10 @@
         </div>
     </nav>
 
-    <!-- القسم الرئيسي (Hero Section) بعد التعديل ليتطابق مع الصورة -->
-    <header class="hero-section" style="position: relative; overflow: hidden; min-height: 90vh; border-radius: 30px; margin-top: 20px;">
+    <!-- 🚨 القسم الرئيسي (Hero Section) المحدث 🚨 -->
+    <header class="hero-section" style="position: relative; overflow: hidden; min-height: 90vh; border-radius: 30px; margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
         
-        <!-- خلفية الأنيميشن Lottie (ليل وقمر / نهار وشمس) مدمجة في البوكس -->
+        <!-- خلفية الأنيميشن Lottie مدمجة في البوكس -->
         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;">
             <dotlottie-wc id="heroLottieBg" src="https://lottie.host/1c4d92eb-5986-455b-bf42-e56230f81d18/sYpZzB4H9m.json" autoplay loop style="width: 100%; height: 100%; object-fit: cover; opacity: 0.9;"></dotlottie-wc>
         </div>
@@ -176,24 +171,27 @@
         <!-- طبقة لون خفيفة فوق الأنيميشن لتوضيح الكلام -->
         <div id="heroOverlayColor" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; transition: 0.5s; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(2px);"></div>
 
-        <div class="hero-content" style="position: relative; z-index: 2; flex: 1;">
-            <span class="hero-badge" style="background: var(--bg-card); color: var(--primary-color);">👋 مرحباً بك في Primee Academy</span>
-            <h1 id="heroTitle" style="transition: opacity 0.5s ease; color: var(--text-main); text-shadow: 0 2px 10px rgba(0,0,0,0.1);">تعلّم بذكاء،<br><span>وتقدّم بثقة.</span></h1>
-            <p style="color: var(--text-main); font-weight: 700; text-shadow: 0 2px 5px rgba(255,255,255,0.3);">المنصة التعليمية الأقوى التي تجمع لك أفضل المعلمين. تجربة تعليمية تفاعلية ومميزة في أي وقت ومن أي مكان.</p>
-            <div class="hero-buttons">
-                <a href="#teachersSection" onclick="document.getElementById('viewAllTeachersBtn').click();" class="btn-primary-hero">تصفح المدرسين <i class="fas fa-arrow-left"></i></a>
-                <a href="#" onclick="document.getElementById('searchTeacherModal').classList.add('active')" class="btn-secondary-hero"><i class="fas fa-search"></i> بحث عن مدرس</a>
-            </div>
-        </div>
-        
-        <div class="hero-image" style="position: relative; z-index: 2; flex: 1.2;">
-            <!-- اللوجو الطاير -->
-            <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" style="width: 130px; position: absolute; top: -30px; left: 0px; z-index: 15; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); animation: smoothFloat 4s ease-in-out infinite;">
+        <div class="hero-flex-container">
             
-            <!-- سلايدر المدرسين 3D الشفاف المفرغ -->
-            <div class="swiper hero-3d-slider">
-                <div class="swiper-wrapper" id="heroTeachers3DGrid">
-                    <!-- المدرسين هينزلوا هنا من الجافاسكريبت -->
+            <!-- الجزء اليمين: النص والأزرار -->
+            <div class="hero-content" style="z-index: 5; text-align: right;">
+                <span class="hero-badge" style="background: var(--bg-card); color: var(--primary-color);">👋 مرحباً بك في Primee Academy</span>
+                <h1 id="heroTitle" style="color: var(--text-main); text-shadow: 0 2px 10px rgba(0,0,0,0.1);">نخبة المعلمين،<br><span style="color: var(--primary-color);">في شاشة واحدة.</span></h1>
+                <p style="color: var(--text-main); font-weight: 700; text-shadow: 0 2px 5px rgba(255,255,255,0.3);">المنصة التعليمية الأقوى التي تجمع لك أفضل المعلمين. تجربة تعليمية تفاعلية ومميزة في أي وقت ومن أي مكان.</p>
+                <div class="hero-buttons">
+                    <a href="#teachersSection" onclick="document.getElementById('viewAllTeachersBtn').click();" class="btn-primary-hero">تصفح المدرسين <i class="fas fa-arrow-left"></i></a>
+                    <a href="#" onclick="document.getElementById('searchTeacherModal').classList.add('active')" class="btn-secondary-hero" style="background: var(--bg-card); color: var(--text-main); border:none;"><i class="fas fa-search"></i> بحث عن مدرس</a>
+                </div>
+            </div>
+            
+            <!-- الجزء الشمال: المدرسين واللوجو الطاير -->
+            <div class="hero-image" style="z-index: 5; display: flex; flex-direction: column; align-items: center; position: relative;">
+                <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" style="width: 150px; position: absolute; top: -50px; left: 0px; z-index: 15; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); animation: float 4s ease-in-out infinite;">
+                
+                <div class="swiper hero-3d-slider">
+                    <div class="swiper-wrapper" id="heroTeachers3DGrid">
+                        <!-- المدرسين هينزلوا هنا -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -207,14 +205,11 @@
         </div>
     </section>
 
-    <!-- قسم المدرسين (السلايدر 3D والفلتر المزدوج) -->
+    <!-- قسم المدرسين مع Lottie في الخلفية -->
     <section id="teachersSection" class="teachers-section" style="position: relative; overflow: hidden; padding: 40px 0; border-radius: 24px;">
-        
-        <!-- خلفية Lottie خفيفة ورا قسم المدرسين -->
         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.1; pointer-events: none;">
             <dotlottie-wc src="https://lottie.host/9327e025-a4b5-4bce-9252-4cd82649ea5b/K3nF7QvQj1.json" autoplay loop style="width: 100%; height: 100%; object-fit: cover;"></dotlottie-wc>
         </div>
-
         <div style="position: relative; z-index: 1;">
             <div class="section-header">
                 <h2>نخبة المعلمين</h2>
@@ -329,6 +324,6 @@
 
     <!-- مكتبة Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script type="module" src="index-script.js?v=106"></script>
+    <script type="module" src="index-script.js?v=105"></script>
 </body>
 </html>
