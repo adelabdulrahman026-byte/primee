@@ -73,7 +73,7 @@ document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); 
 document.getElementById('btnParentLogin')?.addEventListener('click', () => { const p = document.getElementById('parentStudentPhone').value; if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; else alert("رقم غير صحيح"); });
 
 // ==========================================
-// 2. زرار المود وتغيير خلفية Lottie (الصحرا والقمر)
+// 2. زرار المود وتغيير خلفية Lottie (تحديث الـ Player)
 // ==========================================
 const themeBtn = document.getElementById('themeToggleBtn');
 const heroLottieBg = document.getElementById('heroLottieBg');
@@ -83,28 +83,23 @@ const dayLottieUrl = "https://lottie.host/1c4d92eb-5986-455b-bf42-e56230f81d18/s
 const nightLottieUrl = "https://lottie.host/80e3da11-dfab-40a2-9b24-9ad9828e1c66/hT9s76G5R2.json"; 
 
 function applyThemeColors(isDark) {
-    if (heroLottieBg) heroLottieBg.src = isDark ? nightLottieUrl : dayLottieUrl;
+    if (heroLottieBg) heroLottieBg.setAttribute("src", isDark ? nightLottieUrl : dayLottieUrl);
     if (heroOverlayColor) heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(255, 255, 255, 0.4)';
 }
 
 if(themeBtn) {
     const icon = themeBtn.querySelector('i');
-    const isDark = document.body.getAttribute('data-theme') === 'dark' || localStorage.getItem('theme') === 'dark';
-    
-    if(isDark) { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
-    applyThemeColors(isDark);
+    if(localStorage.getItem('theme')==='dark') { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
+    applyThemeColors(localStorage.getItem('theme') === 'dark');
 
     themeBtn.addEventListener('click', () => {
-        setTimeout(() => {
-            const currentlyDark = document.body.getAttribute('data-theme') === 'dark';
-            if(currentlyDark) { 
-                document.body.removeAttribute('data-theme'); localStorage.setItem('theme','light'); 
-                icon.classList.replace('fa-sun','fa-moon'); applyThemeColors(false);
-            } else { 
-                document.body.setAttribute('data-theme','dark'); localStorage.setItem('theme','dark'); 
-                icon.classList.replace('fa-moon','fa-sun'); applyThemeColors(true);
-            }
-        }, 50);
+        if(document.body.getAttribute('data-theme')==='dark') { 
+            document.body.removeAttribute('data-theme'); localStorage.setItem('theme','light'); 
+            icon.classList.replace('fa-sun','fa-moon'); applyThemeColors(false);
+        } else { 
+            document.body.setAttribute('data-theme','dark'); localStorage.setItem('theme','dark'); 
+            icon.classList.replace('fa-moon','fa-sun'); applyThemeColors(true);
+        }
     });
 }
 
@@ -163,14 +158,14 @@ function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
                     });
                     subContainer.style.display = 'flex';
                 }
-                onFilterCallback(mainFilter); // تصفية عامة للمرحلة الأول
+                onFilterCallback(mainFilter); 
             }
         });
     });
 }
 
 // ==========================================
-// 4. المدرسين: سلايدر Fade الشفاف
+// 4. المدرسين: سلايدر Fade والمدرس المفرغ
 // ==========================================
 let allTeachersData = [];
 let teachersSwiperInstance = null;
@@ -188,11 +183,11 @@ async function fetchTeachers() {
             const t = { id: doc.id, ...doc.data() };
             allTeachersData.push(t);
             
-            // 🚨 سلايدر הـ Hero الـ Fade المفرغ مع أيقونة الـ Glow 🚨
+            // سلايدر الـ Hero الـ Fade المفرغ مع أيقونة الـ Glow
             heroFadeHtml += `
             <div class="swiper-slide hero-slide-fade" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
-                <div class="teacher-glow-icon"></div> <!-- الهالة المضيئة -->
-                <img src="${t.imageUrl}" alt="${t.name}" class="teacher-png">
+                <div class="teacher-glow-bg"></div> <!-- الأيقونة المضيئة ورا المدرس -->
+                <img src="${t.imageUrl}" alt="${t.name}" class="teacher-fade-png">
                 <h4 class="hero-teacher-name">${t.name}</h4>
                 <span class="hero-teacher-subject">${t.subject}</span>
             </div>`;
@@ -202,11 +197,11 @@ async function fetchTeachers() {
             heroFadeGrid.innerHTML = heroFadeHtml;
             if(typeof Swiper !== 'undefined') {
                 heroFadeSwiperInstance = new Swiper('.hero-fade-slider', {
-                    effect: 'fade', // التأثير المطلوب للمدرسين
+                    effect: 'fade', // التأثير Fade
                     fadeEffect: { crossFade: true },
                     grabCursor: true,
                     loop: true,
-                    autoplay: { delay: 3000, disableOnInteraction: false }
+                    autoplay: { delay: 2500, disableOnInteraction: false }
                 });
             }
         }
@@ -419,7 +414,7 @@ window.buyCourseAction = async function(courseId, price, title) {
         const userData = userSnap.docs[0].data();
         window.currentUserId = userSnap.docs[0].id;
         window.currentUserBalance = parseInt(userData.walletBalance) || 0;
-        window.currentUserCourses = userData.myCourses || []; // جبنا الكورسات اللي معاه
+        window.currentUserCourses = userData.myCourses || []; 
 
         window.pendingCourseId = courseId;
         window.pendingCoursePrice = parseInt(price) || 0;
