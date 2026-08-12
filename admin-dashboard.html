@@ -145,6 +145,7 @@
                                 <button id="btnChargeWallet" style="background: #10b981; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i></button>
                                 <button id="btnDeductWallet" style="background: #ef4444; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-minus"></i></button>
                             </div>
+                            <!-- زرار حظر الطالب -->
                             <button id="btnToggleBlock" style="width: 100%; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 12px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-ban"></i> حظر الطالب</button>
                         </div>
                     </div>
@@ -193,7 +194,6 @@
                             <small id="imgStatus" style="color: #10b981; display: none;">تم اختيار الصورة ✔️</small>
                         </div>
                         
-                        <!-- إضافة خانة عدد المشاهدات -->
                         <div class="form-group-admin">
                             <label>الحد الأقصى لعدد المشاهدات للطالب</label>
                             <input type="number" id="courseMaxViews" placeholder="مثال: 3 (اتركه 0 لمشاهدة لا نهائية)" min="0" value="0" required>
@@ -210,7 +210,6 @@
                             </select>
                         </div>
                         
-                        <!-- رفع الفيديوهات المتعددة للكورسات -->
                         <div class="form-group-admin" style="grid-column: 1 / -1;">
                             <label>فيديوهات الحصة (يمكنك اختيار أكثر من فيديو للرفع معاً) 🎥</label>
                             <input type="file" id="courseVideoFiles" accept="video/mp4,video/x-m4v,video/*" multiple style="background: rgba(59, 130, 246, 0.1); border: 2px dashed #3b82f6; padding: 20px; text-align: center; cursor: pointer;">
@@ -236,36 +235,61 @@
                 </table>
             </div>
         </div>
-<!-- قسم إضافة مدرس جديد -->
-<div class="admin-section" style="background: var(--bg-card); padding: 25px; border-radius: 15px; border: 1px solid var(--input-border); margin-bottom: 30px; max-width: 600px;">
-    <h3 style="color: var(--primary-color); margin-bottom: 20px;"><i class="fas fa-chalkboard-teacher"></i> إضافة مدرس جديد للسلايدر</h3>
-    
-    <form id="addTeacherForm">
-        <div style="margin-bottom: 15px;">
-            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: var(--text-main);">اسم المدرس</label>
-            <input type="text" id="teacherName" placeholder="مثال: أ. أحمد محمود" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: var(--input-bg); color: var(--text-main);">
+
+        <!-- 6. قسم إدارة المدرسين -->
+        <div id="teachersSection" class="admin-section">
+            <div class="admin-table-container">
+                <h3><i class="fas fa-chalkboard-teacher" style="color: #3b82f6;"></i> إضافة مدرس جديد للسلايدر والمنصة</h3>
+                <form id="addTeacherForm">
+                    <div class="form-grid">
+                        <div class="form-group-admin">
+                            <label>اسم المدرس</label>
+                            <input type="text" id="teacherName" placeholder="مثال: أ. عبدالرحمن عادل" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>المادة التي يدرسها</label>
+                            <input type="text" id="teacherSubject" placeholder="مثال: فيزياء، لغات..." required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>المراحل الدراسية (للفلترة)</label>
+                            <select id="teacherStages" multiple style="height: 120px;" required>
+                                <option value="الأول الابتدائي">الأول الابتدائي</option>
+                                <option value="الثاني الابتدائي">الثاني الابتدائي</option>
+                                <option value="الثالث الابتدائي">الثالث الابتدائي</option>
+                                <option value="الرابع الابتدائي">الرابع الابتدائي</option>
+                                <option value="الخامس الابتدائي">الخامس الابتدائي</option>
+                                <option value="السادس الابتدائي">السادس الابتدائي</option>
+                                <option value="الأول الإعدادي">الأول الإعدادي</option>
+                                <option value="الثاني الإعدادي">الثاني الإعدادي</option>
+                                <option value="الثالث الإعدادي">الثالث الإعدادي</option>
+                                <option value="الأول بكالوريا">الأول بكالوريا</option>
+                                <option value="الثاني بكالوريا">الثاني بكالوريا</option>
+                                <option value="الثالث بكالوريا">الثالث بكالوريا</option>
+                                <option value="الأول الثانوي">الأول الثانوي</option>
+                                <option value="الثاني الثانوي">الثاني الثانوي</option>
+                                <option value="الثالث الثانوي">الثالث الثانوي</option>
+                            </select>
+                            <small style="color: #94a3b8;">اضغط Ctrl لاختيار أكثر من مرحلة.</small>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>صورة المدرس (خلفية شفافة PNG أفضل)</label>
+                            <input type="file" id="teacherImage" accept="image/*">
+                        </div>
+                    </div>
+                    <button type="submit" id="btnSaveTeacher" style="background: #f59e0b; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i> إضافة المدرس</button>
+                </form>
+            </div>
+            <div class="admin-table-container" style="margin-top: 20px;">
+                <h3>المدرسين المسجلين بالمنصة</h3>
+                <table>
+                    <thead><tr><th>المدرس</th><th>المادة</th><th>المراحل</th><th>إجراءات</th></tr></thead>
+                    <tbody id="adminTeachersTable">
+                        <tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب المدرسين...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div style="margin-bottom: 15px;">
-            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: var(--text-main);">المادة</label>
-            <input type="text" id="teacherSubject" placeholder="مثال: لغة عربية" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: var(--input-bg); color: var(--text-main);">
-        </div>
-
-        <div style="margin-bottom: 15px;">
-            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: var(--text-main);">المراحل (افصل بينها بفاصلة)</label>
-            <input type="text" id="teacherStages" placeholder="مثال: ثانوي, إعدادي" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: var(--input-bg); color: var(--text-main);">
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: var(--text-main);">صورة المدرس (خلفية شفافة PNG أفضل)</label>
-            <input type="file" id="teacherImage" accept="image/*" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: var(--input-bg); color: var(--text-main);">
-        </div>
-
-        <button type="submit" id="btnSubmitTeacher" style="width: 100%; padding: 15px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s;">
-            إضافة المدرس <i class="fas fa-plus-circle"></i>
-        </button>
-    </form>
-</div>
         <!-- 4. قسم إدارة الامتحانات -->
         <div id="examsSection" class="admin-section">
             <div class="admin-table-container">
@@ -321,58 +345,6 @@
                 <table>
                     <thead><tr><th>الطالب</th><th>الحصة / الامتحان</th><th>الدرجة</th><th>الحالة (المشاهدة)</th><th>وقت الحل</th><th>إجراءات</th></tr></thead>
                     <tbody id="adminGradingTable"><tr><td colspan="6" style="text-align: center; color: #94a3b8;">جاري جلب البيانات... ⏳</td></tr></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 6. قسم إدارة المدرسين -->
-        <div id="teachersSection" class="admin-section">
-            <div class="admin-table-container">
-                <h3><i class="fas fa-chalkboard-teacher" style="color: #3b82f6;"></i> إضافة مدرس جديد</h3>
-                <form id="addTeacherForm">
-                    <div class="form-grid">
-                        <div class="form-group-admin">
-                            <label>اسم المدرس</label>
-                            <input type="text" id="teacherName" placeholder="مثال: أ. عبدالرحمن عادل" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>المادة التي يدرسها</label>
-                            <input type="text" id="teacherSubject" placeholder="مثال: فيزياء، لغات..." required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>المراحل الدراسية</label>
-                            <select id="teacherStages" multiple style="height: 120px;" required>
-                                <option value="الأول الابتدائي">الأول الابتدائي</option>
-                                <option value="الثاني الابتدائي">الثاني الابتدائي</option>
-                                <option value="الثالث الابتدائي">الثالث الابتدائي</option>
-                                <option value="الرابع الابتدائي">الرابع الابتدائي</option>
-                                <option value="الخامس الابتدائي">الخامس الابتدائي</option>
-                                <option value="السادس الابتدائي">السادس الابتدائي</option>
-                                <option value="الأول الإعدادي">الأول الإعدادي</option>
-                                <option value="الثاني الإعدادي">الثاني الإعدادي</option>
-                                <option value="الثالث الإعدادي">الثالث الإعدادي</option>
-                                <option value="الأول بكالوريا">الأول بكالوريا</option>
-                                <option value="الثاني بكالوريا">الثاني بكالوريا</option>
-                                <option value="الثالث بكالوريا">الثالث بكالوريا</option>
-                                <option value="الثالث الثانوي">الثالث الثانوي</option>
-                            </select>
-                            <small style="color: #94a3b8;">اضغط Ctrl (أو Command) لاختيار أكثر من مرحلة.</small>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>صورة المدرس</label>
-                            <input type="file" id="teacherImage" accept="image/*" required>
-                        </div>
-                    </div>
-                    <button type="submit" id="btnSaveTeacher" style="background: #f59e0b; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i> إضافة المدرس</button>
-                </form>
-            </div>
-            <div class="admin-table-container" style="margin-top: 20px;">
-                <h3>المدرسين المسجلين بالمنصة</h3>
-                <table>
-                    <thead><tr><th>المدرس</th><th>المادة</th><th>المراحل</th><th>إجراءات</th></tr></thead>
-                    <tbody id="adminTeachersTable">
-                        <tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب المدرسين...</td></tr>
-                    </tbody>
                 </table>
             </div>
         </div>
@@ -433,7 +405,7 @@
             <div class="admin-table-container">
                 <h3><i class="fas fa-boxes" style="color: #3b82f6;"></i> إضافة / تعديل باقة</h3>
                 <form id="addPackageForm">
-                    <input type="hidden" id="editingPkgId" value=""> <!-- ده عشان التعديل -->
+                    <input type="hidden" id="editingPkgId" value="">
                     <div class="form-grid">
                         <div class="form-group-admin">
                             <label>اسم الباقة</label>
@@ -456,7 +428,6 @@
                             <input type="text" id="pkgFeatures" placeholder="مثال: 3 مدرسين, مراجعات مجانية" required>
                         </div>
                         
-                        <!-- إضافة خانة عدد المشاهدات -->
                         <div class="form-group-admin">
                             <label>الحد الأقصى لعدد المشاهدات (للفيديو الواحد)</label>
                             <input type="number" id="pkgMaxViews" placeholder="مثال: 3 (اتركه 0 لمشاهدة لا نهائية)" min="0" value="0" required>
@@ -468,7 +439,6 @@
                             <small style="color: #94a3b8;">اتركه فارغاً عند التعديل إذا كنت لا تريد تغيير الصورة.</small>
                         </div>
                         
-                        <!-- رفع الفيديوهات وتحديد الامتحان -->
                         <div class="form-group-admin" style="grid-column: 1 / -1; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px dashed #3b82f6;">
                             <h4 style="margin: 0 0 15px 0; color: #3b82f6;">إضافة محتوى جديد للباقة 🎥</h4>
                             
@@ -502,7 +472,7 @@
             </div>
         </div>
 
-        <!-- 9. قسم إدارة المساعدين (الصلاحيات) -->
+        <!-- 9. قسم إدارة المساعدين -->
         <div id="assistantsSection" class="admin-section">
             <div class="admin-table-container">
                 <h3><i class="fas fa-user-shield" style="color: #10b981;"></i> إضافة/تعديل حساب مساعد (سكرتير مدرس)</h3>
@@ -528,7 +498,6 @@
                             </select>
                         </div>
                         
-                        <!-- الصلاحيات (Checkboxes) -->
                         <div class="form-group-admin" style="grid-column: 1 / -1;">
                             <label>صلاحيات المساعد (علم على اللي يقدر يشوفه ويديره)</label>
                             <div style="display: flex; gap: 15px; flex-wrap: wrap; background: #0f172a; padding: 15px; border-radius: 12px; border: 1px solid #334155;">
