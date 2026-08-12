@@ -65,7 +65,6 @@ async function fetchStudentNavData(phone) {
     } catch (e) { console.error(e); }
 }
 
-// القائمة الجانبية والمود والمودالز البسيطة
 document.getElementById('openDrawer')?.addEventListener('click', () => { document.getElementById('stagesDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('active'); document.body.style.overflow='hidden'; });
 function closeDrawer() { document.getElementById('stagesDrawer')?.classList.remove('open'); document.getElementById('drawerOverlay')?.classList.remove('active'); document.body.style.overflow=''; }
 document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
@@ -73,13 +72,12 @@ document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); 
 document.getElementById('btnParentLogin')?.addEventListener('click', () => { const p = document.getElementById('parentStudentPhone').value; if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; else alert("رقم غير صحيح"); });
 
 // ==========================================
-// 2. زرار المود وتغيير الفيديو (الفيديوهات بتاعتك)
+// 2. زرار المود وتغيير الفيديو
 // ==========================================
 const themeBtn = document.getElementById('themeToggleBtn');
 const heroVideoBg = document.getElementById('heroVideoBg');
 const heroOverlayColor = document.getElementById('heroOverlayColor');
 
-// لينكاتك الحقيقية
 const dayVideoUrl = "https://www.primeeacademy.com/day.mp4"; 
 const nightVideoUrl = "https://www.primeeacademy.com/night.mp4"; 
 
@@ -196,13 +194,15 @@ async function fetchTeachers() {
             const t = { id: doc.id, ...doc.data() };
             allTeachersData.push(t);
             
-            // سلايدر הـ Hero الـ Fade المفرغ مع أيقونة الـ Glow
+            // 🚨 رجعنا بيانات المدرس عشان تظهر متزينة 🚨
             heroFadeHtml += `
             <div class="swiper-slide hero-slide-fade" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
-                <div class="teacher-glow-bg"></div> <!-- الأيقونة المضيئة ورا المدرس -->
+                <div class="teacher-glow-bg"></div>
                 <img src="${t.imageUrl}" alt="${t.name}" class="teacher-fade-png">
-                <h4 class="hero-teacher-name">${t.name}</h4>
-                <span class="hero-teacher-subject">${t.subject}</span>
+                <div class="hero-teacher-info">
+                    <h4 class="hero-teacher-name">${t.name}</h4>
+                    <span class="hero-teacher-subject">${t.subject}</span>
+                </div>
             </div>`;
         });
         
@@ -210,7 +210,7 @@ async function fetchTeachers() {
             heroFadeGrid.innerHTML = heroFadeHtml;
             if(typeof Swiper !== 'undefined') {
                 heroFadeSwiperInstance = new Swiper('.hero-fade-slider', {
-                    effect: 'fade', // التأثير Fade
+                    effect: 'fade', 
                     fadeEffect: { crossFade: true },
                     grabCursor: true,
                     loop: true,
