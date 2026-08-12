@@ -94,7 +94,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             localStorage.setItem('studentName', userData.fullName);
             localStorage.setItem('studentPhone', userData.studentPhone);
             
-            window.location.replace('index.html'); // تحويل للرئيسية
+            window.location.replace('https://www.primeeacademy.com/'); // تحويل للرئيسية
         } else {
             throw new Error("بيانات غير مكتملة");
         }
