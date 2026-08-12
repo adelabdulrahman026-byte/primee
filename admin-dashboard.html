@@ -236,7 +236,36 @@
                 </table>
             </div>
         </div>
+<!-- قسم إضافة مدرس جديد -->
+<div class="admin-section" style="background: var(--bg-card); padding: 25px; border-radius: 15px; border: 1px solid var(--input-border); margin-bottom: 30px; max-width: 600px;">
+    <h3 style="color: var(--primary-color); margin-bottom: 20px;"><i class="fas fa-chalkboard-teacher"></i> إضافة مدرس جديد للسلايدر</h3>
+    
+    <form id="addTeacherForm">
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: var(--text-main);">اسم المدرس</label>
+            <input type="text" id="teacherName" placeholder="مثال: أ. أحمد محمود" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: var(--input-bg); color: var(--text-main);">
+        </div>
 
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: var(--text-main);">المادة</label>
+            <input type="text" id="teacherSubject" placeholder="مثال: لغة عربية" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: var(--input-bg); color: var(--text-main);">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: var(--text-main);">المراحل (افصل بينها بفاصلة)</label>
+            <input type="text" id="teacherStages" placeholder="مثال: ثانوي, إعدادي" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: var(--input-bg); color: var(--text-main);">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: var(--text-main);">صورة المدرس (خلفية شفافة PNG أفضل)</label>
+            <input type="file" id="teacherImage" accept="image/*" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: var(--input-bg); color: var(--text-main);">
+        </div>
+
+        <button type="submit" id="btnSubmitTeacher" style="width: 100%; padding: 15px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s;">
+            إضافة المدرس <i class="fas fa-plus-circle"></i>
+        </button>
+    </form>
+</div>
         <!-- 4. قسم إدارة الامتحانات -->
         <div id="examsSection" class="admin-section">
             <div class="admin-table-container">
