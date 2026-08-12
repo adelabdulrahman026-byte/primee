@@ -114,7 +114,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .hero-image { flex: 1; display: flex; justify-content: center; position: relative; }
 .animated-logo-container { position: relative; width: 100%; max-width: 350px; height: 350px; display: flex; justify-content: center; align-items: center; margin: 0 auto; }
 .main-animated-logo { width: 100%; max-width: 280px; height: auto; filter: drop-shadow(0 20px 30px rgba(91, 33, 182, 0.2)); animation: smoothFloat 4s ease-in-out infinite alternate; }
-@keyframes smoothFloat { 0% { transform: translateY(0px) scale(1); } 100% { transform: translateY(-20px) scale(1.02); } }
+
 .floating-badge { position: absolute; background: var(--bg-card); padding: 12px 20px; border-radius: 15px; font-weight: 800; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; color: var(--text-main); animation: float 3s ease-in-out infinite alternate; border: 1px solid var(--input-border);}
 .floating-badge i { color: var(--primary-color); font-size: 20px; }
 .badge-1 { top: 20px; right: -30px; animation-delay: 0s; }
@@ -152,12 +152,10 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .cover-card-btn { background: #f59e0b; color: #fff; border: none; padding: 12px; border-radius: 12px; font-family: 'Cairo'; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.3s; }
 .cover-card-btn:hover { background: #d97706; transform: translateY(-2px); }
 
-/* أزرار تقليب سلايدر المدرسين */
 .swiper-button-next, .swiper-button-prev { color: #3b82f6 !important; background: #fff; width: 45px !important; height: 45px !important; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); top: auto !important; bottom: 0px !important; }
 .swiper-button-next::after, .swiper-button-prev::after { font-size: 20px !important; font-weight: bold; }
 .swiper-pagination-bullet-active { background-color: var(--primary-color) !important; }
 
-/* حالة إلغاء السلايدر وعرض الجميع כشبكة */
 .teachers-grid-active .swiper-wrapper { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important; gap: 30px !important; transform: none !important; }
 .teachers-grid-active .swiper-slide { width: 100% !important; margin-right: 0 !important; opacity: 1 !important; height: auto !important; aspect-ratio: 1/1; transform: none !important; }
 .teachers-grid-active .swiper-pagination, .teachers-grid-active .swiper-button-next, .teachers-grid-active .swiper-button-prev { display: none !important; }
@@ -338,8 +336,52 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .parent-report-body .student-info h3 { margin: 0 0 10px 0; font-size: 26px; color: var(--text-main); font-weight: 900;}
 .parent-report-body .student-info p { margin: 0 0 5px 0; color: var(--text-muted); font-weight: 700; display: flex; align-items: center; gap: 8px;}
 
+
 /* ==========================================================================
-   11. الموبايل الشامل (Responsive) 📱
+   🔥🔥🔥 إضافات الأنيميشن والسلايدر Fade الجديد (المفرغ + الأيقونة) 🔥🔥🔥
+   🚨 وتوحيد شكل الموبايل مع اللاب توب (جنب بعض) 🚨
+========================================================================== */
+.hero-flex-container {
+    position: relative; z-index: 2; width: 100%; max-width: 1300px; margin: 0 auto;
+    padding: 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 20px;
+}
+
+.hero-fade-slider { width: 100%; max-width: 400px; height: 480px; overflow: visible; position: relative; }
+
+.hero-slide-fade {
+    background: transparent !important; box-shadow: none !important; border: none !important;
+    display: flex !important; flex-direction: column; justify-content: flex-end; align-items: center; text-align: center;
+}
+
+/* الأيقونة (Glow) اللي بتنور ورا المدرس */
+.teacher-glow-bg {
+    position: absolute; bottom: 15%; width: 250px; height: 250px;
+    background: radial-gradient(circle, var(--primary-color) 0%, transparent 70%);
+    border-radius: 50%; z-index: 1; opacity: 0.5; animation: pulseGlow 3s infinite alternate;
+}
+
+@keyframes pulseGlow { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(1.1); opacity: 0.7; } }
+@keyframes smoothFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-15px); } }
+
+/* صورة المدرس المفرغة */
+.teacher-fade-png {
+    width: 100%; height: 85%; object-fit: contain; object-position: bottom;
+    z-index: 2; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.4)); transition: 0.4s; margin-bottom: -5px;
+}
+.hero-slide-fade:hover .teacher-fade-png { transform: scale(1.05) translateY(-10px); }
+
+/* تأثير السحاب اللي تحت المدرس عشان يندمج مع اللوتي */
+.bottom-cloud-fade {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 25%;
+    background: linear-gradient(to top, var(--bg-card) 5%, transparent 100%);
+    z-index: 10; pointer-events: none; border-radius: 0 0 30px 30px;
+}
+
+.hero-slide-fade h4 { color: var(--text-main); font-size: 32px; font-weight: 900; margin: 10px 0 5px; z-index: 3; text-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.hero-slide-fade span { background: var(--primary-color); color: #fff; padding: 5px 20px; border-radius: 20px; font-weight: bold; z-index: 3; box-shadow: 0 4px 15px rgba(91,33,182,0.4); }
+
+/* ==========================================================================
+   11. الموبايل الشامل (Responsive) - (اللاب زي الموبايل بالمللي)
 ========================================================================== */
 .mobile-dash-header { display: none; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--bg-card); border-bottom: 1px solid var(--input-border); }
 .close-mobile-sidebar { display: none; background: none; border: none; font-size: 24px; color: var(--text-muted); position: absolute; top: 20px; left: 20px; cursor: pointer; z-index: 1002;}
@@ -356,11 +398,33 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 .btn-logout-mobile { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 12px; border-radius: 12px; font-weight: 800; font-family: 'Cairo'; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
 
 @media (max-width: 991px) {
-    .main-navbar { padding: 15px 20px; }
-    .nav-links, .btn-nav-login, .btn-nav-signup, .theme-toggle { display: none; }
+    /* 🚨 الموبايل مش هيخفي حاجة من الـ Navbar بعد التعديل، زرار النايت مود ظاهر 🚨 */
+    .main-navbar { padding: 10px 15px; }
+    .nav-links, .btn-nav-login, .btn-nav-signup { display: none; }
     
-    .animated-logo-container { max-width: 250px; height: 250px; }
-    .main-animated-logo { max-width: 200px; }
+    /* النايت مود والقائمة */
+    .theme-toggle { display: flex !important; width: 35px; height: 35px; font-size: 16px; margin-right: 10px; }
+    .nav-brand { font-size: 20px; }
+    .btn-hamburger { font-size: 14px; }
+    
+    /* 🚨 الهيرو سيكشن - نفس اللاب توب بالظبط (جنب بعض) 🚨 */
+    .hero-flex-container { flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 10px; padding: 0 10px; }
+    .hero-content { text-align: right; flex: 1; padding: 10px 0; }
+    .hero-content h1 { font-size: 24px !important; margin: 10px 0; }
+    .hero-content p { font-size: 11px !important; margin-bottom: 15px; line-height: 1.4; }
+    .hero-badge { font-size: 10px; padding: 5px 10px; margin-bottom: 10px;}
+    
+    .hero-buttons { flex-direction: row; gap: 5px;}
+    .btn-primary-hero, .btn-secondary-hero { padding: 8px 10px; font-size: 11px; width: auto; justify-content: center;}
+    
+    .hero-image { flex: 1; max-width: 50%; }
+    .hero-fade-slider { height: 250px; margin-top: 0; }
+    .flying-logo { width: 70px !important; top: -20px !important; left: 10px !important; transform: none !important; }
+    .teacher-glow-bg { width: 120px; height: 120px; bottom: 25%; }
+    .hero-slide-fade h4 { font-size: 18px; margin: 5px 0 2px; }
+    .hero-slide-fade span { font-size: 11px; padding: 3px 10px; }
+    .teacher-fade-png { max-height: 200px; }
+    
     .creative-tip-card { flex-direction: column-reverse; text-align: center; padding: 40px 20px 30px; gap: 20px; }
     .creative-tip-card.reverse { flex-direction: column-reverse; }
     .creative-tip-content p { max-width: 100%; }
@@ -396,54 +460,4 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     .modern-table { display: block; overflow-x: auto; white-space: nowrap; }
     
     .teachers-grid-active .swiper-wrapper { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important; }
-}
-
-/* ==========================================================================
-   🔥🔥🔥 إضافات الأنيميشن والسلايدر Fade الجديد (المفرغ + الأيقونة) 🔥🔥🔥
-========================================================================== */
-.hero-flex-container {
-    position: relative; z-index: 2; width: 100%; max-width: 1300px; margin: 0 auto;
-    padding: 0 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 40px;
-}
-
-.hero-fade-slider { width: 100%; max-width: 400px; height: 500px; overflow: visible; position: relative; }
-
-.hero-slide-fade {
-    background: transparent !important; box-shadow: none !important; border: none !important;
-    display: flex !important; flex-direction: column; justify-content: flex-end; align-items: center; text-align: center;
-}
-
-/* الأيقونة (Glow) اللي بتنور ورا المدرس */
-.teacher-glow-bg {
-    position: absolute; bottom: 15%; width: 250px; height: 250px;
-    background: radial-gradient(circle, var(--primary-color) 0%, transparent 70%);
-    border-radius: 50%; z-index: 1; opacity: 0.5; animation: pulseGlow 3s infinite alternate;
-}
-
-@keyframes pulseGlow { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(1.1); opacity: 0.7; } }
-@keyframes smoothFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-15px); } }
-
-/* صورة المدرس المفرغة */
-.teacher-fade-png {
-    width: 100%; height: 85%; object-fit: contain; object-position: bottom;
-    z-index: 2; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.4)); transition: 0.4s; margin-bottom: -5px;
-}
-.hero-slide-fade:hover .teacher-fade-png { transform: scale(1.05) translateY(-10px); }
-
-/* تأثير السحاب اللي تحت المدرس عشان يندمج مع اللوتي */
-.bottom-cloud-fade {
-    position: absolute; bottom: 0; left: 0; width: 100%; height: 25%;
-    background: linear-gradient(to top, var(--bg-card) 5%, transparent 100%);
-    z-index: 10; pointer-events: none; border-radius: 0 0 30px 30px;
-}
-
-.hero-slide-fade h4 { color: var(--text-main); font-size: 32px; font-weight: 900; margin: 10px 0 5px; z-index: 3; text-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-.hero-slide-fade span { background: var(--primary-color); color: #fff; padding: 5px 20px; border-radius: 20px; font-weight: bold; z-index: 3; box-shadow: 0 4px 15px rgba(91,33,182,0.4); }
-
-/* تظبيط الموبايل للهيرو Fade */
-@media (max-width: 991px) {
-    .hero-flex-container { flex-direction: column-reverse; text-align: center; }
-    .hero-fade-slider { height: 450px; margin-top: 20px; }
-    .flying-logo { left: 50% !important; transform: translateX(-50%); top: -40px !important; }
-    .teacher-glow-bg { width: 200px; height: 200px; bottom: 20%; }
 }
