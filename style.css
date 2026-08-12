@@ -461,3 +461,70 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     
     .teachers-grid-active .swiper-wrapper { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important; }
 }
+/* ==========================================================================
+   🔥 تعديل حجم وتمركز المدرس (ليبدأ من حافة الكارت الأسفل ويكبر) 🔥
+========================================================================== */
+.hero-image {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end !important; /* تثبيت المحتوى في أسفل البوكس */
+    height: 100% !important;
+}
+
+.hero-fade-slider {
+    width: 100% !important;
+    max-width: 450px !important;
+    height: 580px !important; /* زيادة الطول عشان يكبر براحته */
+    overflow: visible !important;
+    position: absolute !important;
+    bottom: -10px !important; /* يخلي بدايته نازلة لآخر الكارت تحت */
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.hero-slide-fade {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+}
+
+/* تكبير صورة المدرس الـ PNG لتملى المساحة */
+.teacher-fade-png {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 480px !important; /* تكبير المدرس جداً */
+    object-fit: contain !important;
+    object-position: bottom !important;
+    z-index: 2;
+    filter: drop-shadow(0px 20px 30px rgba(0,0,0,0.5));
+    margin-bottom: -5px;
+}
+
+/* تكبير وتظبيط الهالة اللي ورا المدرس */
+.teacher-glow-bg {
+    position: absolute !important;
+    bottom: 20% !important;
+    width: 320px !important;
+    height: 320px !important;
+    background: radial-gradient(circle, var(--primary-color) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: 1;
+    opacity: 0.6;
+}
+
+/* تظبيط مكان الاسم والمادة تحت المدرس */
+.hero-teacher-name {
+    font-size: 36px !important;
+    font-weight: 900 !important;
+    margin: 5px 0 2px 0 !important;
+    z-index: 5;
+}
+
+.hero-teacher-subject {
+    font-size: 16px !important;
+    padding: 6px 25px !important;
+    z-index: 5;
+    margin-bottom: 10px;
+}
