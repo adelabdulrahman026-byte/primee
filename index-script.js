@@ -475,7 +475,7 @@ document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async (
         const snap = await getDocs(q);
         if (snap.empty) throw new Error("الكود غير صحيح.");
         const codeDoc = snap.docs[0]; const codeData = codeDoc.data();
-        if (codeData.isUsed) throw new Error("مستخدم مسبقاً.");
+        if (codeData.isUsed) throw new Error("مستخدم مســـبقاً.");
 
         const codeValue = parseInt(codeData.value);
         const newTempBalance = window.currentUserBalance + codeValue;
