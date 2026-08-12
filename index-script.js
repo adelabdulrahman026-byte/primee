@@ -65,34 +65,35 @@ async function fetchStudentNavData(phone) {
     } catch (e) { console.error(e); }
 }
 
-// القائمة الجانبية
+// القائمة الجانبية والمود والمودالز البسيطة
 document.getElementById('openDrawer')?.addEventListener('click', () => { document.getElementById('stagesDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('active'); document.body.style.overflow='hidden'; });
 function closeDrawer() { document.getElementById('stagesDrawer')?.classList.remove('open'); document.getElementById('drawerOverlay')?.classList.remove('active'); document.body.style.overflow=''; }
 document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
+
 document.getElementById('btnParentLogin')?.addEventListener('click', () => { const p = document.getElementById('parentStudentPhone').value; if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; else alert("رقم غير صحيح"); });
 
 // ==========================================
-// 2. زرار المود وتغيير خلفية Lottie (الصحرا والقمر) 🚨 حل الإيرور 🚨
+// 2. زرار المود وتغيير الفيديو (الفيديوهات بتاعتك)
 // ==========================================
 const themeBtn = document.getElementById('themeToggleBtn');
-const heroLottieBg = document.getElementById('heroLottieBg');
+const heroVideoBg = document.getElementById('heroVideoBg');
 const heroOverlayColor = document.getElementById('heroOverlayColor');
 
-// لينكات شغالة 100%
-const dayLottieUrl = "https://assets9.lottiefiles.com/packages/lf20_U25Y1T.json"; 
-const nightLottieUrl = "https://assets3.lottiefiles.com/packages/lf20_yq3zchlw.json"; 
+// لينكاتك الحقيقية
+const dayVideoUrl = "https://www.primeeacademy.com/day.mp4"; 
+const nightVideoUrl = "https://www.primeeacademy.com/night.mp4"; 
 
 function applyThemeColors(isDark) {
-    if (heroLottieBg) {
-        const targetUrl = isDark ? nightLottieUrl : dayLottieUrl;
-        try {
-            heroLottieBg.load(targetUrl); // الدالة الرسمية لمكتبة lottie-player
-        } catch(e) {
-            heroLottieBg.setAttribute("src", targetUrl); // كاحتياطي
+    if (heroVideoBg) {
+        const targetUrl = isDark ? nightVideoUrl : dayVideoUrl;
+        if (heroVideoBg.src !== targetUrl) {
+            heroVideoBg.src = targetUrl;
+            heroVideoBg.load();
+            heroVideoBg.play().catch(()=>{});
         }
     }
     if (heroOverlayColor) {
-        heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255, 255, 255, 0.4)';
+        heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(255, 255, 255, 0.4)';
     }
 }
 
@@ -101,9 +102,7 @@ if(themeBtn) {
     const isDark = document.body.getAttribute('data-theme') === 'dark' || localStorage.getItem('theme') === 'dark';
     
     if(isDark) { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
-    
-    // تشغيل الأنيميشن أول ما يفتح
-    setTimeout(() => { applyThemeColors(isDark); }, 100);
+    applyThemeColors(isDark);
 
     themeBtn.addEventListener('click', () => {
         const currentlyDark = document.body.getAttribute('data-theme') === 'dark';
@@ -121,7 +120,7 @@ if(themeBtn) {
 document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', () => {
     const term = document.getElementById('searchTeacherInput').value.trim().toLowerCase();
     document.getElementById('searchTeacherModal').classList.remove('active');
-    document.getElementById('viewAllTeachersBtn').click();
+    document.getElementById('viewAllTeachersBtn').click(); 
     setTimeout(() => {
         document.querySelectorAll('.modern-teacher-card').forEach(card => {
             const name = card.querySelector('h3').innerText.toLowerCase();
@@ -200,7 +199,7 @@ async function fetchTeachers() {
             // سلايدر הـ Hero الـ Fade المفرغ مع أيقونة الـ Glow
             heroFadeHtml += `
             <div class="swiper-slide hero-slide-fade" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
-                <div class="teacher-glow-bg"></div>
+                <div class="teacher-glow-bg"></div> <!-- الأيقونة المضيئة ورا المدرس -->
                 <img src="${t.imageUrl}" alt="${t.name}" class="teacher-fade-png">
                 <h4 class="hero-teacher-name">${t.name}</h4>
                 <span class="hero-teacher-subject">${t.subject}</span>
