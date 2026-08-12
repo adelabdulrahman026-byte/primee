@@ -9,7 +9,7 @@
     
     <!-- مكتبة السلايدر CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-    <link rel="stylesheet" href="style.css?v=110">
+    <link rel="stylesheet" href="style.css?v=108">
 
     <!-- كود إشعارات OneSignal -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -20,12 +20,12 @@
       });
     </script>
     
-    <!-- مكتبة Lottie الأساسية -->
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <!-- مكتبة Lottie الأصلية بتاعتك -->
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.4/dist/dotlottie-wc.js" type="module"></script>
 </head>
 <body class="index-body">
 
-    <!-- النوافذ المنبثقة زي ما هي تماماً -->
+    <!-- النوافذ المنبثقة زي ما هي -->
     <div id="notificationModal" class="custom-modal-overlay">
         <div class="custom-modal-content">
             <div class="modal-icon" style="color: #f59e0b;"><i class="fas fa-bell"></i></div>
@@ -160,23 +160,21 @@
         </div>
     </nav>
 
-    <!-- 🚨 القسم الرئيسي (Hero Section) Lottie + Fade Slider 🚨 -->
-    <header class="hero-section" style="position: relative; overflow: hidden; min-height: 90vh; border-radius: 30px; margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); background: var(--bg-card);">
+    <!-- 🚨 القسم الرئيسي (Hero Section) المحدث - Lottie + Fade Slider 🚨 -->
+    <div class="hero-wrapper" style="position: relative; overflow: hidden; border-radius: 30px; margin: 20px auto; max-width: 1350px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); background: var(--bg-card);">
         
-        <!-- خلفية الأنيميشن Lottie (مكتبة lottie-player المستقرة) -->
+        <!-- خلفية الأنيميشن Lottie (ليل وقمر / نهار وشمس) -->
         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;">
-            <lottie-player id="heroLottieBg" src="https://lottie.host/1c4d92eb-5986-455b-bf42-e56230f81d18/sYpZzB4H9m.json" background="transparent" speed="1" style="width: 100%; height: 100%; position: absolute; left: 0; top: 0;" preserveAspectRatio="xMidYMid slice" loop autoplay></lottie-player>
+            <dotlottie-wc id="heroLottieBg" src="https://lottie.host/9327e025-a4b5-4bce-9252-4cd82649ea5b/K3nF7QvQj1.json" autoplay loop style="width: 100%; height: 100%; object-fit: cover; opacity: 1;"></dotlottie-wc>
         </div>
         
         <!-- طبقة لون لتوضيح الكلام فوق اللوتي -->
         <div id="heroOverlayColor" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; transition: 0.5s; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(2px);"></div>
 
-        <div class="hero-flex-container">
-            
-            <!-- الجزء اليمين: النص والأزرار -->
-            <div class="hero-content" style="z-index: 5; text-align: right;">
+        <header class="hero-section" style="position: relative; z-index: 2; margin: 0 auto; padding: 60px 20px;">
+            <div class="hero-content">
                 <span class="hero-badge" style="background: var(--bg-card); color: var(--primary-color); border-radius: 20px; font-weight: 800; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">👋 مرحباً بك في Primee Academy</span>
-                <h1 id="heroTitle" style="color: var(--text-main); text-shadow: 0 2px 10px rgba(0,0,0,0.1);">تعلّم بذكاء،<br><span style="color: var(--primary-color);">وتقدّم بثقة.</span></h1>
+                <h1 id="heroTitle" style="transition: opacity 0.5s ease; color: var(--text-main);">تعلّم بذكاء،<br><span>وتقدّم بثقة.</span></h1>
                 <p style="color: var(--text-main); font-weight: 700; text-shadow: 0 2px 5px rgba(255,255,255,0.3);">المنصة التعليمية الأقوى التي تجمع لك أفضل المعلمين. تجربة تعليمية تفاعلية ومميزة في أي وقت ومن أي مكان.</p>
                 <div class="hero-buttons">
                     <a href="#teachersSection" onclick="document.getElementById('viewAllTeachersBtn').click();" class="btn-primary-hero">تصفح المدرسين <i class="fas fa-arrow-left"></i></a>
@@ -184,26 +182,25 @@
                 </div>
             </div>
             
-            <!-- الجزء الشمال: المدرسين Fade واللوجو الطاير -->
-            <div class="hero-image" style="z-index: 5; display: flex; flex-direction: column; align-items: center; position: relative; width: 100%; max-width: 450px;">
-                <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" class="flying-logo" style="width: 150px; position: absolute; top: -50px; left: 0px; z-index: 15; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); animation: smoothFloat 4s ease-in-out infinite alternate;">
+            <div class="hero-image" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 400px; position: relative;">
+                <!-- اللوجو الصغير الطاير -->
+                <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" style="width: 140px; position: absolute; top: -60px; left: 0px; z-index: 15; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); animation: smoothFloat 4s ease-in-out infinite;">
                 
-                <div class="swiper hero-fade-slider">
+                <!-- سلايدر المدرسين Fade الشفاف -->
+                <div class="swiper hero-fade-slider" style="width: 100%; overflow: visible;">
                     <div class="swiper-wrapper" id="heroTeachersFadeGrid">
-                        <!-- المدرسين هينزلوا هنا Fade -->
+                        <div style="text-align:center; padding: 50px; color:var(--text-main); font-weight: bold;">جاري تحميل الأبطال...</div>
                     </div>
                 </div>
             </div>
-        </div>
-    </header>
-
-    <!-- تم مسح قسم (اختر مدرسك المفضل للبدء) نهائياً -->
+        </header>
+    </div>
 
     <!-- قسم المدرسين مع Lottie في الخلفية -->
-    <section id="teachersSection" class="teachers-section" style="position: relative; overflow: hidden; padding: 60px 20px; border-radius: 24px; background: var(--bg-card); box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
+    <section id="teachersSection" class="teachers-section" style="position: relative; overflow: hidden; padding: 40px 20px; border-radius: 24px; background: var(--bg-card); box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
         <!-- Lottie متحرك ورا المدرسين -->
-        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.1; pointer-events: none;">
-            <lottie-player src="https://lottie.host/9327e025-a4b5-4bce-9252-4cd82649ea5b/K3nF7QvQj1.json" background="transparent" speed="1" style="width: 100%; height: 100%; position: absolute; left: 0; top: 0;" preserveAspectRatio="xMidYMid slice" loop autoplay></lottie-player>
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.05; pointer-events: none;">
+            <dotlottie-wc src="https://lottie.host/9327e025-a4b5-4bce-9252-4cd82649ea5b/K3nF7QvQj1.json" autoplay loop style="width: 100%; height: 100%; object-fit: cover;"></dotlottie-wc>
         </div>
         
         <div style="position: relative; z-index: 1;">
@@ -320,6 +317,6 @@
 
     <!-- مكتبة Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script type="module" src="index-script.js?v=110"></script>
+    <script type="module" src="index-script.js?v=109"></script>
 </body>
 </html>
