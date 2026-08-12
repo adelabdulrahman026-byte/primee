@@ -406,3 +406,15 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     
     .teachers-grid-active .swiper-wrapper { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important; }
 }
+/* كروت المدرسين في الـ Hero */
+.hero-3d-slider { border-radius: 20px; overflow: visible; }
+.hero-slide-card {
+    width: 100%; height: 100%; border-radius: 20px; overflow: hidden;
+    position: relative; box-shadow: 0 15px 35px rgba(0,0,0,0.3); cursor: pointer;
+}
+.hero-slide-card img { width: 100%; height: 100%; object-fit: cover; }
+.hero-slide-info {
+    position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px 15px 15px;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    color: #fff; text-align: center;
+}
