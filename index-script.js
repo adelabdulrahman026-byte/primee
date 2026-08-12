@@ -14,28 +14,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// 1. الأنيميشن، الدخول، وتحديث الهيدر
+// 1. الدخول وتحديث الهيدر
 // ==========================================
-const phrases = [
-    "تعلّم بذكاء،<br><span>وتقدّم بثقة.</span>", 
-    "اكتشف قدراتك،<br><span>واصنع مستقبلك.</span>", 
-    "نخبة المعلمين،<br><span>في شاشة واحدة.</span>", 
-    "منصة برايمي،<br><span>طريقك للتفوق.</span>", 
-    "وفر وقتك،<br><span>وضاعف تحصيلك.</span>"
-];
-let phraseIndex = 0;
-const heroTitle = document.getElementById('heroTitle');
-if(heroTitle) {
-    setInterval(() => {
-        heroTitle.style.opacity = 0;
-        setTimeout(() => {
-            phraseIndex = (phraseIndex + 1) % phrases.length;
-            heroTitle.innerHTML = phrases[phraseIndex];
-            heroTitle.style.opacity = 1;
-        }, 500);
-    }, 3500);
-}
-
 const loggedInPhone = localStorage.getItem('studentPhone');
 if (loggedInPhone) {
     const myC = document.getElementById('myCoursesLink');
@@ -69,26 +49,22 @@ async function fetchStudentNavData(phone) {
 document.getElementById('openDrawer')?.addEventListener('click', () => { document.getElementById('stagesDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('active'); document.body.style.overflow='hidden'; });
 window.closeDrawer = function() { document.getElementById('stagesDrawer')?.classList.remove('open'); document.getElementById('drawerOverlay')?.classList.remove('active'); document.body.style.overflow=''; };
 document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
-
 document.getElementById('btnParentLogin')?.addEventListener('click', () => { const p = document.getElementById('parentStudentPhone').value; if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; else alert("رقم غير صحيح"); });
 
 // ==========================================
-// 2. زرار المود (Dark/Light) وتغيير خلفية الـ Lottie
+// 2. زرار المود وتغيير خلفية Lottie (الصحرا والقمر)
 // ==========================================
 const themeBtn = document.getElementById('themeToggleBtn');
 const heroLottieBg = document.getElementById('heroLottieBg');
 const heroOverlayColor = document.getElementById('heroOverlayColor');
 
-// روابط اللوتي الجبارة (النهار: طبيعة وشمس / الليل: قمر وسماء)
+// روابط الأنيميشن للنهار والليل
 const dayLottieUrl = "https://lottie.host/1c4d92eb-5986-455b-bf42-e56230f81d18/sYpZzB4H9m.json"; 
 const nightLottieUrl = "https://lottie.host/80e3da11-dfab-40a2-9b24-9ad9828e1c66/hT9s76G5R2.json"; 
 
 function applyThemeColors(isDark) {
     if (heroLottieBg) heroLottieBg.src = isDark ? nightLottieUrl : dayLottieUrl;
-    // Overlay خفيف عشان الأنيميشن ينطق
-    if (heroOverlayColor) {
-        heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(255, 255, 255, 0.4)';
-    }
+    if (heroOverlayColor) heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.4)' : 'rgba(248, 250, 252, 0.5)';
 }
 
 if(themeBtn) {
@@ -158,7 +134,7 @@ function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
 }
 
 // ==========================================
-// 4. المدرسين: دوائر الجانبية، كروت 3D، سلايدر عادي
+// 4. المدرسين: كروت 3D الشفافة وسلايدر عادي
 // ==========================================
 let allTeachersData = [];
 let teachersSwiperInstance = null;
@@ -182,15 +158,12 @@ async function fetchTeachers() {
             // دوائر القائمة الجانبية
             avHtml += `<img src="${t.imageUrl}" title="${t.name}" onclick="openTeacherCourses('${t.name}'); closeDrawer();" style="width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--primary-color); cursor: pointer; flex-shrink: 0; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">`;
             
-            // كروت الـ 3D
-           hero3DHtml += `
-            <div class="swiper-slide transparent-slide" onclick="openTeacherCourses('${t.name}')">
+            // صورة المدرس الـ PNG الشفافة (بدون أي خلفيات أو كروت)
+            hero3DHtml += `
+            <div class="swiper-slide hero-slide-transparent" onclick="openTeacherCourses('${t.name}')">
                 <img src="${t.imageUrl}" alt="${t.name}" class="teacher-png">
-                <div class="cloud-fade"></div> <!-- الضباب اللي المدرس طالع منه -->
-                <div class="teacher-info">
-                    <h4>${t.name}</h4>
-                    <span>${t.subject}</span>
-                </div>
+                <h4 class="hero-teacher-name">${t.name}</h4>
+                <span class="hero-teacher-subject">${t.subject}</span>
             </div>`;
         });
         
@@ -204,9 +177,9 @@ async function fetchTeachers() {
                     loop: true,
                     autoplay: { delay: 2500, disableOnInteraction: false },
                     cardsEffect: { 
-                        slideShadows: false, // دي اللي كانت بتعمل المربع الأسود!
-                        perSlideOffset: 12, 
-                        perSlideRotate: 4,
+                        slideShadows: false, // 🚨 السطر ده اللي بيشيل المربع الأسود 🚨
+                        perSlideOffset: 20, 
+                        perSlideRotate: 2,
                         rotate: true
                     }
                 });
@@ -283,7 +256,6 @@ async function fetchPackages() {
 function renderPackages(filterText) {
     const grid = document.getElementById('packagesGridContainer');
     const filtered = allPackagesData.filter(p => filterText === 'all' ? true : p.grade && p.grade.includes(filterText));
-    
     if(filtered.length === 0) { grid.innerHTML = '<div style="text-align:center; width:100%; color:#94a3b8; padding:30px;">لا يوجد باقات هنا.</div>'; return; }
 
     let html = '';
@@ -291,7 +263,6 @@ function renderPackages(filterText) {
         let fHtml = '';
         if(pkg.features) pkg.features.forEach(f => fHtml += `<li><i class="fas fa-check-circle" style="color:#10b981;"></i> ${f.trim()}</li>`);
         const subLink = loggedInPhone ? 'student-dashboard.html' : 'login.html';
-        
         html += `
         <div class="premium-package-card">
             <img src="${pkg.imageUrl}" class="pkg-glow-image">
@@ -468,7 +439,7 @@ document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async (
         const snap = await getDocs(q);
         if (snap.empty) throw new Error("الكود غير صحيح.");
         const codeDoc = snap.docs[0]; const codeData = codeDoc.data();
-        if (codeData.isUsed) throw new Error("مستخدم مســـبقاً.");
+        if (codeData.isUsed) throw new Error("مستخدم مسبقاً.");
 
         const codeValue = parseInt(codeData.value);
         const newTempBalance = window.currentUserBalance + codeValue;
