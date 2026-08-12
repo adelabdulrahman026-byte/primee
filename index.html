@@ -9,7 +9,7 @@
     
     <!-- مكتبة السلايدر CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-    <link rel="stylesheet" href="style.css?v=101">
+    <link rel="stylesheet" href="style.css?v=102">
 
     <!-- كود إشعارات OneSignal -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -19,6 +19,23 @@
         await OneSignal.init({ appId: "6f7ca840-5b06-4e85-81ec-00d53f2a5b9a" });
       });
     </script>
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.4/dist/dotlottie-wc.js" type="module"></script>
+
+    <!-- ستايل كروت المدرسين 3D -->
+    <style>
+        .hero-3d-slider { border-radius: 20px; overflow: visible; margin-top: 10px; }
+        .hero-slide-card {
+            width: 100%; height: 100%; border-radius: 20px; overflow: hidden;
+            position: relative; box-shadow: 0 15px 35px rgba(0,0,0,0.3); cursor: pointer;
+            background: #1e293b;
+        }
+        .hero-slide-card img { width: 100%; height: 100%; object-fit: cover; }
+        .hero-slide-info {
+            position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px 15px 15px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            color: #fff; text-align: center;
+        }
+    </style>
 </head>
 <body class="index-body">
 
@@ -98,7 +115,6 @@
         </div>
     </div>
 
-    <!-- نافذة البحث عن مدرس -->
     <div id="searchTeacherModal" class="custom-modal-overlay">
         <div class="custom-modal-content">
             <div class="modal-icon" style="color: #3b82f6;"><i class="fas fa-search"></i></div>
@@ -123,6 +139,14 @@
             <a href="register.html" class="btn-secondary-mobile">إنشاء حساب</a>
         </div>
 
+        <!-- دوائر المدرسين في القائمة الجانبية -->
+        <div class="sidebar-avatars-container" style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(128,128,128,0.2);">
+            <h4 style="color: var(--text-muted); margin-bottom: 10px; font-size: 13px; font-weight: 800;">مدرسينك المفضلين للبدء السريع</h4>
+            <div class="avatars-wrapper" id="sidebarTeachersAvatars" style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none;">
+                <!-- الدوائر هتنزل هنا -->
+            </div>
+        </div>
+
         <ul class="drawer-links">
             <li><a href="index.html"><i class="fas fa-home"></i> الرئيسية</a></li>
             <li><a href="#" onclick="document.getElementById('parentModal').classList.add('active'); closeDrawer();"><i class="fas fa-user-shield"></i> متابعة ولي الأمر</a></li>
@@ -137,7 +161,7 @@
     <div id="drawerOverlay" class="drawer-overlay"></div>
 
     <!-- الشريط العلوي -->
-    <nav class="main-navbar">
+    <nav class="main-navbar" style="position: relative; z-index: 10;">
         <div class="nav-right-side">
             <div class="nav-brand">Primee<span>.</span></div>
             <button id="openDrawer" class="btn-hamburger"><i class="fas fa-bars-staggered"></i> القائمة</button>
@@ -157,9 +181,17 @@
         </div>
     </nav>
 
-    <!-- القسم الرئيسي -->
-    <header class="hero-section">
-        <div class="hero-content">
+    <!-- القسم الرئيسي (Hero Section) المعدل -->
+    <header class="hero-section" style="position: relative; overflow: hidden; min-height: 90vh;">
+        <!-- خلفية الأنيميشن Lottie -->
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.8;">
+            <dotlottie-wc id="heroLottieBg" src="https://lottie.host/734c5688-df0e-4ff7-b648-fb9e2fdebc62/Lg91zXv8Uv.json" autoplay loop style="width: 100%; height: 100%; object-fit: cover;"></dotlottie-wc>
+        </div>
+        
+        <!-- طبقة لون خفيفة عشان الكلام يفضل مقروء -->
+        <div id="heroOverlayColor" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255, 255, 255, 0.7); z-index: 1; backdrop-filter: blur(2px); transition: 0.5s;"></div>
+
+        <div class="hero-content" style="z-index: 2;">
             <span class="hero-badge">👋 مرحباً بك في Primee Academy</span>
             <h1 id="heroTitle" style="transition: opacity 0.5s ease;">تعلّم بذكاء،<br><span>وتقدّم بثقة.</span></h1>
             <p>المنصة التعليمية الأقوى التي تجمع لك أفضل المعلمين. تجربة تعليمية تفاعلية ومميزة في أي وقت ومن أي مكان.</p>
@@ -168,22 +200,18 @@
                 <a href="#" onclick="document.getElementById('searchTeacherModal').classList.add('active')" class="btn-secondary-hero"><i class="fas fa-search"></i> بحث عن مدرس</a>
             </div>
         </div>
-        <div class="hero-image">
-            <div class="animated-logo-container">
-                <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" class="main-animated-logo">
-                <div class="floating-badge badge-1"><i class="fas fa-graduation-cap"></i> محتوى مميز</div>
-                <div class="floating-badge badge-2"><i class="fas fa-users"></i> مجتمع تفاعلي</div>
+        
+        <div class="hero-image" style="z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+            <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" style="width: 120px; animation: float 3s ease-in-out infinite;">
+            
+            <!-- سلايدر المدرسين 3D -->
+            <div class="swiper hero-3d-slider" style="width: 250px; height: 340px;">
+                <div class="swiper-wrapper" id="heroTeachers3DGrid">
+                    <div style="text-align:center; padding: 50px; color:var(--text-main);">جاري تحميل المدرسين...</div>
+                </div>
             </div>
         </div>
     </header>
-
-    <!-- دوائر المدرسين السريعة -->
-    <section class="teachers-avatars-section" style="max-width: 1200px; margin: 40px auto; text-align: center;">
-        <h3 style="color: var(--text-muted); font-size: 18px; margin-bottom: 10px;">اختر مدرسك المفضل للبدء</h3>
-        <div class="avatars-wrapper" id="teachersAvatarsRow">
-            <!-- الدوائر هتنزل هنا بالداتا بيز -->
-        </div>
-    </section>
 
     <!-- قسم المدرسين (السلايدر 3D والفلتر المزدوج) -->
     <section id="teachersSection" class="teachers-section">
@@ -233,7 +261,7 @@
         </div>
     </section>
 
-    <!-- قسم الباقات الشاملة (الفلتر المزدوج وتصميم فخم) -->
+    <!-- قسم الباقات الشاملة -->
     <section class="packages-section" style="max-width: 1200px; margin: 80px auto; padding: 0 20px;">
         <div class="section-header" style="text-align: center; justify-content: center; flex-direction: column; gap: 10px;">
             <h2>الباقات الشاملة <span style="color: #f59e0b;"><i class="fas fa-crown"></i></span></h2>
@@ -277,7 +305,7 @@
         </div>
     </section>
 
-    <!-- הפوتر -->
+    <!-- الفوتر -->
     <div class="modern-footer-container">
         <div class="footer-card">
             <div class="footer-logo">
@@ -299,6 +327,6 @@
 
     <!-- مكتبة Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script type="module" src="index-script.js?v=101"></script>
+    <script type="module" src="index-script.js?v=102"></script>
 </body>
 </html>
