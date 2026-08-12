@@ -14,7 +14,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// 1. الأنيميشن، الدخول، وتحديث الهيدر (صورة الطالب)
+// 1. الأنيميشن، الدخول، وتحديث الهيدر
 // ==========================================
 const phrases = [
     "تعلّم بذكاء،<br><span>وتقدّم بثقة.</span>", 
@@ -51,7 +51,6 @@ async function fetchStudentNavData(phone) {
             const data = userSnap.docs[0].data();
             const firstName = (data.fullName || "طالب").split(" ")[0];
             const balance = data.walletBalance || 0;
-            // لو عنده صورة هتظهر مكان الأيقونة الموف
             const avatarHtml = data.profileImage ? `<img src="${data.profileImage}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : `<i class="fas fa-user-graduate"></i>`;
 
             const navAuth = document.getElementById('navAuthSection');
@@ -66,20 +65,44 @@ async function fetchStudentNavData(phone) {
     } catch (e) { console.error(e); }
 }
 
-// القائمة الجانبية والمود والمودالز البسيطة
+// القائمة الجانبية والمودالز البسيطة
 document.getElementById('openDrawer')?.addEventListener('click', () => { document.getElementById('stagesDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('active'); document.body.style.overflow='hidden'; });
-function closeDrawer() { document.getElementById('stagesDrawer')?.classList.remove('open'); document.getElementById('drawerOverlay')?.classList.remove('active'); document.body.style.overflow=''; }
+window.closeDrawer = function() { document.getElementById('stagesDrawer')?.classList.remove('open'); document.getElementById('drawerOverlay')?.classList.remove('active'); document.body.style.overflow=''; };
 document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
 
 document.getElementById('btnParentLogin')?.addEventListener('click', () => { const p = document.getElementById('parentStudentPhone').value; if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; else alert("رقم غير صحيح"); });
 
+// ==========================================
+// 2. زرار المود (Dark/Light) وتغيير خلفية الـ Lottie
+// ==========================================
 const themeBtn = document.getElementById('themeToggleBtn');
+const heroLottieBg = document.getElementById('heroLottieBg');
+const heroOverlayColor = document.getElementById('heroOverlayColor');
+
+const dayLottieUrl = "https://lottie.host/734c5688-df0e-4ff7-b648-fb9e2fdebc62/Lg91zXv8Uv.json"; 
+const nightLottieUrl = "https://lottie.host/80e3da11-dfab-40a2-9b24-9ad9828e1c66/hT9s76G5R2.json"; 
+
+function applyThemeColors(isDark) {
+    if (heroLottieBg) heroLottieBg.src = isDark ? nightLottieUrl : dayLottieUrl;
+    if (heroOverlayColor) heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255, 255, 255, 0.7)';
+}
+
 if(themeBtn) {
     const icon = themeBtn.querySelector('i');
-    if(localStorage.getItem('theme')==='dark') { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
+    const isDark = localStorage.getItem('theme') === 'dark';
+    
+    if(isDark) { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
+    applyThemeColors(isDark);
+
     themeBtn.addEventListener('click', () => {
-        if(document.body.getAttribute('data-theme')==='dark') { document.body.removeAttribute('data-theme'); localStorage.setItem('theme','light'); icon.classList.replace('fa-sun','fa-moon'); }
-        else { document.body.setAttribute('data-theme','dark'); localStorage.setItem('theme','dark'); icon.classList.replace('fa-moon','fa-sun'); }
+        const currentlyDark = document.body.getAttribute('data-theme') === 'dark';
+        if(currentlyDark) { 
+            document.body.removeAttribute('data-theme'); localStorage.setItem('theme','light'); 
+            icon.classList.replace('fa-sun','fa-moon'); applyThemeColors(false);
+        } else { 
+            document.body.setAttribute('data-theme','dark'); localStorage.setItem('theme','dark'); 
+            icon.classList.replace('fa-moon','fa-sun'); applyThemeColors(true);
+        }
     });
 }
 
@@ -87,7 +110,7 @@ if(themeBtn) {
 document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', () => {
     const term = document.getElementById('searchTeacherInput').value.trim().toLowerCase();
     document.getElementById('searchTeacherModal').classList.remove('active');
-    document.getElementById('viewAllTeachersBtn').click(); // فرد الشبكة
+    document.getElementById('viewAllTeachersBtn').click(); 
     setTimeout(() => {
         document.querySelectorAll('.modern-teacher-card').forEach(card => {
             const name = card.querySelector('h3').innerText.toLowerCase();
@@ -98,7 +121,7 @@ document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', ()
 });
 
 // ==========================================
-// 2. الفلترة المزدوجة (المراحل الفرعية)
+// 3. الفلترة المزدوجة (المراحل الفرعية)
 // ==========================================
 const subStagesMap = {
     'ابتدائي': ['الأول الابتدائي', 'الثاني الابتدائي', 'الثالث الابتدائي', 'الرابع الابتدائي', 'الخامس الابتدائي', 'السادس الابتدائي'],
@@ -138,36 +161,65 @@ function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
                     });
                     subContainer.style.display = 'flex';
                 }
-                onFilterCallback(mainFilter); // تصفية عامة للمرحلة الأول
+                onFilterCallback(mainFilter); 
             }
         });
     });
 }
 
 // ==========================================
-// 3. المدرسين: دوائر، سلايدر، وفلاتر
+// 4. المدرسين: دوائر الجانبية، كروت 3D، سلايدر عادي
 // ==========================================
 let allTeachersData = [];
 let teachersSwiperInstance = null;
+let hero3DSwiperInstance = null; 
 
 async function fetchTeachers() {
     try {
         const snap = await getDocs(collection(db, "teachers"));
         if(snap.empty) return;
         
-        const grid = document.getElementById('teachersGrid');
-        const avatarsRow = document.getElementById('teachersAvatarsRow');
-        let html = ''; let avHtml = '';
+        const sidebarAvatars = document.getElementById('sidebarTeachersAvatars');
+        const hero3DGrid = document.getElementById('heroTeachers3DGrid');
+        
+        let avHtml = ''; 
+        let hero3DHtml = '';
         
         snap.forEach(doc => {
             const t = { id: doc.id, ...doc.data() };
             allTeachersData.push(t);
             
-            // الدوائر
-            avHtml += `<img src="${t.imageUrl}" class="teacher-avatar-circle" title="${t.name}" onclick="openTeacherCourses('${t.name}')">`;
+            // دوائر القائمة الجانبية
+            avHtml += `<img src="${t.imageUrl}" title="${t.name}" onclick="openTeacherCourses('${t.name}'); closeDrawer();" style="width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--primary-color); cursor: pointer; flex-shrink: 0; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">`;
+            
+            // كروت الـ 3D
+            hero3DHtml += `
+            <div class="swiper-slide">
+                <div class="hero-slide-card" onclick="openTeacherCourses('${t.name}')">
+                    <img src="${t.imageUrl}" alt="${t.name}">
+                    <div class="hero-slide-info">
+                        <h4 style="margin: 0 0 5px 0; font-weight: 900; font-size: 20px;">${t.name}</h4>
+                        <span style="background: var(--primary-color); padding: 3px 10px; border-radius: 6px; font-size: 13px; font-weight: bold;">${t.subject}</span>
+                    </div>
+                </div>
+            </div>`;
         });
         
-        if(avatarsRow) avatarsRow.innerHTML = avHtml;
+        if(sidebarAvatars) sidebarAvatars.innerHTML = avHtml;
+        if(hero3DGrid) {
+            hero3DGrid.innerHTML = hero3DHtml;
+            // تشغيل تأثير الـ Cards
+            if(typeof Swiper !== 'undefined') {
+                hero3DSwiperInstance = new Swiper('.hero-3d-slider', {
+                    effect: 'cards',
+                    grabCursor: true,
+                    loop: true,
+                    autoplay: { delay: 2500, disableOnInteraction: false },
+                    cardsEffect: { perSlideOffset: 10, perSlideRotate: 3, rotate: true, slideShadows: true }
+                });
+            }
+        }
+        
         renderTeachers('all');
     } catch(e) {}
 }
@@ -224,7 +276,7 @@ document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => 
 });
 
 // ==========================================
-// 4. الباقات: تصميم زجاجي وفلاتر مزدوجة
+// 5. الباقات: تصميم زجاجي وفلاتر مزدوجة
 // ==========================================
 let allPackagesData = [];
 async function fetchPackages() {
@@ -267,7 +319,7 @@ fetchPackages();
 setupNestedFilters('packagesMainFilters', 'packagesSubFilters', renderPackages);
 
 // ==========================================
-// 5. الحصص (الأحدث والأكثر مشاهدة)
+// 6. الحصص (الأحدث والأكثر مشاهدة)
 // ==========================================
 async function fetchCoursesSliders() {
     try {
@@ -275,7 +327,6 @@ async function fetchCoursesSliders() {
         let allC = [];
         snap.forEach(d => allC.push({id: d.id, ...d.data()}));
         
-        // الأحدث
         let latest = [...allC].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 6);
         let top = [...allC].sort((a,b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
 
@@ -302,7 +353,7 @@ async function fetchCoursesSliders() {
 fetchCoursesSliders();
 
 // ==========================================
-// 6. نظام الشراء وإضافة الكورسات المضمون 100%
+// 7. نظام الشراء وإضافة الكورسات المضمون 100%
 // ==========================================
 window.currentViewingTeacher = "";
 window.pendingCourseId = null;
@@ -376,7 +427,7 @@ window.buyCourseAction = async function(courseId, price, title) {
         const userData = userSnap.docs[0].data();
         window.currentUserId = userSnap.docs[0].id;
         window.currentUserBalance = parseInt(userData.walletBalance) || 0;
-        window.currentUserCourses = userData.myCourses || []; // جبنا الكورسات اللي معاه
+        window.currentUserCourses = userData.myCourses || []; 
 
         window.pendingCourseId = courseId;
         window.pendingCoursePrice = parseInt(price) || 0;
@@ -392,7 +443,6 @@ window.buyCourseAction = async function(courseId, price, title) {
     } catch (e) {} finally { btn.innerHTML = originalText; btn.disabled = false; }
 }
 
-// دالة تحديث الطالب باحترافية (عشان الكورس يسمع 100%)
 async function executePurchaseAndAddCourse(newBalance) {
     if(!window.currentUserCourses.includes(window.pendingCourseId)) {
         window.currentUserCourses.push(window.pendingCourseId);
