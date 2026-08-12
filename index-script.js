@@ -65,30 +65,34 @@ async function fetchStudentNavData(phone) {
     } catch (e) { console.error(e); }
 }
 
-// القائمة الجانبية والمود والمودالز البسيطة
+// القائمة الجانبية
 document.getElementById('openDrawer')?.addEventListener('click', () => { document.getElementById('stagesDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('active'); document.body.style.overflow='hidden'; });
 function closeDrawer() { document.getElementById('stagesDrawer')?.classList.remove('open'); document.getElementById('drawerOverlay')?.classList.remove('active'); document.body.style.overflow=''; }
 document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
-
 document.getElementById('btnParentLogin')?.addEventListener('click', () => { const p = document.getElementById('parentStudentPhone').value; if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; else alert("رقم غير صحيح"); });
 
 // ==========================================
-// 2. زرار المود وتغيير خلفية Lottie (الصحرا والقمر)
+// 2. زرار المود وتغيير خلفية Lottie (الصحرا والقمر) 🚨 حل الإيرور 🚨
 // ==========================================
 const themeBtn = document.getElementById('themeToggleBtn');
 const heroLottieBg = document.getElementById('heroLottieBg');
 const heroOverlayColor = document.getElementById('heroOverlayColor');
 
-// 🔥 لينكات Lottie شغالة 100% (من عندي) 🔥
-const dayLottieUrl = "https://assets9.lottiefiles.com/packages/lf20_U25Y1T.json"; // نهار وشمس وغيوم متحركة
-const nightLottieUrl = "https://assets3.lottiefiles.com/packages/lf20_yq3zchlw.json"; // ليل وقمر ونجوم
+// لينكات شغالة 100%
+const dayLottieUrl = "https://assets9.lottiefiles.com/packages/lf20_U25Y1T.json"; 
+const nightLottieUrl = "https://assets3.lottiefiles.com/packages/lf20_yq3zchlw.json"; 
 
 function applyThemeColors(isDark) {
     if (heroLottieBg) {
-        heroLottieBg.setAttribute("src", isDark ? nightLottieUrl : dayLottieUrl);
+        const targetUrl = isDark ? nightLottieUrl : dayLottieUrl;
+        try {
+            heroLottieBg.load(targetUrl); // الدالة الرسمية لمكتبة lottie-player
+        } catch(e) {
+            heroLottieBg.setAttribute("src", targetUrl); // كاحتياطي
+        }
     }
     if (heroOverlayColor) {
-        heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(255, 255, 255, 0.1)';
+        heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255, 255, 255, 0.4)';
     }
 }
 
@@ -97,7 +101,9 @@ if(themeBtn) {
     const isDark = document.body.getAttribute('data-theme') === 'dark' || localStorage.getItem('theme') === 'dark';
     
     if(isDark) { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
-    applyThemeColors(isDark);
+    
+    // تشغيل الأنيميشن أول ما يفتح
+    setTimeout(() => { applyThemeColors(isDark); }, 100);
 
     themeBtn.addEventListener('click', () => {
         const currentlyDark = document.body.getAttribute('data-theme') === 'dark';
@@ -110,6 +116,21 @@ if(themeBtn) {
         }
     });
 }
+
+// بحث المدرسين
+document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', () => {
+    const term = document.getElementById('searchTeacherInput').value.trim().toLowerCase();
+    document.getElementById('searchTeacherModal').classList.remove('active');
+    document.getElementById('viewAllTeachersBtn').click();
+    setTimeout(() => {
+        document.querySelectorAll('.modern-teacher-card').forEach(card => {
+            const name = card.querySelector('h3').innerText.toLowerCase();
+            card.parentElement.style.display = name.includes(term) ? 'block' : 'none';
+        });
+        document.getElementById('teachersSection').scrollIntoView({behavior: 'smooth'});
+    }, 500);
+});
+
 // ==========================================
 // 3. الفلترة المزدوجة (المراحل الفرعية)
 // ==========================================
@@ -158,7 +179,7 @@ function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
 }
 
 // ==========================================
-// 4. المدرسين: سلايدر Fade والمدرس المفرغ
+// 4. المدرسين: سلايدر Fade والمدرس المفرغ 🚨
 // ==========================================
 let allTeachersData = [];
 let teachersSwiperInstance = null;
@@ -176,10 +197,10 @@ async function fetchTeachers() {
             const t = { id: doc.id, ...doc.data() };
             allTeachersData.push(t);
             
-            // سلايدر الـ Hero الـ Fade المفرغ مع أيقونة الـ Glow
+            // سلايدر הـ Hero الـ Fade المفرغ مع أيقونة الـ Glow
             heroFadeHtml += `
             <div class="swiper-slide hero-slide-fade" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
-                <div class="teacher-glow-bg"></div> <!-- الأيقونة المضيئة ورا المدرس -->
+                <div class="teacher-glow-bg"></div>
                 <img src="${t.imageUrl}" alt="${t.name}" class="teacher-fade-png">
                 <h4 class="hero-teacher-name">${t.name}</h4>
                 <span class="hero-teacher-subject">${t.subject}</span>
@@ -194,13 +215,13 @@ async function fetchTeachers() {
                     fadeEffect: { crossFade: true },
                     grabCursor: true,
                     loop: true,
-                    autoplay: { delay: 2500, disableOnInteraction: false }
+                    autoplay: { delay: 3000, disableOnInteraction: false }
                 });
             }
         }
         
         renderTeachers('all');
-    } catch(e) {}
+    } catch(e) { console.error("Error loading teachers:", e); }
 }
 
 function renderTeachers(filterText) {
@@ -306,7 +327,6 @@ async function fetchCoursesSliders() {
         let allC = [];
         snap.forEach(d => allC.push({id: d.id, ...d.data()}));
         
-        // الأحدث
         let latest = [...allC].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 6);
         let top = [...allC].sort((a,b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
 
