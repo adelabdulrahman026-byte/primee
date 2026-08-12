@@ -98,7 +98,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .modern-table th { background: var(--input-bg); font-weight: 900; font-size: 16px; }
 
 /* ==========================================================================
-   5. الصفحة الرئيسية (الـ Hero Section)
+   5. الصفحة الرئيسية (الـ Hero Section وسلايدر الـ PNG) 🔥🔥🔥
 ========================================================================== */
 .hero-section { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 50px auto; padding: 0 20px; gap: 40px; }
 .hero-content { flex: 1; }
@@ -112,13 +112,43 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .btn-secondary-hero { text-decoration: none; background: var(--bg-card); color: var(--text-main); border: 2px solid var(--input-border); padding: 15px 30px; border-radius: 12px; font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 10px; }
 .btn-secondary-hero:hover { border-color: var(--primary-color); color: var(--primary-color); }
 .hero-image { flex: 1; display: flex; justify-content: center; position: relative; }
-.animated-logo-container { position: relative; width: 100%; max-width: 350px; height: 350px; display: flex; justify-content: center; align-items: center; margin: 0 auto; }
-.main-animated-logo { width: 100%; max-width: 280px; height: auto; filter: drop-shadow(0 20px 30px rgba(91, 33, 182, 0.2)); animation: smoothFloat 4s ease-in-out infinite alternate; }
-@keyframes smoothFloat { 0% { transform: translateY(0px) scale(1); } 100% { transform: translateY(-20px) scale(1.02); } }
-.floating-badge { position: absolute; background: var(--bg-card); padding: 12px 20px; border-radius: 15px; font-weight: 800; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; color: var(--text-main); animation: float 3s ease-in-out infinite alternate; border: 1px solid var(--input-border);}
-.floating-badge i { color: var(--primary-color); font-size: 20px; }
-.badge-1 { top: 20px; right: -30px; animation-delay: 0s; }
-.badge-2 { bottom: 30px; left: -40px; animation-delay: 1s; }
+
+/* 🌟 سلايدر المدرسين הـ PNG الشفاف تماماً 🌟 */
+.hero-3d-slider { width: 380px; height: 500px; z-index: 10; overflow: visible; padding-top: 20px; }
+
+.swiper-slide.hero-slide-transparent {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+    padding-bottom: 10px;
+}
+
+/* صورة المدرس المفرغة */
+.teacher-png {
+    width: 100%; height: 100%; max-height: 400px; object-fit: contain; object-position: bottom;
+    filter: drop-shadow(0px 10px 20px rgba(0,0,0,0.3)); /* ظل يدي للصورة عمق 3D */
+    z-index: 2; transition: 0.4s; margin-bottom: -15px;
+}
+.hero-slide-transparent:hover .teacher-png { transform: scale(1.05) translateY(-10px); filter: drop-shadow(0px 15px 25px rgba(0,0,0,0.5)); }
+
+/* تأثير السحابة اللي المدرس طالع منها (بتاخد لون الخلفية عشان تندمج) */
+.cloud-fade {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 30%;
+    background: linear-gradient(to top, var(--bg-body) 10%, transparent 100%);
+    z-index: 3; pointer-events: none;
+}
+
+/* اسم المدرس والمادة */
+.hero-teacher-name {
+    color: var(--text-main); font-size: 38px; font-weight: 900; margin: 0;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 5; font-family: 'Cairo', sans-serif;
+}
+.hero-teacher-subject {
+    background: var(--primary-color, #6d28d9); color: white; padding: 6px 30px;
+    border-radius: 25px; font-size: 18px; font-weight: 900;
+    box-shadow: 0 5px 15px rgba(109, 40, 217, 0.4); display: inline-block; z-index: 5; margin-top: 5px;
+}
 
 /* ==========================================================================
    6. التصميمات الجديدة (الفلاتر، المدرسين، الباقات، والحصص)
@@ -146,7 +176,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .teacher-avatar-circle { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--primary-color); cursor: pointer; object-fit: cover; transition: 0.3s; flex-shrink: 0; box-shadow: 0 5px 15px rgba(0,0,0,0.1); padding: 3px; background: var(--bg-card); }
 .teacher-avatar-circle:hover { transform: scale(1.1); box-shadow: 0 8px 25px rgba(91,33,182,0.4); border-color: #f59e0b; }
 
-/* تأثير السلايدر الـ 3D للمدرسين (Coverflow) */
+/* تأثير السلايدر الـ 3D لـ (نخبة المدرسين) اللي تحت */
 .teachers-section { max-width: 1200px; margin: 80px auto; padding: 0 20px; }
 .teachers-slider { padding: 40px 0 60px 0 !important; overflow: hidden; }
 .teachers-slider .swiper-slide { width: 320px; height: 320px; opacity: 0.4; transition: opacity 0.3s ease; border-radius: 20px; overflow: hidden; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
@@ -364,10 +394,17 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
 @media (max-width: 991px) {
     .main-navbar { padding: 15px 20px; }
     .nav-links, .btn-nav-login, .btn-nav-signup, .theme-toggle { display: none; }
+    
+    /* تظبيط الموبايل للـ Hero الجديد والمدرسين الشفافين */
     .hero-section { flex-direction: column-reverse; text-align: center; margin: 30px auto; gap: 30px; }
     .hero-content h1 { font-size: 35px; }
     .hero-buttons { flex-direction: column; }
     .btn-primary-hero, .btn-secondary-hero { justify-content: center; }
+    
+    .hero-3d-slider { width: 280px; height: 400px; }
+    .hero-teacher-name { font-size: 28px; }
+    .hero-teacher-subject { font-size: 15px; padding: 5px 20px; }
+    
     .animated-logo-container { max-width: 250px; height: 250px; }
     .main-animated-logo { max-width: 200px; }
     .creative-tip-card { flex-direction: column-reverse; text-align: center; padding: 40px 20px 30px; gap: 20px; }
@@ -405,16 +442,4 @@ input:focus, select:focus { outline: none; border-color: var(--primary-color); b
     .modern-table { display: block; overflow-x: auto; white-space: nowrap; }
     
     .teachers-grid-active .swiper-wrapper { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important; }
-}
-/* كروت المدرسين في الـ Hero */
-.hero-3d-slider { border-radius: 20px; overflow: visible; }
-.hero-slide-card {
-    width: 100%; height: 100%; border-radius: 20px; overflow: hidden;
-    position: relative; box-shadow: 0 15px 35px rgba(0,0,0,0.3); cursor: pointer;
-}
-.hero-slide-card img { width: 100%; height: 100%; object-fit: cover; }
-.hero-slide-info {
-    position: absolute; bottom: 0; left: 0; width: 100%; padding: 30px 15px 15px;
-    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-    color: #fff; text-align: center;
 }
