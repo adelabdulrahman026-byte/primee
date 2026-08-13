@@ -8,142 +8,150 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://lottie.host/6bc24f6a-10be-40e0-b7e2-7b0fc44e2512/zP2Kc77nro.lottie.json"></script>
 
-    <!-- ستايل الشخصية التفاعلية (Peekaboo) والـ Micro-interactions -->
+    <!-- ستايل الصفحة والشخصية التفاعلية مدمج هنا عشان ميبوظش -->
     <style>
-        /* ==================== تصميم الدب التفاعلي (Interactive Mascot) ==================== */
-        .mascot-wrapper {
+        /* ==================== تنسيق الهيكل الأساسي (اللاب توب والموبايل) ==================== */
+        body {
+            background-color: var(--bg-body, #f4f7f6);
+            color: var(--text-main, #1e293b);
             display: flex;
             justify-content: center;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .bear-head {
-            width: 100px;
-            height: 100px;
-            background: #ffffff;
-            border-radius: 50%;
-            position: relative;
-            border: 3px solid #cbd5e1;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease;
-        }
-
-        .bear-ear {
-            width: 32px;
-            height: 32px;
-            background: var(--primary-color, #3b82f6);
-            border-radius: 50%;
-            position: absolute;
-            top: -5px;
-            z-index: -1;
-            border: 3px solid #cbd5e1;
-        }
-        .bear-ear.left { left: -5px; }
-        .bear-ear.right { right: -5px; }
-
-        .bear-eye {
-            width: 24px;
-            height: 24px;
-            background: #f8fafc;
-            border: 3px solid #334155;
-            border-radius: 50%;
-            position: absolute;
-            top: 35px;
-            display: flex;
             align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        .bear-eye.left { left: 18px; }
-        .bear-eye.right { right: 18px; }
-
-        .bear-pupil {
-            width: 12px;
-            height: 12px;
-            background: #0f172a;
-            border-radius: 50%;
-            transition: transform 0.1s ease-out;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Cairo', sans-serif;
         }
 
-        .bear-nose {
-            width: 14px;
-            height: 10px;
-            background: #334155;
-            border-radius: 50%;
-            position: absolute;
-            top: 55px;
-            left: 50%;
-            transform: translateX(-50%);
+        .split-container { 
+            display: flex; 
+            flex-direction: row; 
+            background: var(--bg-card, #ffffff); 
+            border-radius: 24px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05); 
+            overflow: hidden; 
+            width: 100%; 
+            max-width: 1000px; 
+            min-height: 600px; 
+            margin: auto; 
+            border: 1px solid var(--input-border, #cbd5e1); 
         }
-
-        .bear-hand {
-            width: 35px;
-            height: 40px;
-            background: #ffffff;
-            border: 3px solid #cbd5e1;
-            border-radius: 20px;
-            position: absolute;
-            bottom: -30px; /* مخفية تحت */
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1.2);
-            z-index: 5;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        
+        .brand-side { 
+            flex: 1; 
+            padding: 40px; 
+            background: linear-gradient(135deg, var(--primary-color, #5b21b6), var(--primary-hover, #4c1d95)); 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center; 
         }
-        .bear-hand.left { left: 10px; }
-        .bear-hand.right { right: 10px; }
-
-        /* حالة الاستغماية (تغطية العيون) */
-        .mascot-wrapper.hide-eyes .bear-hand.left {
-            bottom: 20px;
-            left: 15px;
-            transform: rotate(30deg);
+        .brand-side img { max-width: 80%; margin-bottom: 20px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2)); }
+        .brand-side h2 { margin: 0 0 10px 0; font-weight: 900; font-size: 28px; }
+        .brand-side p { margin: 0; font-size: 16px; opacity: 0.9; }
+        
+        .form-side { 
+            flex: 1.2; 
+            padding: 50px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            background: var(--bg-card, #ffffff); 
         }
-        .mascot-wrapper.hide-eyes .bear-hand.right {
-            bottom: 20px;
-            right: 15px;
-            transform: rotate(-30deg);
+        
+        .form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .form-header h3 { margin: 0; color: var(--primary-color, #5b21b6); font-size: 28px; font-weight: 900; }
+        
+        .form-group { margin-bottom: 15px; text-align: right; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 700; color: var(--text-main, #1e293b); font-size: 14px; }
+        .form-group input { 
+            width: 100%; 
+            padding: 15px; 
+            border: 1px solid var(--input-border, #cbd5e1); 
+            border-radius: 12px; 
+            background: var(--input-bg, #f8fafc); 
+            font-family: 'Cairo', sans-serif; 
+            color: var(--text-main, #1e293b); 
+            font-size: 14px; 
+            outline: none; 
+            transition: 0.3s;
+            box-sizing: border-box;
         }
-
-        /* ==================== Micro-interactions للحقول والزرار ==================== */
-        .form-group input {
-            transition: all 0.3s ease;
-        }
-        .form-group input:focus {
+        .form-group input:focus { 
             transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(59, 130, 246, 0.15);
-            border-color: var(--primary-color, #3b82f6);
+            box-shadow: 0 8px 15px rgba(91, 33, 182, 0.15);
+            border-color: var(--primary-color, #5b21b6); 
         }
 
-        .btn-submit {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .btn-submit { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--primary-color, #5b21b6); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            margin-top: 10px; 
             position: relative;
             overflow: hidden;
             z-index: 1;
-            cursor: pointer;
         }
-        .btn-submit:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        .btn-submit:hover { 
+            background: var(--primary-hover, #4c1d95); 
+            transform: translateY(-3px); 
+            box-shadow: 0 10px 20px rgba(91,33,182,0.3);
         }
-        .btn-submit:active {
-            transform: translateY(1px);
-        }
-        /* لمعة خفيفة بتعدي على الزرار */
+        .btn-submit:active { transform: translateY(1px); }
         .btn-submit::after {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 50%; height: 100%;
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
             background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
-            transform: skewX(-20deg);
-            z-index: -1;
-            transition: 0.5s;
+            transform: skewX(-20deg); z-index: -1; transition: 0.5s;
         }
-        .btn-submit:hover::after {
-            left: 150%;
-            transition: 0.7s ease-in-out;
+        .btn-submit:hover::after { left: 150%; transition: 0.7s ease-in-out; }
+
+        /* نوافذ التنبيهات */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 9999; opacity: 0; visibility: hidden; backdrop-filter: blur(4px); transition: 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content { background: var(--bg-card, #fff); padding: 30px; border-radius: 24px; text-align: center; width: 90%; max-width: 400px; transform: scale(0.9); transition: 0.3s; border: 1px solid var(--input-border, #cbd5e1); box-shadow: 0 20px 40px rgba(0,0,0,0.2);}
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-content h3 { color: #ef4444; margin: 0 0 10px 0; font-size: 22px; font-weight: 900; }
+        .modal-content p { color: var(--text-muted, #64748b); margin-bottom: 25px; font-size: 15px; font-weight: 600; }
+        .btn-close-modal { background: var(--primary-color, #5b21b6); color: #fff; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s;}
+        .btn-close-modal:hover { background: var(--primary-hover, #4c1d95); transform: translateY(-2px); }
+
+        /* ==================== تظبيط الموبايل الصارم ==================== */
+        @media (max-width: 991px) {
+            body { padding: 15px; }
+            .split-container { flex-direction: column !important; min-height: auto !important; border-radius: 20px !important; margin: 0 !important; width: 100% !important;}
+            .brand-side { padding: 30px 20px !important; }
+            .brand-side img { max-width: 150px !important; }
+            .brand-side h2 { font-size: 22px !important; }
+            .form-side { padding: 30px 20px !important; }
+            .form-header h3 { font-size: 24px !important; }
+            .two-cols { flex-direction: column !important; gap: 0 !important; }
         }
+
+        /* ==================== تصميم الدب التفاعلي (Interactive Mascot) ==================== */
+        .mascot-wrapper { display: flex; justify-content: center; margin-bottom: 20px; position: relative; z-index: 10; }
+        .bear-head { width: 100px; height: 100px; background: #ffffff; border-radius: 50%; position: relative; border: 3px solid #cbd5e1; box-shadow: 0 10px 25px rgba(0,0,0,0.05); transition: transform 0.3s ease; }
+        .bear-ear { width: 32px; height: 32px; background: var(--primary-color, #3b82f6); border-radius: 50%; position: absolute; top: -5px; z-index: -1; border: 3px solid #cbd5e1; }
+        .bear-ear.left { left: -5px; }
+        .bear-ear.right { right: -5px; }
+        .bear-eye { width: 24px; height: 24px; background: #f8fafc; border: 3px solid #334155; border-radius: 50%; position: absolute; top: 35px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .bear-eye.left { left: 18px; }
+        .bear-eye.right { right: 18px; }
+        .bear-pupil { width: 12px; height: 12px; background: #0f172a; border-radius: 50%; transition: transform 0.1s ease-out; }
+        .bear-nose { width: 14px; height: 10px; background: #334155; border-radius: 50%; position: absolute; top: 55px; left: 50%; transform: translateX(-50%); }
+        .bear-hand { width: 35px; height: 40px; background: #ffffff; border: 3px solid #cbd5e1; border-radius: 20px; position: absolute; bottom: -30px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1.2); z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .bear-hand.left { left: 10px; }
+        .bear-hand.right { right: 10px; }
+        .mascot-wrapper.hide-eyes .bear-hand.left { bottom: 20px; left: 15px; transform: rotate(30deg); }
+        .mascot-wrapper.hide-eyes .bear-hand.right { bottom: 20px; right: 15px; transform: rotate(-30deg); }
     </style>
 </head>
 <body>
@@ -165,7 +173,7 @@
         <div class="form-side">
             <div class="form-header">
                 <h3>تسجيل الدخول</h3>
-                <button class="theme-toggle" id="themeBtn" title="تغيير المظهر">🌙</button>
+                <button class="theme-toggle" id="themeBtn" title="تغيير المظهر" style="background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; color: var(--text-main);">🌙</button>
             </div>
 
             <!-- الشخصية التفاعلية (Mascot) -->
@@ -203,7 +211,7 @@
             </form>
             
             <p style="text-align: center; margin-top: 20px; color: var(--text-muted);">
-                ليس لديك حساب؟ <a href="register.html" style="color: var(--primary-color); font-weight: 800;">سجل الآن</a>
+                ليس لديك حساب؟ <a href="register.html" style="color: var(--primary-color); font-weight: 800; text-decoration: none;">سجل الآن</a>
             </p>
         </div>
     </div>
@@ -217,7 +225,7 @@
         </div>
     </div>
 
-    <!-- سكربت التحكم في حركة الشخصية فقط (بدون التدخل في فورم الدخول) -->
+    <!-- سكربت التحكم في حركة الشخصية -->
     <script>
         const phoneInput = document.getElementById('loginPhone');
         const passInput = document.getElementById('loginPassword');
@@ -225,56 +233,31 @@
         const pupils = document.querySelectorAll('.bear-pupil');
         const togglePassword = document.getElementById('togglePassword');
 
-        // 1. حركة العيون مع رقم التليفون
         phoneInput.addEventListener('input', (e) => {
             let textLength = e.target.value.length;
             let moveX = Math.min(Math.max(textLength * 1.5 - 8, -8), 8); 
-            pupils.forEach(pupil => {
-                pupil.style.transform = `translateX(${moveX}px)`;
-            });
+            pupils.forEach(pupil => { pupil.style.transform = `translateX(${moveX}px)`; });
         });
 
-        // 2. نزول العيون عند التركيز على الرقم
-        phoneInput.addEventListener('focus', () => {
-            pupils.forEach(pupil => {
-                pupil.style.transform = `translateY(4px)`;
-            });
-        });
+        phoneInput.addEventListener('focus', () => { pupils.forEach(pupil => { pupil.style.transform = `translateY(4px)`; }); });
+        phoneInput.addEventListener('blur', () => { pupils.forEach(pupil => { pupil.style.transform = `translate(0px, 0px)`; }); });
 
-        // 3. رجوع العيون للمنتصف
-        phoneInput.addEventListener('blur', () => {
-            pupils.forEach(pupil => {
-                pupil.style.transform = `translate(0px, 0px)`;
-            });
-        });
-
-        // 4. تغمية العيون عند التركيز على الباسورد
         function handlePeekaboo() {
-            if (passInput.getAttribute('type') === 'password') {
-                mascot.classList.add('hide-eyes');
-            }
+            if (passInput.getAttribute('type') === 'password') { mascot.classList.add('hide-eyes'); }
         }
         passInput.addEventListener('focus', handlePeekaboo);
         passInput.addEventListener('input', handlePeekaboo);
+        passInput.addEventListener('blur', () => { mascot.classList.remove('hide-eyes'); });
 
-        passInput.addEventListener('blur', () => {
-            mascot.classList.remove('hide-eyes');
-        });
-
-        // 5. التفاعل مع أيقونة إظهار الباسورد
         togglePassword.addEventListener('click', () => {
             const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passInput.setAttribute('type', type);
-            
-            if (type === 'text') {
-                mascot.classList.remove('hide-eyes');
-            } else if (document.activeElement === passInput) {
-                mascot.classList.add('hide-eyes');
-            }
+            if (type === 'text') { mascot.classList.remove('hide-eyes'); } 
+            else if (document.activeElement === passInput) { mascot.classList.add('hide-eyes'); }
         });
     </script>
 
-    <!-- ملف السكربت الأساسي بتاعك (بيشتغل براحته ومفيش حاجة هتعطله) -->
+    <!-- ملف السكربت الأساسي بتاعك -->
     <script src="login-script.js?v=2" type="module"></script>
 </body>
 </html>
