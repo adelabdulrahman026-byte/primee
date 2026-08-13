@@ -4,28 +4,145 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إنشاء حساب جديد طالب - Primee Academy</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+    <!-- ستايل الصفحة مدمج هنا عشان ميبوظش أبداً -->
     <style>
-        .file-upload.required-upload { border: 2px dashed #ef4444; background: rgba(239, 68, 68, 0.05); }
-        .file-upload.success-upload { border: 2px solid #10b981; background: rgba(16, 185, 129, 0.05); color: #10b981; }
+        /* ==================== تنسيق الهيكل الأساسي (اللاب توب والموبايل) ==================== */
+        body {
+            background-color: var(--bg-body, #f4f7f6);
+            color: var(--text-main, #1e293b);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .split-container { 
+            display: flex; 
+            flex-direction: row; 
+            background: var(--bg-card, #ffffff); 
+            border-radius: 24px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05); 
+            overflow: hidden; 
+            width: 100%; 
+            max-width: 1000px; 
+            min-height: 600px; 
+            margin: auto; 
+            border: 1px solid var(--input-border, #cbd5e1); 
+        }
+        
+        .brand-side { 
+            flex: 1; 
+            padding: 40px; 
+            background: linear-gradient(135deg, var(--primary-color, #5b21b6), var(--primary-hover, #4c1d95)); 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center; 
+        }
+        .brand-side img { max-width: 150px; margin-bottom: 20px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2)); }
+        .brand-side h2 { margin: 0 0 10px 0; font-weight: 900; font-size: 28px; }
+        .brand-side p { margin: 0; font-size: 16px; opacity: 0.9; margin-bottom: 20px;}
+        
+        .form-side { 
+            flex: 1.2; 
+            padding: 40px 50px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            background: var(--bg-card, #ffffff); 
+        }
+        
+        .form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .form-header h3 { margin: 0; color: var(--primary-color, #5b21b6); font-size: 26px; font-weight: 900; }
+        
+        .two-cols { display: flex; gap: 15px; width: 100%; }
+        .form-group { margin-bottom: 15px; text-align: right; flex: 1; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 700; color: var(--text-main, #1e293b); font-size: 13px; }
+        .form-group input, .form-group select { 
+            width: 100%; 
+            padding: 12px 15px; 
+            border: 1px solid var(--input-border, #cbd5e1); 
+            border-radius: 12px; 
+            background: var(--input-bg, #f8fafc); 
+            font-family: 'Cairo', sans-serif; 
+            color: var(--text-main, #1e293b); 
+            font-size: 14px; 
+            outline: none; 
+            transition: 0.3s;
+            box-sizing: border-box;
+        }
+        .form-group input:focus, .form-group select:focus { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(91, 33, 182, 0.1);
+            border-color: var(--primary-color, #5b21b6); 
+        }
+
+        .btn-submit { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--primary-color, #5b21b6); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            margin-top: 10px; 
+        }
+        .btn-submit:hover { 
+            background: var(--primary-hover, #4c1d95); 
+            transform: translateY(-3px); 
+            box-shadow: 0 10px 20px rgba(91,33,182,0.3);
+        }
+
+        /* النوافذ المنبثقة */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 9999; opacity: 0; visibility: hidden; backdrop-filter: blur(4px); transition: 0.3s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content { background: var(--bg-card, #fff); padding: 30px; border-radius: 24px; text-align: center; width: 90%; max-width: 400px; transform: scale(0.9); transition: 0.3s; border: 1px solid var(--input-border, #cbd5e1); box-shadow: 0 20px 40px rgba(0,0,0,0.2);}
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-content h3 { margin: 0 0 10px 0; font-size: 22px; font-weight: 900; }
+        .modal-content p { color: var(--text-muted, #64748b); margin-bottom: 25px; font-size: 15px; font-weight: 600; }
+        .btn-close-modal { background: var(--primary-color, #5b21b6); color: #fff; border: none; padding: 12px 30px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s;}
+        .btn-close-modal:hover { background: var(--primary-hover, #4c1d95); transform: translateY(-2px); }
+
+        /* ==================== الموبايل ==================== */
+        @media (max-width: 991px) {
+            body { padding: 15px; }
+            .split-container { flex-direction: column !important; min-height: auto !important; border-radius: 20px !important; margin: 0 !important; width: 100% !important;}
+            .brand-side { padding: 30px 20px !important; }
+            .brand-side h2 { font-size: 22px !important; }
+            .brand-side lottie-player { height: 200px !important; }
+            .form-side { padding: 30px 20px !important; }
+            .form-header h3 { font-size: 22px !important; }
+            .two-cols { flex-direction: column !important; gap: 0 !important; }
+        }
     </style>
 </head>
 <body>
 
     <div class="split-container">
+        <!-- الجانب الأيمن -->
         <div class="brand-side">
             <img src="https://adelabdulrahman026-byte.github.io/primee/white%20logo.png" alt="Primee Text Logo">
             <h2>مرحباً بك في الأكاديمية 👋</h2>
             <p>سجل حسابك الآن وانضم لأفضل بيئة تعليمية تفاعلية.</p>
-            <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_z01bika0.json" background="transparent" speed="1" style="width: 100%; max-width: 350px; height: 350px;" loop autoplay></lottie-player>
+            <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_z01bika0.json" background="transparent" speed="1" style="width: 100%; max-width: 350px; height: 300px;" loop autoplay></lottie-player>
         </div>
 
+        <!-- الجانب الأيسر (الفورم) -->
         <div class="form-side">
             <div class="form-header">
                 <h3>إنشاء حساب جديد</h3>
-                <button class="theme-toggle" id="themeBtn" title="تغيير المظهر">🌙</button>
             </div>
 
             <form id="registerForm">
@@ -44,31 +161,74 @@
                         <input type="tel" id="parentPhone" placeholder="010..." required>
                     </div>
                 </div>
+                
                 <div class="form-group">
                     <label>كلمة المرور (الباسوورد)</label>
                     <input type="password" id="password" placeholder="أدخل كلمة مرور قوية للحساب" required>
                 </div>
+
                 <div class="two-cols">
                     <div class="form-group">
                         <label>المرحلة الدراسية</label>
-                        <select id="grade" required>
+                        <select id="grade" required style="font-weight: bold;">
                             <option value="" disabled selected>اختر المرحلة</option>
-                            <option value="prep1">الأول الإعدادي</option>
-                            <option value="prep2">الثاني الإعدادي</option>
-                            <option value="prep3">الثالث الإعدادي</option>
-                            <option value="sec1">الأول الثانوي</option>
-                            <option value="sec2">الثاني الثانوي</option>
-                            <option value="sec3">الثالث الثانوي (عام)</option>
+                            <optgroup label="المرحلة الابتدائية">
+                                <option value="الأول الابتدائي">الأول الابتدائي</option>
+                                <option value="الثاني الابتدائي">الثاني الابتدائي</option>
+                                <option value="الثالث الابتدائي">الثالث الابتدائي</option>
+                                <option value="الرابع الابتدائي">الرابع الابتدائي</option>
+                                <option value="الخامس الابتدائي">الخامس الابتدائي</option>
+                                <option value="السادس الابتدائي">السادس الابتدائي</option>
+                            </optgroup>
+                            <optgroup label="المرحلة الإعدادية">
+                                <option value="الأول الإعدادي">الأول الإعدادي</option>
+                                <option value="الثاني الإعدادي">الثاني الإعدادي</option>
+                                <option value="الثالث الإعدادي">الثالث الإعدادي</option>
+                            </optgroup>
+                            <optgroup label="المرحلة الثانوية">
+                                <option value="الأول الثانوي">الأول الثانوي</option>
+                                <option value="الثاني الثانوي">الثاني الثانوي</option>
+                                <option value="الثالث الثانوي">الثالث الثانوي</option>
+                            </optgroup>
+                            <optgroup label="البكالوريا">
+                                <option value="الأول بكالوريا">الأول بكالوريا</option>
+                                <option value="الثاني بكالوريا">الثاني بكالوريا</option>
+                                <option value="الثالث بكالوريا">الثالث بكالوريا</option>
+                            </optgroup>
                         </select>
                     </div>
+                    
                     <div class="form-group">
                         <label>المحافظة</label>
-                        <select id="governorate" required>
+                        <select id="governorate" required style="font-weight: bold;">
                             <option value="" disabled selected>اختر المحافظة</option>
-                            <option value="cairo">القاهرة</option>
-                            <option value="alex">الإسكندرية</option>
-                            <option value="giza">الجيزة</option>
-                            <option value="other">أخرى</option>
+                            <option value="القاهرة">القاهرة</option>
+                            <option value="الإسكندرية">الإسكندرية</option>
+                            <option value="الجيزة">الجيزة</option>
+                            <option value="القليوبية">القليوبية</option>
+                            <option value="الدقهلية">الدقهلية</option>
+                            <option value="الشرقية">الشرقية</option>
+                            <option value="الغربية">الغربية</option>
+                            <option value="المنوفية">المنوفية</option>
+                            <option value="البحيرة">البحيرة</option>
+                            <option value="كفر الشيخ">كفر الشيخ</option>
+                            <option value="دمياط">دمياط</option>
+                            <option value="بورسعيد">بورسعيد</option>
+                            <option value="الإسماعيلية">الإسماعيلية</option>
+                            <option value="السويس">السويس</option>
+                            <option value="شمال سيناء">شمال سيناء</option>
+                            <option value="جنوب سيناء">جنوب سيناء</option>
+                            <option value="مطروح">مطروح</option>
+                            <option value="البحر الأحمر">البحر الأحمر</option>
+                            <option value="الوادي الجديد">الوادي الجديد</option>
+                            <option value="الفيوم">الفيوم</option>
+                            <option value="بني سويف">بني سويف</option>
+                            <option value="المنيا">المنيا</option>
+                            <option value="أسيوط">أسيوط</option>
+                            <option value="سوهاج">سوهاج</option>
+                            <option value="قنا">قنا</option>
+                            <option value="الأقصر">الأقصر</option>
+                            <option value="أسوان">أسوان</option>
                         </select>
                     </div>
                 </div>
@@ -76,15 +236,6 @@
                 <div class="form-group">
                     <label>العنوان بالتفصيل</label>
                     <input type="text" id="address" placeholder="المنطقة، الشارع، رقم العمارة..." required>
-                </div>
-
-                <!-- الصورة أصبحت إجبارية -->
-                <div class="form-group">
-                    <label>الصورة الشخصية (إجبارية لإتمام التسجيل) ⚠️</label>
-                    <div class="file-upload required-upload" id="uploadBtn" onclick="document.getElementById('profilePic').click()">
-                        <span id="uploadText">📷 اضغط هنا لرفع صورتك (إجباري)</span>
-                        <input type="file" id="profilePic" style="display: none;" accept="image/*">
-                    </div>
                 </div>
 
                 <button type="submit" class="btn-submit">إنشاء الحساب الآن</button>
@@ -98,8 +249,8 @@
     <!-- النوافذ المنبثقة -->
     <div class="modal-overlay" id="alertModal">
         <div class="modal-content">
-            <div class="modal-icon" style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i></div>
-            <h3 id="alertTitle">تنبيه</h3>
+            <div style="color: #ef4444; font-size: 45px; margin-bottom: 15px;"><i class="fas fa-exclamation-circle"></i></div>
+            <h3 id="alertTitle" style="color: #ef4444;">تنبيه</h3>
             <p id="alertMessage">رسالة التنبيه هنا</p>
             <button class="btn-close-modal" onclick="closeAlertModal()">حسناً</button>
         </div>
@@ -108,34 +259,27 @@
     <div class="modal-overlay" id="successModal">
         <div class="modal-content">
             <lottie-player src="https://assets10.lottiefiles.com/packages/lf20_lk80fpsm.json" background="transparent" speed="1" style="width: 150px; height: 150px; margin: 0 auto;" autoplay></lottie-player>
-            <h3>تم إنشاء الحساب بنجاح!</h3>
+            <h3 style="color: #10b981;">تم إنشاء الحساب بنجاح!</h3>
             <p>أهلاً بك يا بطل في Primee Academy 🚀</p>
-            <button class="btn-close-modal" onclick="window.location.href='login.html'">متابعة لتسجيل الدخول</button>
+            <button class="btn-close-modal" style="background: #10b981;" onclick="window.location.href='login.html'">متابعة لتسجيل الدخول</button>
         </div>
     </div>
-<!-- نافذة تأكيد الواتساب (OTP) -->
+
+    <!-- نافذة تأكيد الواتساب (OTP) -->
     <div class="modal-overlay" id="otpModal">
         <div class="modal-content" style="max-width: 400px; padding: 30px;">
-            <div class="modal-icon" style="color: #25d366; font-size: 45px; margin-bottom: 10px;"><i class="fab fa-whatsapp"></i></div>
-            <h3 style="color: #25d366; font-weight: 900; margin-bottom: 10px;">تأكيد رقم الواتساب</h3>
+            <div style="color: #25d366; font-size: 45px; margin-bottom: 10px;"><i class="fab fa-whatsapp"></i></div>
+            <h3 style="color: #25d366;">تأكيد رقم الواتساب</h3>
             <p style="color: var(--text-muted); font-size: 15px; font-weight: 600; margin-bottom: 25px;">أرسلنا كود تأكيد مكون من 4 أرقام إلى:<br><b id="displayOtpPhone" style="color: var(--text-main); font-size: 18px;" dir="ltr"></b></p>
             
-            <input type="text" id="otpInput" placeholder="----" maxlength="4" style="width: 100%; text-align: center; font-size: 35px; letter-spacing: 20px; font-weight: 900; padding: 15px; border-radius: 15px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-main); margin-bottom: 25px;" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            <input type="text" id="otpInput" placeholder="----" maxlength="4" style="width: 100%; text-align: center; font-size: 35px; letter-spacing: 20px; font-weight: 900; padding: 15px; border-radius: 15px; border: 2px solid var(--input-border, #cbd5e1); background: var(--input-bg, #f8fafc); color: var(--text-main, #1e293b); margin-bottom: 25px; outline: none;" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             
-            <button id="btnVerifyOtp" class="btn-submit" style="background: #25d366; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(37,211,102,0.2);">تأكيد الكود وإنشاء الحساب</button>
-            <button onclick="document.getElementById('otpModal').classList.remove('active')" style="width: 100%; padding: 10px; background: transparent; border: none; color: var(--text-muted); font-weight: 800; cursor: pointer; transition: 0.3s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">إلغاء وتعديل الرقم</button>
+            <button id="btnVerifyOtp" class="btn-submit" style="background: #25d366; margin-bottom: 15px; margin-top: 0; box-shadow: 0 10px 20px rgba(37,211,102,0.2);">تأكيد الكود وإنشاء الحساب</button>
+            <button onclick="document.getElementById('otpModal').classList.remove('active')" style="width: 100%; padding: 10px; background: transparent; border: none; color: var(--text-muted, #64748b); font-weight: 800; cursor: pointer; transition: 0.3s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">إلغاء وتعديل الرقم</button>
         </div>
     </div>
-    <script type="module" src="register-script.js"></script>
-    <script>
-        document.getElementById('profilePic').addEventListener('change', function() {
-            if(this.files && this.files[0]) {
-                const btn = document.getElementById('uploadBtn');
-                document.getElementById('uploadText').innerText = "تم اختيار الصورة ✔️";
-                btn.classList.remove('required-upload');
-                btn.classList.add('success-upload');
-            }
-        });
-    </script>
+
+    <!-- السكربت المخصص للتسجيل -->
+    <script type="module" src="register-script.js?v=2"></script>
 </body>
 </html>
