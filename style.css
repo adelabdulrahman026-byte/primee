@@ -190,7 +190,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
         z-index: 20 !important; 
     }
     .hero-badge { margin: 0 auto 10px auto !important; font-size: 12px !important; padding: 6px 15px !important;}
-    .hero-content h1 { display: none !important; }
+    .hero-content h1 { font-size: 28px !important; margin: 0 0 10px 0 !important; line-height: 1.4 !important; }
    .hero-content p { display: none !important; }
     
     /* المدرس (عملاق ولامس الأرض) */
