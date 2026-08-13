@@ -324,10 +324,18 @@ async function fetchCoursesSliders() {
             if(!userSnap.empty) studentMyCourses = userSnap.docs[0].data().myCourses || [];
         }
 
-        const buildCard = (c) => {
-            // 🚨 تحديث المشاهدات (لا محدود لو صفر أو فاضي) 🚨
-            let viewsVal = c.allowedViews;
-            let allowedV = (viewsVal == 0 || viewsVal === "0" || viewsVal === "" || viewsVal === undefined || viewsVal === null) ? "لا محدود" : viewsVal;
+ const buildCard = (c) => {
+    // 🚨 تحديث المشاهدات (لا محدود لو صفر أو فاضي) 🚨
+    let viewsVal = c.courseMaxViews;
+
+    let allowedV =
+        (viewsVal == 0 ||
+         viewsVal === "0" ||
+         viewsVal === "" ||
+         viewsVal === undefined ||
+         viewsVal === null)
+        ? "لا محدود"
+        : viewsVal;
             
             // 🚨 تغيير شكل الزرار لو الطالب شاري الحصة 🚨
             const isBought = studentMyCourses.includes(c.id);
