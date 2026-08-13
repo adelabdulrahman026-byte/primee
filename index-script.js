@@ -182,7 +182,7 @@ window.sendMaggieMessage = async function() {
     chatBody.innerHTML += `<div class="ai-msg" id="${loadingId}"><i class="fas fa-ellipsis-h fa-fade"></i> ماجي تفكر...</div>`;
     chatBody.scrollTop = chatBody.scrollHeight;
     
-    const CLOUDFLARE_WORKER_URL = "https://your-worker-name.your-username.workers.dev"; 
+    const CLOUDFLARE_WORKER_URL = "https://ai.adelabdulrahman026.workers.dev"; 
     
     try {
         const response = await fetch(CLOUDFLARE_WORKER_URL, {
