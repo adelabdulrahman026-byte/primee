@@ -153,75 +153,61 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 @keyframes smoothFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-15px); } }
 
 /* ==========================================================================
-   🚨 6. تظبيط الموبايل الشامل (Responsive) - العظمة وإنقاذ الخراب 🚨
+   🚨 6. تظبيط الموبايل الشامل (Responsive) - حل نهائي وأكيد 🚨
 ========================================================================== */
 @media (max-width: 991px) {
-    /* تظبيط النافبار */
-    .main-navbar { padding: 10px 15px; flex-wrap: nowrap; } 
+    /* النافبار */
+    .main-navbar { padding: 10px 15px !important; flex-wrap: nowrap !important; } 
     .nav-links, .btn-nav-login, .btn-nav-signup, .logged-in-badge { display: none !important; } 
-    .nav-right-side { gap: 10px; }
-    .theme-toggle, .nav-bell-wrapper { display: flex !important; width: 35px; height: 35px; font-size: 14px; margin-right: 0;}
-    .nav-brand { font-size: 20px; }
-    .btn-hamburger { font-size: 14px; padding: 5px; }
+    .nav-right-side { gap: 10px !important; }
+    .theme-toggle, .nav-bell-wrapper { width: 35px !important; height: 35px !important; font-size: 14px !important; margin-right: 0 !important;}
+    .nav-brand { font-size: 20px !important; }
+    .btn-hamburger { font-size: 14px !important; padding: 5px !important; }
 
-    /* الهيرو سيكشن في الموبايل (إعادة بناء) */
+    /* 🚨 الهيرو سيكشن - بناء طبيعي بدون Absolute يبوظ الترتيب 🚨 */
+    .hero-wrapper {
+        border-radius: 20px !important;
+        margin: 15px !important;
+    }
+    
     .hero-flex-container { 
         display: flex !important;
         flex-direction: column !important; 
         align-items: center !important;
-        justify-content: space-between !important;
         text-align: center !important; 
         padding: 30px 15px 0 15px !important; 
-        gap: 20px !important; 
+        gap: 15px !important; /* مسافة طبيعية بين النص والمدرس */
         min-height: auto !important; 
     }
     
-    /* 1. النص فوق */
+    /* 1. النص (فوق وفي مكانه الطبيعي) */
     .hero-content { 
         position: relative !important; 
-        flex: none !important; 
-        text-align: center !important; 
+        width: 100% !important; 
         padding: 0 !important; 
-        width: 100% !important; 
-        z-index: 10 !important; 
+        z-index: 20 !important; 
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
     }
-    .hero-badge { margin: 0 auto 10px auto !important; font-size: 12px !important; padding: 6px 15px !important;}
-    .hero-content h1 { font-size: 28px !important; margin: 5px 0 !important; line-height: 1.3 !important; }
-    .hero-content p { font-size: 14px !important; margin-bottom: 0 !important; line-height: 1.5 !important; }
-    
-    /* 2. المدرس (عملاق ولامس الأرضية) */
-    .hero-image { 
-        flex: none !important; 
-        width: 100% !important; 
-        height: 380px !important; 
-        margin-top: 10px !important; 
-        z-index: 5 !important; 
-        position: relative !important;
+    .hero-badge { 
+        margin: 0 auto 10px auto !important; 
+        font-size: 12px !important; 
+        padding: 6px 15px !important;
     }
-    .hero-fade-slider { width: 100% !important; height: 100% !important; bottom: 0 !important; }
+    .hero-content h1 { font-size: 28px !important; margin: 0 0 10px 0 !important; line-height: 1.4 !important; }
+    .hero-content p { font-size: 14px !important; margin-bottom: 0 !important; line-height: 1.6 !important; max-width: 100% !important;}
     
-    .teacher-fade-png { 
-        position: absolute !important;
-        max-height: 380px !important; 
-        bottom: 0 !important; /* لازق في الأرض */
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-    } 
-    .teacher-glow-bg { width: 200px !important; height: 200px !important; bottom: 15% !important; }
-    
-    /* 3. الأزرار طايرة بشياكة فوق المدرس */
+    /* 🚨 2. الأزرار (مكانها تحت النص بالظبط) 🚨 */
     .hero-buttons { 
-        position: absolute !important; 
-        bottom: 30px !important; 
-        left: 50% !important; 
-        transform: translateX(-50%) !important; 
-        width: 90% !important; 
+        position: relative !important; /* لغينا الـ Absolute عشان متركبش ع الكلام */
+        width: 100% !important; 
         display: flex !important;
         flex-direction: row !important; 
-        justify-content: space-between !important; 
+        justify-content: center !important; 
         gap: 10px !important; 
         z-index: 30 !important; 
-        margin: 0 !important; 
+        margin: 15px 0 0 0 !important; /* مسافة بسيطة من الكلام */
     }
     .btn-primary-hero, .btn-secondary-hero { 
         flex: 1 !important; 
@@ -233,19 +219,37 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
         white-space: nowrap !important; 
     }
     
-    /* 4. إخفاء اسم المدرس واللوجو نهائياً في الموبايل */
+    /* 🚨 3. المدرس (هيطلع لفوق شوية عشان يبقى تحت الزراير) 🚨 */
+    .hero-image { 
+        position: relative !important;
+        width: 100% !important; 
+        height: 350px !important; /* طول المدرس */
+        margin-top: -30px !important; /* 🔥 ده اللي هيسحب المدرس تحت الزراير بشياكة 🔥 */
+        z-index: 5 !important; 
+    }
+    .hero-fade-slider { width: 100% !important; height: 100% !important; position: absolute !important; bottom: 0 !important; left: 0 !important; transform: none !important;}
+    
+    .teacher-fade-png { 
+        position: absolute !important;
+        bottom: 0 !important; /* لازق في الأرض دايماً */
+        left: 50% !important; 
+        transform: translateX(-50%) !important;
+        height: 100% !important;
+        max-height: 350px !important;
+        width: auto !important;
+        object-fit: contain !important;
+        object-position: bottom !important;
+        margin: 0 !important;
+    } 
+    .teacher-glow-bg { width: 220px !important; height: 220px !important; bottom: 10% !important; }
+    
+    /* 🚨 إخفاء اسم المدرس واللوجو نهائياً في الموبايل 🚨 */
     .hero-teacher-info { display: none !important; }
     .flying-logo { display: none !important; }
 
-    /* زرار ماجي نرفعه شوية في الموبايل عشان ميغطيش على حاجة */
-    .floating-ai-btn {
-        bottom: 15px !important;
-        right: 15px !important;
-        padding: 10px 15px !important;
-        font-size: 13px !important;
-        z-index: 9999 !important;
-    }
-    .floating-ai-btn img { width: 22px !important; height: 22px !important; }
+    /* زرار ماجي (في الزاوية تحت) */
+    .floating-ai-btn { bottom: 20px !important; right: 20px !important; padding: 10px 15px !important; font-size: 13px !important; z-index: 9999 !important;}
+    .floating-ai-btn img { width: 25px !important; height: 25px !important; }
 
     /* باقي الأقسام العادية في الموبايل */
     .creative-tip-card { flex-direction: column-reverse; text-align: center; padding: 40px 20px 30px; gap: 20px; }
@@ -277,7 +281,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 }
 
 /* ==========================================================================
-   7. باقي التصميمات (الكورسات والباقات) 🚨 عرض ثابت للكارت 🚨
+   7. باقي التصميمات (الكورسات والباقات)
 ========================================================================== */
 .latest-courses-slider .swiper-slide, 
 .top-courses-slider .swiper-slide,
@@ -287,7 +291,6 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .course-slide-card:hover { border-color: var(--primary-color); box-shadow: 0 10px 25px rgba(91,33,182,0.1); transform: translateY(-5px); }
 .c-slide-img { aspect-ratio: 16/9; border-radius: 10px; margin-bottom: 15px; background-color: #0f172a; background-size: cover; background-position: center; }
 
-/* الفلاتر والمدرسين والباقات */
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 .section-header h2 { font-size: 32px; font-weight: 900; color: var(--text-main); margin: 0; }
 .view-all { color: var(--primary-color); font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 8px; }
@@ -399,7 +402,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .ai-chat-input button { background: var(--primary-color); color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
 
 /* ==========================================================================
-   10. النوافذ المنبثقة (Modals) وصفحات الدخول
+   10. النوافذ المنبثقة (Modals)
 ========================================================================== */
 .modal-overlay, .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 9999; opacity: 0; visibility: hidden; }
 .modal-overlay.active, .custom-modal-overlay.active { opacity: 1; visibility: visible; }
