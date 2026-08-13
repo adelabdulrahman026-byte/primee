@@ -153,7 +153,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 @keyframes smoothFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-15px); } }
 
 /* ==========================================================================
-   🚨 6. تظبيط الموبايل الشامل (Responsive) - العظمة وإنقاذ الخراب 🚨
+   🚨 6. تظبيط الموبايل الشامل (Responsive)
 ========================================================================== */
 @media (max-width: 991px) {
     .main-navbar { padding: 10px 15px; flex-wrap: nowrap; } 
@@ -164,7 +164,6 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
     .nav-brand { font-size: 20px; }
     .btn-hamburger { font-size: 14px; padding: 5px; }
 
-    /* الهيرو سيكشن في الموبايل */
     .hero-wrapper {
         border-radius: 20px !important;
         margin: 15px !important;
@@ -177,11 +176,11 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
         text-align: center !important; 
         padding: 30px 15px 0 15px !important; 
         gap: 0 !important; 
-        min-height: 680px !important; /* 🔥 إجبار البوكس إنه ميقصش حاجة 🔥 */
+        min-height: 680px !important; 
         position: relative !important;
     }
     
-   .hero-content { 
+    .hero-content { 
         position: relative !important; 
         flex: none !important; 
         text-align: center !important; 
@@ -191,9 +190,10 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
     }
     .hero-badge { margin: 0 auto 10px auto !important; font-size: 12px !important; padding: 6px 15px !important;}
     .hero-content h1 { font-size: 28px !important; margin: 0 0 10px 0 !important; line-height: 1.4 !important; }
-   .hero-content p { display: none !important; }
     
-    /* المدرس (عملاق ولامس الأرض) */
+    /* 🚨 السطر ده بيخفي النص في الموبايل بس 🚨 */
+    .hero-content p { display: none !important; }
+    
     .hero-image { 
         position: absolute !important;
         bottom: 0 !important;
@@ -207,7 +207,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
     
     .teacher-fade-png { 
         position: absolute !important;
-        bottom: 0 !important; /* لازق في الأرض */
+        bottom: 0 !important; 
         left: 50% !important; 
         transform: translateX(-50%) !important;
         height: 100% !important;
@@ -218,16 +218,10 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
         margin: 0 !important;
     } 
     .teacher-glow-bg { width: 220px !important; height: 220px !important; bottom: 10% !important; }
-    .hero-section {
-  display: flex;
-  flex-direction: column; 
-  align-items: center; /* لتوسيط العناصر في النص */
-  gap: 20px; /* لعمل مسافة آمنة بين الزراير والنص */
-}
-    /* 🚨 الأزرار طايرة بشياكة فوق المدرس 🚨 */
+    
     .hero-buttons { 
         position: absolute !important; 
-        bottom: 25px !important; /* مرفوعة من تحت 25 بكسل */
+        bottom: 25px !important; 
         left: 50% !important; 
         transform: translateX(-50%) !important; 
         width: 90% !important; 
@@ -248,11 +242,9 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
         white-space: nowrap !important; 
     }
     
-    /* 🚨 إخفاء اسم المدرس واللوجو نهائياً في الموبايل 🚨 */
     .hero-teacher-info { display: none !important; }
     .flying-logo { display: none !important; }
 
-    /* زرار ماجي نرفعه شوية عشان ميغطيش على الزراير */
     .floating-ai-btn {
         bottom: 80px !important;
         right: 15px !important;
@@ -262,7 +254,6 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
     }
     .floating-ai-btn img { width: 22px !important; height: 22px !important; }
 
-    /* باقي الأقسام العادية في الموبايل */
     .creative-tip-card { flex-direction: column-reverse; text-align: center; padding: 40px 20px 30px; gap: 20px; }
     .creative-tip-card.reverse { flex-direction: column-reverse; }
     .creative-tip-content p { max-width: 100%; }
