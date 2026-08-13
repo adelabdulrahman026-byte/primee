@@ -296,14 +296,6 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
         white-space: nowrap; 
     }
     
-    /* 🚨 4. إظهار اسم المدرس والمادة (تحت الزراير) في الموبايل 🚨 */
-    .hero-teacher-info {
-        display: flex !important; /* إجبار الظهور */
-        bottom: 10px !important; /* تحت خالص */
-    }
-    .hero-teacher-name { font-size: 16px !important; padding: 4px 15px !important;}
-    .hero-teacher-subject { font-size: 13px !important; padding: 4px 15px !important; }
-    
     /* اللوجو الطاير */
     .flying-logo { width: 80px !important; top: 10px !important; left: 10px !important; animation: smoothFloat 4s ease-in-out infinite alternate !important; }
 
