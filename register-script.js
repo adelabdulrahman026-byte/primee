@@ -23,22 +23,6 @@ function showAlert(title, message) {
 }
 window.closeAlertModal = () => { document.getElementById('alertModal').classList.remove('active'); };
 
-// دالة الرفع على Cloudflare R2
-async function uploadImageToR2(file) {
-    const formData = new FormData();
-    formData.append("image", file);
-    try {
-        const response = await fetch("https://primee-api.adelabdulrahman026.workers.dev/upload-image", {
-            method: "POST", body: formData
-        });
-        const data = await response.json();
-        if (data.success) return data.url;
-        throw new Error(data.error);
-    } catch (error) {
-        throw new Error("فشل رفع الصورة، تأكد من اتصالك بالإنترنت.");
-    }
-}
-
 // توليد OTP وإرساله عبر WaPilot
 let generatedOTP = "";
 let pendingUserData = {};
@@ -69,9 +53,6 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
     
-    const imageFile = document.getElementById('profilePic').files[0];
-    if (!imageFile) return showAlert('تنبيه', 'يجب رفع الصورة الشخصية لإتمام التسجيل.');
-
     const phone = document.getElementById('studentPhone').value.trim();
     if (phone.length < 11) return showAlert('تنبيه', 'رقم الهاتف غير صحيح.');
 
@@ -86,7 +67,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             return showAlert('خطأ', 'رقم الهاتف هذا مسجل لدينا بالفعل!');
         }
 
-        // تجهيز بيانات الطالب
+        // تجهيز بيانات الطالب (من غير صورة)
         pendingUserData = {
             fullName: document.getElementById('fullName').value.trim(),
             studentPhone: phone,
@@ -94,8 +75,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             password: document.getElementById('password').value,
             grade: document.getElementById('grade').value,
             governorate: document.getElementById('governorate').value,
-            address: document.getElementById('address').value.trim(),
-            file: imageFile
+            address: document.getElementById('address').value.trim()
         };
 
         // توليد 4 أرقام عشوائية
@@ -122,22 +102,19 @@ document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
     const inputOtp = document.getElementById('otpInput').value;
     if (inputOtp !== generatedOTP) {
         document.getElementById('otpInput').style.borderColor = '#ef4444';
-        return; // الكود غلط
+        return; 
     }
 
     const btn = document.getElementById('btnVerifyOtp');
     btn.innerHTML = "جاري تجهيز الحساب... 🚀"; btn.disabled = true;
 
     try {
-        // 1. رفع الصورة على Cloudflare R2
-        const profilePicUrl = await uploadImageToR2(pendingUserData.file);
-
-        // 2. إنشاء الحساب الرسمي المشفر في Firebase Auth
+        // إنشاء الحساب الرسمي المشفر في Firebase Auth
         const fakeEmail = pendingUserData.studentPhone + "@primee.com";
         const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, pendingUserData.password);
         const user = userCredential.user;
 
-        // 3. حفظ باقي البيانات في Firestore
+        // حفظ باقي البيانات في Firestore (من غير حقل profilePicUrl خالص، عشان الموقع يستخدم الافتراضية)
         await setDoc(doc(db, "users", user.uid), {
             fullName: pendingUserData.fullName,
             studentPhone: pendingUserData.studentPhone,
@@ -145,30 +122,28 @@ document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
             grade: pendingUserData.grade,
             governorate: pendingUserData.governorate,
             address: pendingUserData.address,
-            profilePicUrl: profilePicUrl,
             walletBalance: 0,
             isBlocked: false,
             createdAt: new Date().toISOString()
         });
 
         document.getElementById('otpModal').classList.remove('active');
-        document.getElementById('successModal').classList.add('active'); // إظهار النجاح
+        document.getElementById('successModal').classList.add('active'); 
 
     } catch (error) {
-        console.error("تفاصيل الخطأ كاملة:", error); // عشان نقرا الخطأ من الـ Console
+        console.error("تفاصيل الخطأ:", error); 
         document.getElementById('otpModal').classList.remove('active');
         
-        let errorMsg = error.message; // الخطأ الافتراضي
+        let errorMsg = error.message; 
         
-        // ترجمة أخطاء فايربيز الشائعة
         if (error.code === 'auth/weak-password') {
             errorMsg = "كلمة المرور ضعيفة جداً، يجب أن تكون 6 أحرف أو أرقام على الأقل.";
         } else if (error.code === 'auth/email-already-in-use') {
             errorMsg = "هذا الحساب مسجل لدينا بالفعل.";
         } else if (error.code === 'auth/operation-not-allowed') {
-            errorMsg = "إعدادات الأمان في فايربيز تمنع التسجيل، تأكد من تفعيل Email/Password.";
+            errorMsg = "إعدادات الأمان تمنع التسجيل، تواصل مع الإدارة.";
         } else if (error.code === 'auth/invalid-email') {
-            errorMsg = "صيغة الإيميل الوهمي غير صحيحة.";
+            errorMsg = "رقم الهاتف غير صحيح.";
         }
         
         showAlert('خطأ في التسجيل', errorMsg);
