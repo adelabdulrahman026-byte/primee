@@ -182,6 +182,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
     }
     
     /* النص فوق */
+    ./* 1. النص (فوق وفي مكانه الطبيعي) */
     .hero-content { 
         position: relative !important; 
         flex: none !important; 
@@ -189,10 +190,18 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
         padding: 0 !important; 
         width: 100% !important; 
         z-index: 20 !important; 
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
     }
-    .hero-badge { margin: 0 auto 10px auto !important; font-size: 12px !important; padding: 6px 15px !important;}
+    .hero-badge { 
+        margin: 0 auto 10px auto !important; 
+        font-size: 12px !important; 
+        padding: 6px 15px !important;
+    }
     .hero-content h1 { font-size: 28px !important; margin: 0 0 10px 0 !important; line-height: 1.4 !important; }
-   /* إخفاء الوصف في الموبايل */
+    
+    /* 🚨 السطر ده اللي بيخفي الجملة نهائياً من الموبايل 🚨 */
     .hero-content p { display: none !important; }
     
     /* المدرس (عملاق ولامس الأرض) */
