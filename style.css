@@ -116,7 +116,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 .modern-table th { background: var(--input-bg); font-weight: 900; font-size: 16px; }
 
 /* ==========================================================================
-   5. الصفحة الرئيسية (Hero Section)
+   5. الصفحة الرئيسية (Hero Section) للاب توب
 ========================================================================== */
 .hero-section { padding-bottom: 0 !important; }
 .hero-flex-container { position: relative; z-index: 2; width: 100%; max-width: 1300px; margin: 0 auto; padding: 0 20px 0 20px; display: flex; align-items: flex-end !important; justify-content: space-between; flex-wrap: nowrap; gap: 20px; min-height: 600px !important; }
@@ -153,55 +153,63 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 @keyframes smoothFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-15px); } }
 
 /* ==========================================================================
-   🚨 6. تظبيط الموبايل الشامل (Responsive) 🚨
+   🚨 10. تظبيط الموبايل الشامل (Responsive) - العظمة كلها هنا 🚨
 ========================================================================== */
 @media (max-width: 991px) {
-    .main-navbar { padding: 10px 15px; flex-wrap: nowrap; } 
-    .nav-links, .btn-nav-login, .btn-nav-signup { display: none !important; }
-    .logged-in-badge { display: none !important; } 
-    
-    .nav-right-side { gap: 10px; }
-    .theme-toggle { display: flex !important; width: 35px; height: 35px; font-size: 14px; margin-right: 0;}
-    .nav-bell-wrapper { width: 35px; height: 35px; font-size: 14px; margin-right: 0;}
-    .nav-brand { font-size: 18px; }
-    .btn-hamburger { font-size: 14px; padding: 5px; }
+    .main-navbar { padding: 10px 15px; }
+    .nav-links, .btn-nav-login, .btn-nav-signup { display: none; }
+    .theme-toggle { display: flex !important; width: 35px; height: 35px; font-size: 16px; margin-right: 10px; }
+    .nav-bell-wrapper { width: 35px; height: 35px; font-size: 16px; margin-right: 5px;}
+    .nav-brand { font-size: 20px; }
+    .btn-hamburger { font-size: 14px; }
 
+    /* الهيرو سيكشن في الموبايل */
     .hero-flex-container { 
         flex-direction: column !important; 
-        justify-content: flex-start !important;
         text-align: center !important; 
-        padding: 20px 15px 0 15px !important; 
+        padding: 30px 15px 0 15px !important; 
         gap: 0 !important; 
-        min-height: 750px !important; 
+        min-height: auto !important; 
     }
     
+    /* 1. النص فوق */
     .hero-content { 
         position: static !important; 
         flex: none !important; 
         text-align: center !important; 
-        padding: 0 !important; 
+        padding: 0 0 10px 0 !important; 
         width: 100% !important; 
         z-index: 10 !important; 
     }
-    .hero-badge { margin: 0 auto 10px auto !important; font-size: 12px !important; padding: 6px 15px !important;}
-    .hero-content h1 { font-size: 28px !important; margin: 10px 0 !important; }
-    .hero-content p { font-size: 13px !important; margin-bottom: 0 !important; line-height: 1.5; }
+    .hero-badge { margin: 0 auto 10px auto !important; font-size: 13px !important; padding: 8px 20px !important;}
+    .hero-content h1 { font-size: 30px !important; margin: 10px 0 !important; }
+    .hero-content p { font-size: 13px !important; margin-bottom: 0 !important; line-height: 1.6; }
     
+    /* 2. المدرس العملاق في الموبايل (لازق في الأرض تماماً) */
     .hero-image { 
         flex: none !important; 
         width: 100% !important; 
-        height: 480px !important; 
-        margin-top: 10px !important; 
+        max-width: 100% !important; 
+        height: 400px !important; 
+        margin-top: 15px !important; 
+        justify-content: flex-end !important; 
         z-index: 5 !important; 
     }
     .hero-fade-slider { width: 100% !important; height: 100% !important; bottom: 0 !important; }
     
-    .teacher-fade-png { max-height: 420px !important; bottom: 120px !important; } 
-    .teacher-glow-bg { width: 200px !important; height: 200px !important; bottom: 35% !important; }
+    /* 🚨 المدرس هنا هينزل يلمس الأرض 🚨 */
+    .teacher-fade-png { 
+        max-height: 400px !important; 
+        bottom: -5px !important; /* لازق في الأرضية */
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+    } 
+    .teacher-glow-bg { width: 220px !important; height: 220px !important; bottom: 20% !important; }
     
+    /* 🚨 3. الأزرار طايرة فوق بدلة المدرس 🚨 */
     .hero-buttons { 
         position: absolute !important; 
-        bottom: 75px !important; 
+        bottom: 30px !important; /* الأزرار طايرة وواضحة جداً فوق البدلة */
         left: 50% !important; 
         transform: translateX(-50%) !important; 
         width: 95% !important; 
@@ -213,32 +221,32 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
     }
     .btn-primary-hero, .btn-secondary-hero { 
         flex: 1 !important; 
-        padding: 10px 5px !important; 
-        font-size: 13px !important; 
+        padding: 12px 10px !important; 
+        font-size: 14px !important; 
         justify-content: center !important; 
         border-radius: 12px !important; 
         white-space: nowrap; 
     }
     
+    /* 🚨 4. إخفاء اسم المدرس والمادة نهائياً في الموبايل 🚨 */
     .hero-teacher-info { 
-        display: flex !important; 
-        flex-direction: column !important;
-        align-items: center !important;
-        bottom: 10px !important; 
-        z-index: 40 !important; 
+        display: none !important; 
     }
-    .hero-teacher-name { 
-        font-size: 18px !important; 
-        padding: 4px 15px !important; 
-        margin-bottom: 5px !important;
-        background: #ffffff !important; 
-        color: var(--primary-color) !important;
-        border: 1px solid var(--input-border);
-    }
-    .hero-teacher-subject { font-size: 12px !important; padding: 3px 15px !important; margin-bottom: 0 !important;}
     
+    /* اللوجو الطاير اختفى عشان الزحمة */
     .flying-logo { display: none !important; }
 
+    /* زرار ماجي نرفعه شوية في الموبايل عشان ميغطيش على الزراير */
+    .floating-ai-btn {
+        bottom: 15px !important;
+        right: 15px !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        z-index: 9999 !important;
+    }
+    .floating-ai-btn img { width: 25px !important; height: 25px !important; }
+
+    /* باقي الأقسام العادية في الموبايل */
     .creative-tip-card { flex-direction: column-reverse; text-align: center; padding: 40px 20px 30px; gap: 20px; }
     .creative-tip-card.reverse { flex-direction: column-reverse; }
     .creative-tip-content p { max-width: 100%; }
@@ -247,15 +255,6 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
     .about-card, .footer-card { padding: 30px 20px; }
     .footer-contact-info { flex-direction: column; width: 100%; }
     .footer-bottom { flex-direction: column; justify-content: center; }
-    
-    .split-container { flex-direction: column; min-height: auto; border-radius: 20px; }
-    .brand-side { padding: 30px 20px; }
-    .form-side { padding: 30px 20px; }
-    .two-cols { flex-direction: column; gap: 0; }
-
-    .dashboard-container, .watch-container { grid-template-columns: 1fr; margin-top: 20px; }
-    .dash-header { flex-direction: column-reverse; align-items: flex-start; }
-    .search-bar { width: 100%; max-width: 100%; }
     
     .mobile-dash-header { display: flex; }
     .dash-sidebar { position: fixed; top: 0; right: -300px; width: 280px; height: 100vh; z-index: 1005; border-radius: 0; border: none; border-left: 1px solid var(--input-border); transition: 0.4s ease; display: flex; flex-direction: column; background: var(--bg-card); box-shadow: -5px 0 25px rgba(0,0,0,0.1); }
@@ -270,132 +269,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 }
 
 /* ==========================================================================
-   🚨 7. تظبيط مقاسات الكروت للسلايدر (أحدث الكورسات، الأكثر مشاهدة، الباقات) 🚨
-========================================================================== */
-.latest-courses-slider .swiper-slide, 
-.top-courses-slider .swiper-slide,
-.packages-slider .swiper-slide {
-    width: 320px !important; 
-    height: auto;
-}
-
-.course-slide-card { background: var(--bg-card); border: 1px solid var(--input-border); border-radius: 15px; padding: 15px; text-align: right; display: flex; flex-direction: column; height: 100%; transition: 0.3s; }
-.course-slide-card:hover { border-color: var(--primary-color); box-shadow: 0 10px 25px rgba(91,33,182,0.1); transform: translateY(-5px); }
-.c-slide-img { aspect-ratio: 16/9; border-radius: 10px; margin-bottom: 15px; background-color: #0f172a; background-size: cover; background-position: center; }
-
-/* الفلاتر والمدرسين والباقات */
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-.section-header h2 { font-size: 32px; font-weight: 900; color: var(--text-main); margin: 0; }
-.view-all { color: var(--primary-color); font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 8px; }
-
-.packages-filters-container { display: flex; justify-content: center; gap: 15px; margin: 40px auto; flex-wrap: wrap; padding: 0 20px; }
-.modern-filter-btn { background: var(--bg-card); border: 2px solid var(--input-border); color: var(--text-muted); padding: 12px 25px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; }
-.modern-filter-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: translateY(-3px); }
-.modern-filter-btn.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); box-shadow: 0 8px 20px rgba(91, 33, 182, 0.3); }
-
-.sub-filters-container { display: none; justify-content: center; gap: 10px; margin-top: 15px; margin-bottom: 25px; flex-wrap: wrap; padding: 0 20px; animation: fadeIn 0.3s ease; }
-.sub-filter-btn { background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-muted); padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; }
-.sub-filter-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
-.sub-filter-btn.active { background: rgba(91,33,182,0.1); color: var(--primary-color); border-color: var(--primary-color); }
-
-@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-.teachers-section { max-width: 1200px; margin: 80px auto; padding: 0 20px; }
-.teachers-slider { padding: 40px 0 60px 0 !important; overflow: hidden; }
-.teachers-slider .swiper-slide { width: 320px; height: 320px; opacity: 0.4; transition: opacity 0.3s ease; border-radius: 20px; overflow: hidden; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-.teachers-slider .swiper-slide-active { opacity: 1; box-shadow: 0 15px 40px rgba(91, 33, 182, 0.4); }
-.cover-card-img { width: 100%; height: 100%; object-fit: cover; }
-.cover-card-fade { position: absolute; bottom: 0; left: 0; width: 100%; height: 70%; background: linear-gradient(to top, rgba(15, 23, 42, 1) 10%, rgba(91, 33, 182, 0.8) 60%, transparent 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; text-align: center; }
-.cover-card-fade h3 { color: #fff; margin: 0 0 5px 0; font-size: 24px; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-.cover-card-fade p { color: #cbd5e1; margin: 0 0 15px 0; font-size: 14px; font-weight: 700; }
-.cover-card-btn { background: #f59e0b; color: #fff; border: none; padding: 12px; border-radius: 12px; font-family: 'Cairo'; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.3s; }
-.cover-card-btn:hover { background: #d97706; transform: translateY(-2px); }
-
-.swiper-button-next, .swiper-button-prev { color: #3b82f6 !important; background: #fff; width: 45px !important; height: 45px !important; border-radius: 50%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); top: auto !important; bottom: 0px !important; }
-.swiper-button-next::after, .swiper-button-prev::after { font-size: 20px !important; font-weight: bold; }
-.swiper-pagination-bullet-active { background-color: var(--primary-color) !important; }
-
-.teachers-grid-active .swiper-wrapper { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important; }
-.teachers-grid-active .swiper-slide { width: 100% !important; margin-right: 0 !important; opacity: 1 !important; height: auto !important; aspect-ratio: 1/1; transform: none !important; }
-.teachers-grid-active .swiper-pagination, .teachers-grid-active .swiper-button-next, .teachers-grid-active .swiper-button-prev { display: none !important; }
-
-/* باقات */
-.premium-package-card { background: linear-gradient(145deg, var(--bg-card), var(--input-bg)); border-radius: 24px; padding: 30px; border: 1px solid rgba(91, 33, 182, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.05); position: relative; overflow: hidden; transition: 0.4s ease; display: flex; flex-direction: column; z-index: 1; height: 100%;}
-.premium-package-card::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(91,33,182,0.05) 0%, transparent 70%); z-index: -1; transition: 0.5s; }
-.premium-package-card:hover { transform: translateY(-10px); border-color: var(--primary-color); box-shadow: 0 20px 40px rgba(91, 33, 182, 0.15); }
-.premium-package-card:hover::before { background: radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%); }
-.pkg-glow-image { width: 100%; aspect-ratio: 16/9; background-color: #0f172a; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); object-fit: cover; }
-
-/* ==========================================================================
-   8. قسم النصائح
-========================================================================== */
-.creative-tips-section { max-width: 900px; margin: 80px auto; padding: 0 20px; }
-.creative-tips-container { display: flex; flex-direction: column; gap: 30px; }
-.creative-tip-card { display: flex; align-items: center; justify-content: space-between; padding: 30px 40px; border-radius: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-.creative-tip-card:hover { transform: translateY(-5px); }
-.creative-tip-card.reverse { flex-direction: row-reverse; }
-.creative-tip-content { flex: 1; z-index: 2; padding: 0 20px;}
-.creative-tip-number { position: absolute; top: -20px; left: -10px; font-size: 140px; font-weight: 900; color: #000; opacity: 0.05; line-height: 1; font-family: sans-serif; }
-.creative-tip-card.reverse .creative-tip-number { left: auto; right: -10px; }
-.creative-tip-content h3 { font-size: 24px; color: #1e293b; margin: 0 0 10px 0; font-weight: 900; }
-.creative-tip-content p { font-size: 16px; color: #334155; margin: 0; line-height: 1.6; font-weight: 600;}
-.creative-tip-image { width: 140px; z-index: 2; }
-.creative-tip-image img { width: 100%; height: auto; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
-
-.creative-tip-card.style-1 { background-color: #d1fae5; border: 1px solid #a7f3d0; }
-.creative-tip-card.style-2 { background-color: #cffafe; border: 1px solid #bae6fd; }
-.creative-tip-card.style-3 { background-color: #e0e7ff; border: 1px solid #c7d2fe; }
-.creative-tip-card.style-4 { background-color: #fef3c7; border: 1px solid #fde68a; }
-
-[data-theme="dark"] .creative-tip-card.style-1 { background-color: rgba(16, 185, 129, 0.1) !important; border-color: rgba(16, 185, 129, 0.2) !important; }
-[data-theme="dark"] .creative-tip-card.style-2 { background-color: rgba(14, 165, 233, 0.1) !important; border-color: rgba(14, 165, 233, 0.2) !important; }
-[data-theme="dark"] .creative-tip-card.style-3 { background-color: rgba(99, 102, 241, 0.1) !important; border-color: rgba(99, 102, 241, 0.2) !important; }
-[data-theme="dark"] .creative-tip-card.style-4 { background-color: rgba(245, 158, 11, 0.1) !important; border-color: rgba(245, 158, 11, 0.2) !important; }
-[data-theme="dark"] .creative-tip-content h3 { color: var(--text-main) !important; }
-[data-theme="dark"] .creative-tip-content p { color: var(--text-muted) !important; }
-[data-theme="dark"] .creative-tip-number { color: #ffffff !important; opacity: 0.03 !important; }
-
-/* ==========================================================================
-   9. الفوتر
-========================================================================== */
-.modern-footer-container { max-width: 1200px; margin: 80px auto 30px; padding: 0 20px; }
-.footer-card { background: var(--bg-card); border-radius: 30px; padding: 50px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid var(--input-border); }
-.footer-logo { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-.footer-logo img { width: 50px; }
-.footer-logo h3 { margin: 0; font-size: 28px; font-weight: 900; color: var(--primary-color); }
-.footer-desc { color: var(--text-muted); max-width: 500px; line-height: 1.8; margin-bottom: 30px; font-weight: 600;}
-.footer-contact-info { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-bottom: 35px; }
-.contact-item { background: var(--input-bg); padding: 10px 20px; border-radius: 20px; color: var(--text-main); font-weight: 600; display: flex; align-items: center; gap: 10px; border: 1px solid var(--input-border); }
-.contact-item i { color: var(--primary-color); }
-
-.footer-bottom { text-align: center; margin-top: 30px; color: var(--text-muted); font-weight: 600; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 0 20px; }
-.footer-links-inline a { color: var(--text-muted); text-decoration: none; font-weight: 700; transition: 0.3s; }
-.footer-links-inline a:hover { color: var(--primary-color); }
-
-.dev-credit-premium { font-size: 14px; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; gap: 6px;}
-.dev-credit-premium a { background: linear-gradient(90deg, #5b21b6, #d946ef); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; text-decoration: none; font-size: 16px; transition: 0.3s; }
-.dev-credit-premium a:hover { opacity: 0.8; }
-
-/* المساعد الذكي ماجي */
-.floating-ai-btn { position: fixed; bottom: 100px; right: 30px; background: linear-gradient(135deg, var(--primary-color), #d946ef); color: #fff; padding: 12px 25px; border-radius: 30px; display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 16px; box-shadow: 0 10px 25px rgba(91, 33, 182, 0.4); z-index: 998; cursor: pointer; border: 2px solid rgba(255,255,255,0.2); transition: 0.3s; }
-.floating-ai-btn img { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff;}
-.floating-ai-btn:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(91, 33, 182, 0.6); }
-
-.ai-chat-modal { position: fixed; bottom: 160px; right: 30px; width: 350px; background: var(--bg-card); border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); border: 1px solid var(--input-border); z-index: 999; display: flex; flex-direction: column; overflow: hidden; opacity: 0; visibility: hidden; transform: translateY(20px); transition: 0.3s ease; }
-.ai-chat-modal.active { opacity: 1; visibility: visible; transform: translateY(0); }
-.ai-chat-header { background: linear-gradient(135deg, var(--primary-color), #d946ef); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-.ai-chat-header h3 { margin: 0; font-size: 16px; font-weight: 900; display: flex; align-items: center; gap: 10px;}
-.ai-chat-header img { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff;}
-.ai-close-btn { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
-.ai-chat-body { padding: 20px; height: 300px; overflow-y: auto; background: var(--bg-body); display: flex; flex-direction: column; gap: 10px;}
-.ai-msg { background: #fff; padding: 10px 15px; border-radius: 15px 15px 0 15px; font-size: 14px; font-weight: 600; color: var(--text-main); align-self: flex-start; max-width: 80%; border: 1px solid var(--input-border); box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
-.user-msg { background: var(--primary-color); color: #fff; padding: 10px 15px; border-radius: 15px 15px 15px 0; font-size: 14px; font-weight: 600; align-self: flex-end; max-width: 80%; box-shadow: 0 2px 5px rgba(91,33,182,0.2);}
-.ai-chat-input { display: flex; padding: 10px; background: var(--bg-card); border-top: 1px solid var(--input-border);}
-.ai-chat-input input { flex: 1; padding: 10px 15px; border: 1px solid var(--input-border); border-radius: 20px; background: var(--input-bg); color: var(--text-main); font-size: 14px; outline: none; }
-.ai-chat-input button { background: var(--primary-color); color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-
-/* ==========================================================================
-   10. النوافذ المنبثقة (Modals)
+   11. النوافذ المنبثقة (Modals) وصفحات الدخول
 ========================================================================== */
 .modal-overlay, .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 9999; opacity: 0; visibility: hidden; }
 .modal-overlay.active, .custom-modal-overlay.active { opacity: 1; visibility: visible; }
