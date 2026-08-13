@@ -184,27 +184,59 @@ document.getElementById('allowNotifications')?.addEventListener('click', () => {
 });
 
 // ==========================================
-// 4. المساعد الذكي ماجي (AI Chat) 🚨
+// 4. المساعد الذكي ماجي (AI Chat) - متصل بـ Cloudflare 🚨
 // ==========================================
-window.sendMaggieMessage = function() {
+window.sendMaggieMessage = async function() {
     const input = document.getElementById('maggieInput');
     const msg = input.value.trim();
     if(!msg) return;
     
     const chatBody = document.getElementById('maggieChatBody');
+    
+    // 1. عرض رسالة الطالب
     chatBody.innerHTML += `<div class="user-msg">${msg}</div>`;
     input.value = '';
-    
-    // سكرول لتحت
     chatBody.scrollTop = chatBody.scrollHeight;
 
-    // دي الحتة اللي هتربطها بـ Cloudflare AI بعدين، دلوقتي بترد رد مؤقت
-    setTimeout(() => {
-        chatBody.innerHTML += `<div class="ai-msg">جارِ تحليل سؤالك للرد عليه فوراً... قريباً هكون جاهزة للمساعدة الذكية المباشرة عبر  🚀</div>`;
-        chatBody.scrollTop = chatBody.scrollHeight;
-    }, 1000);
+    // 2. إظهار "ماجي تكتب الآن..."
+    const loadingId = 'loading-' + Date.now();
+    chatBody.innerHTML += `<div class="ai-msg" id="${loadingId}"><i class="fas fa-ellipsis-h fa-fade"></i> ماجي تفكر...</div>`;
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    // 🚨 حط الرابط بتاع Cloudflare Worker بتاعك هنا 🚨
+    const CLOUDFLARE_WORKER_URL = "https://ai.adelabdulrahman026.workers.dev"; 
+
+    try {
+        // 3. إرسال الطلب لـ Cloudflare
+        const response = await fetch(CLOUDFLARE_WORKER_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ message: msg })
+        });
+
+        const data = await response.json();
+        
+        // 4. مسح رسالة التحميل وعرض رد ماجي الحقيقي
+        document.getElementById(loadingId).remove();
+        chatBody.innerHTML += `<div class="ai-msg">${data.reply}</div>`;
+        
+    } catch (error) {
+        // لو حصل مشكلة في النت أو السيرفر
+        document.getElementById(loadingId).remove();
+        chatBody.innerHTML += `<div class="ai-msg" style="color: #ef4444;">عذراً، فيه مشكلة في الاتصال حالياً. جرب تاني كمان شوية. 🔌</div>`;
+    }
+    
+    chatBody.scrollTop = chatBody.scrollHeight;
 }
 
+// إضافة ميزة الإرسال لما الطالب يضغط زرار Enter من الكيبورد
+document.getElementById('maggieInput')?.addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        sendMaggieMessage();
+    }
+});
 
 // ==========================================
 // 5. المدرسين: سلايدر Fade والمدرس المفرغ
