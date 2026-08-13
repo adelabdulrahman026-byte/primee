@@ -67,7 +67,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             return showAlert('خطأ', 'رقم الهاتف هذا مسجل لدينا بالفعل!');
         }
 
-        // تجهيز بيانات الطالب (من غير صورة)
+        // تجهيز بيانات الطالب (من غير أي إشارة للصورة)
         pendingUserData = {
             fullName: document.getElementById('fullName').value.trim(),
             studentPhone: phone,
@@ -114,7 +114,7 @@ document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
         const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, pendingUserData.password);
         const user = userCredential.user;
 
-        // حفظ باقي البيانات في Firestore (من غير حقل profilePicUrl خالص، عشان الموقع يستخدم الافتراضية)
+        // حفظ باقي البيانات في Firestore (بدون ملفات أو صور)
         await setDoc(doc(db, "users", user.uid), {
             fullName: pendingUserData.fullName,
             studentPhone: pendingUserData.studentPhone,
