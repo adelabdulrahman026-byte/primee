@@ -192,7 +192,8 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
     }
     .hero-badge { margin: 0 auto 10px auto !important; font-size: 12px !important; padding: 6px 15px !important;}
     .hero-content h1 { font-size: 28px !important; margin: 0 0 10px 0 !important; line-height: 1.4 !important; }
-    .hero-content p { font-size: 14px !important; margin-bottom: 0 !important; line-height: 1.6 !important; max-width: 100% !important;}
+   /* إخفاء الوصف في الموبايل */
+    .hero-content p { display: none !important; }
     
     /* المدرس (عملاق ولامس الأرض) */
     .hero-image { 
