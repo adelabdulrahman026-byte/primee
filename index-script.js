@@ -13,15 +13,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// إغلاق أي نافذة لو ضغطت بره
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('navDropdown');
+    const bellBtn = document.getElementById('navBellBtn');
+    if (dropdown && bellBtn && !bellBtn.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('active');
+    }
+});
+
 // ==========================================
 // 1. الأنيميشن، الدخول، وتحديث الهيدر
 // ==========================================
 const phrases = [
     "تعلّم بذكاء،<br><span>وتقدّم بثقة.</span>", 
     "اكتشف قدراتك،<br><span>واصنع مستقبلك.</span>", 
-    "نخبة المعلمين،<br><span>في شاشة واحدة.</span>", 
-    "منصة برايمي،<br><span>طريقك للتفوق.</span>", 
-    "وفر وقتك،<br><span>وضاعف تحصيلك.</span>"
+    "نخبة المعلمين،<br><span>في شاشة واحدة.</span>"
 ];
 let phraseIndex = 0;
 const heroTitle = document.getElementById('heroTitle');
@@ -56,11 +63,32 @@ async function fetchStudentNavData(phone) {
             const navAuth = document.getElementById('navAuthSection');
             if (navAuth) navAuth.innerHTML = `<div class="logged-in-badge" onclick="window.location.href='student-dashboard.html'"><div class="badge-info"><span class="s-name">${firstName}</span><span class="s-wallet">${balance} ج.م</span></div><div class="badge-avatar">${avatarHtml}</div></div>`;
 
+            // 🚨 القائمة الجانبية الفخمة 🚨
             const mobAuth = document.getElementById('mobileAuthSection');
-            if (mobAuth) mobAuth.innerHTML = `<div class="mobile-user-profile" onclick="window.location.href='student-dashboard.html'"><div class="m-avatar">${avatarHtml}</div><div class="m-info"><h4>أهلاً، ${firstName}</h4><span>الرصيد: ${balance} ج.م</span></div></div><button class="btn-logout-mobile" onclick="localStorage.removeItem('studentPhone'); window.location.reload();"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>`;
+            if (mobAuth) mobAuth.innerHTML = `
+                <div class="mobile-user-profile-card">
+                    <div class="m-avatar">${avatarHtml}</div>
+                    <h4>أهلاً، ${firstName}</h4>
+                    <span class="m-wallet">رصيدك: ${balance} ج.م</span>
+                    <button class="btn-logout-premium" onclick="localStorage.removeItem('studentPhone'); window.location.reload();"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
+                </div>
+            `;
             
             const mobMyC = document.getElementById('mobileMyCoursesLink');
             if(mobMyC) mobMyC.style.display = 'block';
+            
+            // داتا تجريبية لزرار الإشعارات اللي طلبته
+            const notifHtml = `
+                <div class="notif-item">
+                    <div class="notif-icon"><i class="fas fa-wallet"></i></div>
+                    <div class="notif-text"><p>تم شحن رصيدك بنجاح</p><span>منذ ساعتين</span></div>
+                </div>
+                <div class="notif-item">
+                    <div class="notif-icon" style="color:#3b82f6; background: rgba(59, 130, 246, 0.1);"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="notif-text"><p>أهلاً بك في منصة برايمي</p><span>منذ يوم</span></div>
+                </div>
+            `;
+            document.getElementById('notificationsListContent').innerHTML = notifHtml;
         }
     } catch (e) { console.error(e); }
 }
@@ -129,54 +157,57 @@ document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', ()
 });
 
 // ==========================================
-// 3. الفلترة المزدوجة (المراحل الفرعية)
+// 3. إشعارات OneSignal (بزرار مخصص ليك بس) 🚨
 // ==========================================
-const subStagesMap = {
-    'ابتدائي': ['الأول الابتدائي', 'الثاني الابتدائي', 'الثالث الابتدائي', 'الرابع الابتدائي', 'الخامس الابتدائي', 'السادس الابتدائي'],
-    'إعدادي': ['الأول الإعدادي', 'الثاني الإعدادي', 'الثالث الإعدادي'],
-    'ثانوي': ['الأول الثانوي', 'الثاني الثانوي', 'الثالث الثانوي'],
-    'بكالوريا': ['الأول بكالوريا', 'الثاني بكالوريا', 'الثالث بكالوريا']
-};
-
-function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
-    const mainBtns = document.querySelectorAll(`#${mainContainerId} .modern-filter-btn`);
-    const subContainer = document.getElementById(subContainerId);
-    
-    mainBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            mainBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const mainFilter = btn.getAttribute('data-filter');
-            
-            if(mainFilter === 'all') {
-                subContainer.style.display = 'none';
-                onFilterCallback('all');
-            } else {
-                subContainer.innerHTML = '';
-                const subStages = subStagesMap[mainFilter];
-                if(subStages) {
-                    subStages.forEach(sub => {
-                        const subBtn = document.createElement('button');
-                        subBtn.className = 'sub-filter-btn';
-                        subBtn.textContent = sub;
-                        subBtn.onclick = (ev) => {
-                            subContainer.querySelectorAll('.sub-filter-btn').forEach(b => b.classList.remove('active'));
-                            ev.target.classList.add('active');
-                            onFilterCallback(sub);
-                        };
-                        subContainer.appendChild(subBtn);
-                    });
-                    subContainer.style.display = 'flex';
-                }
-                onFilterCallback(mainFilter); 
-            }
-        });
-    });
+// بنسأل الطالب أول ما يفتح الموقع بأول مرة عن طريق الكارت بتاعك
+if(!localStorage.getItem('notificationAsked')) {
+    setTimeout(() => {
+        document.getElementById('notificationModal').classList.add('active');
+    }, 2000);
 }
 
+document.getElementById('closeNotifications')?.addEventListener('click', () => {
+    localStorage.setItem('notificationAsked', 'true');
+    document.getElementById('notificationModal').classList.remove('active');
+});
+
+document.getElementById('allowNotifications')?.addEventListener('click', () => {
+    localStorage.setItem('notificationAsked', 'true');
+    document.getElementById('notificationModal').classList.remove('active');
+    
+    // أول ما الطالب يوافق على رسالتك، نفتح تصريح التليفون (OneSignal)
+    if(window.OneSignalDeferred) {
+        OneSignalDeferred.push(function(OneSignal) {
+            OneSignal.Slidedown.promptPush();
+        });
+    }
+});
+
 // ==========================================
-// 4. المدرسين: سلايدر Fade والمدرس المفرغ 🚨
+// 4. المساعد الذكي ماجي (AI Chat) 🚨
+// ==========================================
+window.sendMaggieMessage = function() {
+    const input = document.getElementById('maggieInput');
+    const msg = input.value.trim();
+    if(!msg) return;
+    
+    const chatBody = document.getElementById('maggieChatBody');
+    chatBody.innerHTML += `<div class="user-msg">${msg}</div>`;
+    input.value = '';
+    
+    // سكرول لتحت
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    // دي الحتة اللي هتربطها بـ Cloudflare AI بعدين، دلوقتي بترد رد مؤقت
+    setTimeout(() => {
+        chatBody.innerHTML += `<div class="ai-msg">جارِ تحليل سؤالك للرد عليه فوراً... قريباً هكون جاهزة للمساعدة الذكية المباشرة عبر Cloudflare! 🚀</div>`;
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }, 1000);
+}
+
+
+// ==========================================
+// 5. المدرسين: سلايدر Fade والمدرس المفرغ
 // ==========================================
 let allTeachersData = [];
 let teachersSwiperInstance = null;
@@ -194,7 +225,6 @@ async function fetchTeachers() {
             const t = { id: doc.id, ...doc.data() };
             allTeachersData.push(t);
             
-            // 🚨 رجعنا بيانات المدرس عشان تظهر متزينة 🚨
             heroFadeHtml += `
             <div class="swiper-slide hero-slide-fade" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
                 <div class="teacher-glow-bg"></div>
@@ -258,67 +288,9 @@ function renderTeachers(filterText) {
     }
 }
 fetchTeachers();
-setupNestedFilters('teachersMainFilters', 'teachersSubFilters', renderTeachers);
-
-document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const sc = document.querySelector('.teachers-slider');
-    sc.classList.toggle('teachers-grid-active');
-    if(sc.classList.contains('teachers-grid-active')) {
-        e.target.innerHTML = 'عرض كشريط <i class="fas fa-arrow-right"></i>';
-        if(teachersSwiperInstance) teachersSwiperInstance.destroy(false, true);
-        sc.querySelector('.swiper-wrapper').style.transform = 'none';
-    } else {
-        e.target.innerHTML = 'عرض جميع المدرسين <i class="fas fa-arrow-left"></i>';
-        renderTeachers(document.querySelector('#teachersMainFilters .active').getAttribute('data-filter') || 'all');
-    }
-});
 
 // ==========================================
-// 5. الباقات: تصميم زجاجي وفلاتر مزدوجة
-// ==========================================
-let allPackagesData = [];
-async function fetchPackages() {
-    try {
-        const snap = await getDocs(collection(db, "packages"));
-        if(snap.empty) return;
-        snap.forEach(doc => allPackagesData.push({id: doc.id, ...doc.data()}));
-        renderPackages('all');
-    } catch(e) {}
-}
-function renderPackages(filterText) {
-    const grid = document.getElementById('packagesGridContainer');
-    const filtered = allPackagesData.filter(p => filterText === 'all' ? true : p.grade && p.grade.includes(filterText));
-    
-    if(filtered.length === 0) { grid.innerHTML = '<div style="text-align:center; width:100%; color:#94a3b8; padding:30px;">لا يوجد باقات هنا.</div>'; return; }
-
-    let html = '';
-    filtered.forEach(pkg => {
-        let fHtml = '';
-        if(pkg.features) pkg.features.forEach(f => fHtml += `<li><i class="fas fa-check-circle" style="color:#10b981;"></i> ${f.trim()}</li>`);
-        const subLink = loggedInPhone ? 'student-dashboard.html' : 'login.html';
-        
-        html += `
-        <div class="premium-package-card">
-            <img src="${pkg.imageUrl}" class="pkg-glow-image">
-            <span style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 5px 12px; border-radius: 8px; font-size: 13px; font-weight: 900; align-self: flex-start; margin-bottom: 10px;">🔥 خصم خاص</span>
-            <h3 style="color: var(--text-main); font-size: 22px; margin: 0 0 5px 0; font-weight: 900;">${pkg.name}</h3>
-            <p style="color: var(--text-muted); font-size: 14px; margin: 0 0 15px 0;">${pkg.grade}</p>
-            <ul style="list-style:none; padding:0; margin:0 0 20px 0; color: var(--text-muted); display:flex; flex-direction:column; gap:10px; flex-grow:1;">${fHtml}</ul>
-            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed rgba(91,33,182,0.3); padding-top:20px;">
-                <span style="text-decoration:line-through; color:#ef4444; font-weight:800;">${pkg.oldPrice} ج</span>
-                <span style="font-size:26px; font-weight:900; color:#10b981;">${pkg.newPrice} ج</span>
-            </div>
-            <button onclick="window.location.href='${subLink}'" style="width:100%; background:var(--primary-color); color:#fff; border:none; padding:15px; border-radius:12px; font-weight:900; font-family:'Cairo'; margin-top:20px; cursor:pointer; transition:0.3s; box-shadow: 0 10px 20px rgba(91,33,182,0.2);">اشترك في الباقة</button>
-        </div>`;
-    });
-    grid.innerHTML = html;
-}
-fetchPackages();
-setupNestedFilters('packagesMainFilters', 'packagesSubFilters', renderPackages);
-
-// ==========================================
-// 6. الحصص (الأحدث والأكثر مشاهدة)
+// 6. الحصص وتعديل المشاهدات والشراء 🚨
 // ==========================================
 async function fetchCoursesSliders() {
     try {
@@ -329,31 +301,48 @@ async function fetchCoursesSliders() {
         let latest = [...allC].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 6);
         let top = [...allC].sort((a,b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
 
-        const buildCard = (c) => `
-        <div class="swiper-slide">
-            <div class="course-slide-card">
-                <div class="c-slide-img" style="background-image: url('${c.image || 'https://via.placeholder.com/300'}');"></div>
-                <h4 style="margin:0 0 5px 0; font-size:18px; color:var(--text-main); font-weight:900;">${c.title}</h4>
-                <p style="margin:0 0 10px 0; color:var(--text-muted); font-size:13px;"><i class="fas fa-chalkboard-teacher"></i> ${c.instructor} | <i class="fas fa-eye" style="color:#f59e0b;"></i> ${c.views || 0}</p>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:15px; border-top:1px solid var(--input-border);">
-                    <span style="color:#10b981; font-weight:900; font-size:18px;">${c.price > 0 ? c.price + ' ج' : 'مجاني'}</span>
-                    <button onclick="buyCourseAction('${c.id}', ${c.price}, '${c.title}')" style="background:#3b82f6; color:#fff; border:none; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer;">اشترك</button>
+        // نجيب كورسات الطالب عشان نعرف هو شاري إيه
+        let studentMyCourses = [];
+        if(loggedInPhone) {
+            const userQ = query(collection(db, "users"), where("studentPhone", "==", loggedInPhone));
+            const userSnap = await getDocs(userQ);
+            if(!userSnap.empty) studentMyCourses = userSnap.docs[0].data().myCourses || [];
+        }
+
+        const buildCard = (c) => {
+            // 🚨 منطق المشاهدات (لا محدود لو صفر) 🚨
+            let allowedV = (c.allowedViews == 0 || !c.allowedViews) ? "لا محدود" : c.allowedViews;
+            
+            // 🚨 منطق الشراء (تم الشراء لو معاه) 🚨
+            const isBought = studentMyCourses.includes(c.id);
+            let btnHtml = isBought 
+                ? `<button onclick="window.location.href='student-dashboard.html'" style="background:var(--input-bg); color:#10b981; border:1px solid #10b981; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer;">تم الشراء ✔</button>` 
+                : `<button onclick="buyCourseAction('${c.id}', ${c.price}, '${c.title}')" style="background:#3b82f6; color:#fff; border:none; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer;">اشترك</button>`;
+
+            return `
+            <div class="swiper-slide">
+                <div class="course-slide-card">
+                    <div class="c-slide-img" style="background-image: url('${c.image || 'https://via.placeholder.com/300'}');"></div>
+                    <h4 style="margin:0 0 5px 0; font-size:18px; color:var(--text-main); font-weight:900;">${c.title}</h4>
+                    <p style="margin:0 0 10px 0; color:var(--text-muted); font-size:13px;"><i class="fas fa-chalkboard-teacher"></i> ${c.instructor} | <i class="fas fa-play-circle" style="color:#f59e0b;"></i> المشاهدات: ${allowedV}</p>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:15px; border-top:1px solid var(--input-border);">
+                        <span style="color:#10b981; font-weight:900; font-size:18px;">${c.price > 0 ? c.price + ' ج' : 'مجاني'}</span>
+                        ${btnHtml}
+                    </div>
                 </div>
-            </div>
-        </div>`;
+            </div>`;
+        };
 
         const latGrid = document.getElementById('latestCoursesGrid');
-        if(latGrid) { latGrid.innerHTML = latest.map(buildCard).join(''); new Swiper('.latest-courses-slider', { slidesPerView: 'auto', spaceBetween: 20, breakpoints: { 0:{slidesPerView:1}, 768:{slidesPerView:2}, 1024:{slidesPerView:3} }}); }
+        if(latGrid) { latGrid.innerHTML = latest.map(buildCard).join(''); new Swiper('.latest-courses-slider', { slidesPerView: 'auto', spaceBetween: 20 }); }
 
         const topGrid = document.getElementById('topCoursesGrid');
-        if(topGrid) { topGrid.innerHTML = top.map(buildCard).join(''); new Swiper('.top-courses-slider', { slidesPerView: 'auto', spaceBetween: 20, breakpoints: { 0:{slidesPerView:1}, 768:{slidesPerView:2}, 1024:{slidesPerView:3} }}); }
+        if(topGrid) { topGrid.innerHTML = top.map(buildCard).join(''); new Swiper('.top-courses-slider', { slidesPerView: 'auto', spaceBetween: 20 }); }
     } catch(e) {}
 }
 fetchCoursesSliders();
 
-// ==========================================
-// 7. نظام الشراء وإضافة الكورسات المضمون 100%
-// ==========================================
+// باقي أكواد الشراء والمودالز تحت...
 window.currentViewingTeacher = "";
 window.pendingCourseId = null;
 window.pendingCoursePrice = 0;
@@ -396,14 +385,19 @@ window.selectStageAndLoadCourses = async function(stageKeyword) {
 
             if(isMatch) {
                 hasCourses = true;
+                
+                // 🚨 منطق المشاهدات (لا محدود) والشراء هنا كمان 🚨
+                let allowedV = (c.allowedViews == 0 || !c.allowedViews) ? "لا محدود" : c.allowedViews;
                 const isBought = studentMyCourses.includes(docSnap.id);
-                let btnHtml = isBought ? `<button onclick="window.location.href='student-dashboard.html'" style="background:#1e293b; color:#10b981; border:1px solid #10b981; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:800;">تم الشراء <i class="fas fa-check"></i></button>` : `<button onclick="buyCourseAction('${docSnap.id}', ${c.price}, '${c.title}')" style="background:#f59e0b; color:#fff; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:800;">اشترك الآن</button>`;
+                let btnHtml = isBought 
+                    ? `<button onclick="window.location.href='student-dashboard.html'" style="background:var(--input-bg); color:#10b981; border:1px solid #10b981; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:800;">تم الشراء ✔</button>` 
+                    : `<button onclick="buyCourseAction('${docSnap.id}', ${c.price}, '${c.title}')" style="background:#f59e0b; color:#fff; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:800;">اشترك الآن</button>`;
 
                 html += `
                 <div style="background: var(--bg-card); border: 1px solid var(--input-border); border-radius: 15px; padding: 15px; text-align: right;">
                     <div style="aspect-ratio: 16/9; background: url('${c.image || 'https://via.placeholder.com/300'}') center/cover; border-radius: 10px; margin-bottom: 15px;"></div>
                     <h4 style="color: var(--text-main); margin: 0 0 5px 0; font-size: 18px; font-weight: 800;">${c.title}</h4>
-                    <p style="color: var(--text-muted); font-size: 13px; margin: 0 0 15px 0;"><i class="fas fa-graduation-cap"></i> ${c.grade} | <i class="fas fa-eye" style="color:#f59e0b;"></i> ${c.views || 0}</p>
+                    <p style="color: var(--text-muted); font-size: 13px; margin: 0 0 15px 0;"><i class="fas fa-graduation-cap"></i> ${c.grade} | <i class="fas fa-play-circle" style="color:#f59e0b;"></i> المشاهدات: ${allowedV}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--input-border); padding-top: 15px;">
                         <span style="color: #10b981; font-weight: 900; font-size: 20px;">${c.price > 0 ? c.price + ' ج.م' : 'مجاني'}</span>
                         ${btnHtml}
@@ -490,7 +484,7 @@ document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async (
             window.currentUserBalance = newTempBalance;
             document.getElementById('autoChargeCodeInput').value = '';
             alert(`✅ تم شحن (${codeValue} ج.م). رصيدك الآن (${newTempBalance} ج.م) لا يكفي للحصة. أدخل كود آخر.`);
-            btn.innerHTML = 'شـــحن واشتراك 🚀'; btn.disabled = false;
+            btn.innerHTML = 'شحن واشتراك 🚀'; btn.disabled = false;
         }
     } catch(err) { alert(err.message); btn.innerHTML = 'شحن واشتراك 🚀'; btn.disabled = false; }
 });
