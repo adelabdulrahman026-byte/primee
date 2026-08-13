@@ -200,7 +200,7 @@ window.sendMaggieMessage = function() {
 
     // دي الحتة اللي هتربطها بـ Cloudflare AI بعدين، دلوقتي بترد رد مؤقت
     setTimeout(() => {
-        chatBody.innerHTML += `<div class="ai-msg">جارِ تحليل سؤالك للرد عليه فوراً... قريباً هكون جاهزة للمساعدة الذكية المباشرة عبر Cloudflare! 🚀</div>`;
+        chatBody.innerHTML += `<div class="ai-msg">جارِ تحليل سؤالك للرد عليه فوراً... قريباً هكون جاهزة للمساعدة الذكية المباشرة عبر  🚀</div>`;
         chatBody.scrollTop = chatBody.scrollHeight;
     }, 1000);
 }
