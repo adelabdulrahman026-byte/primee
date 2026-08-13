@@ -194,8 +194,7 @@ async function fetchTeachers() {
             const t = { id: doc.id, ...doc.data() };
             allTeachersData.push(t);
             
-            // 🚨 رجعنا بيانات المدرس عشان تظهر متزينة 🚨
-            heroFadeHtml += `
+            // 🚨 رجعنا بيانات المدرس عشان تظهر متزينة 🚨`
             heroFadeHtml += `
             <div class="swiper-slide hero-slide-fade" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
                 <div class="teacher-glow-bg"></div>
