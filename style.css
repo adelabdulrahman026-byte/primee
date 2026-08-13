@@ -153,20 +153,23 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 @keyframes smoothFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-15px); } }
 
 /* ==========================================================================
-   🚨 6. تظبيط الموبايل الشامل (Responsive)
+   🚨 6. تظبيط الموبايل الشامل (Responsive) - العظمة وإنقاذ الخراب 🚨
 ========================================================================== */
 @media (max-width: 991px) {
-    .main-navbar { padding: 10px 15px; flex-wrap: nowrap; } 
+    /* النافبار */
+    .main-navbar { padding: 10px 15px !important; flex-wrap: nowrap !important; } 
     .nav-links, .btn-nav-login, .btn-nav-signup, .logged-in-badge { display: none !important; } 
     
-    .nav-right-side { gap: 10px; }
-    .theme-toggle, .nav-bell-wrapper { display: flex !important; width: 35px; height: 35px; font-size: 14px; margin-right: 0;}
-    .nav-brand { font-size: 20px; }
-    .btn-hamburger { font-size: 14px; padding: 5px; }
+    .nav-right-side { gap: 10px !important; }
+    .theme-toggle, .nav-bell-wrapper { width: 35px !important; height: 35px !important; font-size: 14px !important; margin-right: 0 !important;}
+    .nav-brand { font-size: 20px !important; }
+    .btn-hamburger { font-size: 14px !important; padding: 5px !important; }
 
+    /* 🚨 الهيرو سيكشن - بناء طبيعي واحترافي 🚨 */
     .hero-wrapper {
         border-radius: 20px !important;
         margin: 15px !important;
+        overflow: hidden !important;
     }
     
     .hero-flex-container { 
@@ -176,61 +179,38 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
         text-align: center !important; 
         padding: 30px 15px 0 15px !important; 
         gap: 0 !important; 
-        min-height: 680px !important; 
+        min-height: 650px !important; /* طول مناسب جداً يلم كل حاجة براحتها */
         position: relative !important;
     }
     
+    /* 1. قسم النص (البادج والعنوان) - طبيعي بدون Position */
     .hero-content { 
         position: relative !important; 
         flex: none !important; 
-        text-align: center !important; 
-        padding: 0 !important; 
         width: 100% !important; 
+        padding: 0 !important; 
         z-index: 20 !important; 
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
     }
     .hero-badge { margin: 0 auto 10px auto !important; font-size: 12px !important; padding: 6px 15px !important;}
     .hero-content h1 { font-size: 28px !important; margin: 0 0 10px 0 !important; line-height: 1.4 !important; }
+    .hero-content p { display: none !important; } /* إخفاء النص الطويل */
     
-    /* 🚨 السطر ده بيخفي النص في الموبايل بس 🚨 */
-    .hero-content p { display: none !important; }
-    
-    .hero-image { 
-        position: absolute !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        width: 100% !important; 
-        height: 420px !important; 
-        margin: 0 !important; 
-        z-index: 5 !important; 
-    }
-    .hero-fade-slider { width: 100% !important; height: 100% !important; position: absolute !important; bottom: 0 !important; left: 0 !important; transform: none !important;}
-    
-    .teacher-fade-png { 
-        position: absolute !important;
-        bottom: 0 !important; 
-        left: 50% !important; 
-        transform: translateX(-50%) !important;
-        height: 100% !important;
-        max-height: 420px !important;
-        width: auto !important;
-        object-fit: contain !important;
-        object-position: bottom !important;
-        margin: 0 !important;
-    } 
-    .teacher-glow-bg { width: 220px !important; height: 220px !important; bottom: 10% !important; }
-    
+    /* 🚨 2. قسم الأزرار - نزلناه بشكل طبيعي تحت العنوان، ومستحيل يركب عليه 🚨 */
     .hero-buttons { 
-        position: absolute !important; 
-        bottom: 25px !important; 
-        left: 50% !important; 
-        transform: translateX(-50%) !important; 
+        position: relative !important; /* 👈 السر هنا: لغينا الـ Absolute */
+        bottom: auto !important; 
+        left: auto !important; 
+        transform: none !important; 
         width: 90% !important; 
         display: flex !important;
         flex-direction: row !important; 
-        justify-content: space-between !important; 
+        justify-content: center !important; 
         gap: 10px !important; 
         z-index: 30 !important; 
-        margin: 0 !important; 
+        margin: 15px auto 0 auto !important; /* 👈 مسافة فوقه وتحته ليفصل عن النص والصورة */
     }
     .btn-primary-hero, .btn-secondary-hero { 
         flex: 1 !important; 
@@ -242,11 +222,39 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
         white-space: nowrap !important; 
     }
     
+    /* 🚨 3. صورة المدرس - في الأرضية تماماً 🚨 */
+    .hero-image { 
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important; 
+        height: 420px !important; /* ارتفاع المدرس ثابت عشان ميطلعش لفوق */
+        margin: 0 !important; 
+        z-index: 5 !important; 
+    }
+    .hero-fade-slider { width: 100% !important; height: 100% !important; position: absolute !important; bottom: 0 !important; left: 0 !important; transform: none !important;}
+    
+    .teacher-fade-png { 
+        position: absolute !important;
+        bottom: -5px !important; /* لازق في الأرض */
+        left: 50% !important; 
+        transform: translateX(-50%) !important;
+        height: 100% !important;
+        max-height: 420px !important;
+        width: auto !important;
+        object-fit: contain !important;
+        object-position: bottom !important;
+        margin: 0 !important;
+    } 
+    .teacher-glow-bg { width: 220px !important; height: 220px !important; bottom: 10% !important; }
+    
+    /* إخفاء معلومات المدرس واللوجو الطاير */
     .hero-teacher-info { display: none !important; }
     .flying-logo { display: none !important; }
 
+    /* زرار ماجي (آمن في الأسفل يمين) */
     .floating-ai-btn {
-        bottom: 80px !important;
+        bottom: 20px !important;
         right: 15px !important;
         padding: 8px 12px !important;
         font-size: 13px !important;
@@ -254,6 +262,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
     }
     .floating-ai-btn img { width: 22px !important; height: 22px !important; }
 
+    /* باقي الأقسام العادية في الموبايل */
     .creative-tip-card { flex-direction: column-reverse; text-align: center; padding: 40px 20px 30px; gap: 20px; }
     .creative-tip-card.reverse { flex-direction: column-reverse; }
     .creative-tip-content p { max-width: 100%; }
@@ -283,7 +292,7 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
 }
 
 /* ==========================================================================
-   7. باقي التصميمات (الكورسات والباقات)
+   7. باقي التصميمات (الكورسات والباقات) 
 ========================================================================== */
 .latest-courses-slider .swiper-slide, 
 .top-courses-slider .swiper-slide,
