@@ -218,7 +218,12 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
         margin: 0 !important;
     } 
     .teacher-glow-bg { width: 220px !important; height: 220px !important; bottom: 10% !important; }
-    
+    .hero-section {
+  display: flex;
+  flex-direction: column; 
+  align-items: center; /* لتوسيط العناصر في النص */
+  gap: 20px; /* لعمل مسافة آمنة بين الزراير والنص */
+}
     /* 🚨 الأزرار طايرة بشياكة فوق المدرس 🚨 */
     .hero-buttons { 
         position: absolute !important; 
