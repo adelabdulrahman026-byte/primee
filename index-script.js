@@ -490,7 +490,7 @@ document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async (
             window.currentUserBalance = newTempBalance;
             document.getElementById('autoChargeCodeInput').value = '';
             alert(`✅ تم شحن (${codeValue} ج.م). رصيدك الآن (${newTempBalance} ج.م) لا يكفي للحصة. أدخل كود آخر.`);
-            btn.innerHTML = 'شحن واشتراك 🚀'; btn.disabled = false;
+            btn.innerHTML = 'شـــحن واشتراك 🚀'; btn.disabled = false;
         }
     } catch(err) { alert(err.message); btn.innerHTML = 'شحن واشتراك 🚀'; btn.disabled = false; }
 });
