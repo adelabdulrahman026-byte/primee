@@ -195,10 +195,12 @@ async function fetchTeachers() {
             allTeachersData.push(t);
             
             // 🚨 رجعنا بيانات المدرس عشان تظهر متزينة 🚨`
-            heroFadeHtml += `
+           heroFadeHtml += `
             <div class="swiper-slide hero-slide-fade" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
                 <div class="teacher-glow-bg"></div>
                 <img src="${t.imageUrl}" alt="${t.name}" class="teacher-fade-png">
+                <div class="hero-teacher-info">
+                </div>
             </div>`;
         });
         
