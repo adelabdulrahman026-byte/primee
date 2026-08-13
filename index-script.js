@@ -195,7 +195,7 @@ window.sendMaggieMessage = async function() {
         chatBody.innerHTML += `<div class="ai-msg">${data.reply}</div>`;
     } catch (error) {
         document.getElementById(loadingId).remove();
-        chatBody.innerHTML += `<div class="ai-msg" style="color: #ef4444;">عذراً، فيه مشكلة في الاتصال حالياً. جرب لاحقاً. 🔌</div>`;
+        chatBody.innerHTML += `<div class="ai-msg" style="color: #ef4444;">عذراً، فيه مشـكلة في الاتصال حالياً. جرب لاحقاً. 🔌</div>`;
     }
     chatBody.scrollTop = chatBody.scrollHeight;
 }
