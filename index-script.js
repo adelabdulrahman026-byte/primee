@@ -78,12 +78,10 @@ async function fetchStudentNavData(phone) {
             const mobMyC = document.getElementById('mobileMyCoursesLink');
             if(mobMyC) mobMyC.style.display = 'block';
             
-            // 🚨 معالجة الإشعارات (الجرس) بناءً على داتا الطالب 🚨
             let notifHtml = '';
             if (data.notifications && data.notifications.length > 0) {
-                const notifs = data.notifications.reverse(); // نعرض الأحدث الأول
+                const notifs = data.notifications.reverse(); 
                 notifs.forEach(n => {
-                    // نظبط لون الأيقونة حسب نوع الإشعار (شراء أو شحن)
                     let iconColor = n.title && n.title.includes('شحن') ? '#3b82f6' : '#10b981';
                     let iconBg = n.title && n.title.includes('شحن') ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)';
                     let iconClass = n.title && n.title.includes('شحن') ? 'fa-wallet' : 'fa-check-circle';
@@ -168,7 +166,7 @@ document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', ()
 });
 
 // ==========================================
-// 4. المساعد الذكي ماجي (AI Chat) - مربوط بـ Cloudflare
+// 4. المساعد الذكي ماجي (AI Chat)
 // ==========================================
 window.sendMaggieMessage = async function() {
     const input = document.getElementById('maggieInput');
@@ -184,7 +182,6 @@ window.sendMaggieMessage = async function() {
     chatBody.innerHTML += `<div class="ai-msg" id="${loadingId}"><i class="fas fa-ellipsis-h fa-fade"></i> ماجي تفكر...</div>`;
     chatBody.scrollTop = chatBody.scrollHeight;
     
-    // 🚨 حط رابط הـ Cloudflare Worker بتاعك هنا 🚨
     const CLOUDFLARE_WORKER_URL = "https://your-worker-name.your-username.workers.dev"; 
     
     try {
@@ -332,9 +329,11 @@ document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => 
 });
 
 // ==========================================
-// 7. الباقات 
+// 7. الباقات (تم تحويلها لـ Swiper Slider شغال) 🚨
 // ==========================================
 let allPackagesData = [];
+let packagesSwiperInstance = null;
+
 async function fetchPackages() {
     try {
         const snap = await getDocs(collection(db, "packages"));
@@ -343,34 +342,53 @@ async function fetchPackages() {
         renderPackages('all');
     } catch(e) {}
 }
+
 function renderPackages(filterText) {
     const grid = document.getElementById('packagesGridContainer');
     const filtered = allPackagesData.filter(p => filterText === 'all' ? true : p.grade && p.grade.includes(filterText));
-    if(filtered.length === 0) { grid.innerHTML = '<div style="text-align:center; width:100%; color:#94a3b8; padding:30px;">لا يوجد باقات هنا.</div>'; return; }
+    
+    if(filtered.length === 0) { 
+        grid.innerHTML = '<div style="text-align:center; width:100%; color:#94a3b8; padding:30px;">لا يوجد باقات هنا.</div>'; 
+        if (packagesSwiperInstance) packagesSwiperInstance.destroy(true, true);
+        return; 
+    }
+
     let html = '';
     filtered.forEach(pkg => {
         let fHtml = '';
         if(pkg.features) pkg.features.forEach(f => fHtml += `<li><i class="fas fa-check-circle" style="color:#10b981;"></i> ${f.trim()}</li>`);
         const subLink = loggedInPhone ? 'student-dashboard.html' : 'login.html';
+        
+        // 🚨 كل باقة محطوطة في swiper-slide 🚨
         html += `
-        <div class="premium-package-card">
-            <img src="${pkg.imageUrl}" class="pkg-glow-image">
-            <span style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 5px 12px; border-radius: 8px; font-size: 13px; font-weight: 900; align-self: flex-start; margin-bottom: 10px;">🔥 خصم خاص</span>
-            <h3 style="color: var(--text-main); font-size: 22px; margin: 0 0 5px 0; font-weight: 900;">${pkg.name}</h3>
-            <p style="color: var(--text-muted); font-size: 14px; margin: 0 0 15px 0;">${pkg.grade}</p>
-            <ul style="list-style:none; padding:0; margin:0 0 20px 0; color: var(--text-muted); display:flex; flex-direction:column; gap:10px; flex-grow:1;">${fHtml}</ul>
-            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed rgba(91,33,182,0.3); padding-top:20px;">
-                <span style="text-decoration:line-through; color:#ef4444; font-weight:800;">${pkg.oldPrice} ج</span>
-                <span style="font-size:26px; font-weight:900; color:#10b981;">${pkg.newPrice} ج</span>
+        <div class="swiper-slide">
+            <div class="premium-package-card">
+                <img src="${pkg.imageUrl}" class="pkg-glow-image">
+                <span style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 5px 12px; border-radius: 8px; font-size: 13px; font-weight: 900; align-self: flex-start; margin-bottom: 10px;">🔥 خصم خاص</span>
+                <h3 style="color: var(--text-main); font-size: 22px; margin: 0 0 5px 0; font-weight: 900;">${pkg.name}</h3>
+                <p style="color: var(--text-muted); font-size: 14px; margin: 0 0 15px 0;">${pkg.grade}</p>
+                <ul style="list-style:none; padding:0; margin:0 0 20px 0; color: var(--text-muted); display:flex; flex-direction:column; gap:10px; flex-grow:1;">${fHtml}</ul>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed rgba(91,33,182,0.3); padding-top:20px;">
+                    <span style="text-decoration:line-through; color:#ef4444; font-weight:800;">${pkg.oldPrice} ج</span>
+                    <span style="font-size:26px; font-weight:900; color:#10b981;">${pkg.newPrice} ج</span>
+                </div>
+                <button onclick="window.location.href='${subLink}'" style="width:100%; background:var(--primary-color); color:#fff; border:none; padding:15px; border-radius:12px; font-weight:900; font-family:'Cairo'; margin-top:20px; cursor:pointer; transition:0.3s; box-shadow: 0 10px 20px rgba(91,33,182,0.2);">اشترك في الباقة</button>
             </div>
-            <button onclick="window.location.href='${subLink}'" style="width:100%; background:var(--primary-color); color:#fff; border:none; padding:15px; border-radius:12px; font-weight:900; font-family:'Cairo'; margin-top:20px; cursor:pointer; transition:0.3s; box-shadow: 0 10px 20px rgba(91,33,182,0.2);">اشترك في الباقة</button>
         </div>`;
     });
     grid.innerHTML = html;
+
+    // 🚨 تفعيل سلايدر الباقات 🚨
+    if (packagesSwiperInstance) packagesSwiperInstance.destroy(true, true);
+    packagesSwiperInstance = new Swiper('.packages-slider', {
+        slidesPerView: 'auto',
+        spaceBetween: 20,
+        autoplay: { delay: 3500, disableOnInteraction: false }, // بيشتغل أوتوماتيك
+        pagination: { el: '.swiper-pagination', clickable: true }
+    });
 }
 fetchPackages();
 setupNestedFilters('packagesMainFilters', 'packagesSubFilters', renderPackages);
-
 
 // ==========================================
 // 8. الحصص وقراءة المشاهدات بشكل صحيح 🚨
@@ -381,8 +399,11 @@ async function fetchCoursesSliders() {
         let allC = [];
         snap.forEach(d => allC.push({id: d.id, ...d.data()}));
         
+        // 🚨 أحدث الحصص: ترتيب وتحديد لـ 6 حصص
         let latest = [...allC].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 6);
-        let top = [...allC].sort((a,b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
+        
+        // 🚨 الأكثر مشاهدة: ترتيب بأعلى المشاهدات واختيار أعلى 3 فقط 🚨
+        let top = [...allC].sort((a,b) => (parseInt(b.views) || 0) - (parseInt(a.views) || 0)).slice(0, 3);
 
         let studentMyCourses = [];
         if(loggedInPhone) {
@@ -392,11 +413,10 @@ async function fetchCoursesSliders() {
         }
 
         const buildCard = (c) => {
-            // 🚨 قراءة حقل maxViews من الداش بورد 🚨
+            // قراءة حقل maxViews من الداش بورد
             let viewsVal = c.maxViews; 
             let allowedV = (viewsVal == 0 || viewsVal === "0" || viewsVal === "" || viewsVal === undefined || viewsVal === null) ? "لا محدود" : viewsVal;
             
-            // الزرار حسب حالة الاشتراك
             const isBought = studentMyCourses.includes(c.id);
             let btnHtml = isBought 
                 ? `<button onclick="window.location.href='student-dashboard.html'" style="background:var(--input-bg); color:#10b981; border:1px solid #10b981; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer;">تم الشراء ✔</button>` 
@@ -407,7 +427,7 @@ async function fetchCoursesSliders() {
                 <div class="course-slide-card">
                     <div class="c-slide-img" style="background-image: url('${c.image || 'https://via.placeholder.com/300'}');"></div>
                     <h4 style="margin:0 0 5px 0; font-size:18px; color:var(--text-main); font-weight:900;">${c.title}</h4>
-                    <p style="margin:0 0 10px 0; color:var(--text-muted); font-size:13px;"><i class="fas fa-chalkboard-teacher"></i> ${c.instructor} | <i class="fas fa-play-circle" style="color:#f59e0b;"></i>  مشاهدات الطالب: ${allowedV}</p>
+                    <p style="margin:0 0 10px 0; color:var(--text-muted); font-size:13px;"><i class="fas fa-chalkboard-teacher"></i> ${c.instructor} | <i class="fas fa-play-circle" style="color:#f59e0b;"></i> المشاهدات: ${allowedV}</p>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:15px; border-top:1px solid var(--input-border);">
                         <span style="color:#10b981; font-weight:900; font-size:18px;">${c.price > 0 ? c.price + ' ج' : 'مجاني'}</span>
                         ${btnHtml}
@@ -417,15 +437,30 @@ async function fetchCoursesSliders() {
         };
 
         const latGrid = document.getElementById('latestCoursesGrid');
-        if(latGrid) { latGrid.innerHTML = latest.map(buildCard).join(''); new Swiper('.latest-courses-slider', { slidesPerView: 'auto', spaceBetween: 20 }); }
+        if(latGrid) { 
+            latGrid.innerHTML = latest.map(buildCard).join(''); 
+            new Swiper('.latest-courses-slider', { 
+                slidesPerView: 'auto', spaceBetween: 20, 
+                autoplay: { delay: 3500, disableOnInteraction: false }, // سلايدر شغال أوتوماتيك
+                pagination: { el: '.swiper-pagination', clickable: true }
+            }); 
+        }
+        
         const topGrid = document.getElementById('topCoursesGrid');
-        if(topGrid) { topGrid.innerHTML = top.map(buildCard).join(''); new Swiper('.top-courses-slider', { slidesPerView: 'auto', spaceBetween: 20 }); }
-    } catch(e) {}
+        if(topGrid) { 
+            topGrid.innerHTML = top.map(buildCard).join(''); 
+            new Swiper('.top-courses-slider', { 
+                slidesPerView: 'auto', spaceBetween: 20,
+                autoplay: { delay: 4000, disableOnInteraction: false }, // سلايدر شغال أوتوماتيك
+                pagination: { el: '.swiper-pagination', clickable: true }
+            }); 
+        }
+    } catch(e) { console.error(e); }
 }
 fetchCoursesSliders();
 
 // ==========================================
-// 9. الشراء وإضافة الإشعارات الحقيقية 🚨
+// 9. الشراء وإضافة الإشعارات الحقيقية
 // ==========================================
 window.currentViewingTeacher = "";
 window.pendingCourseId = null;
@@ -469,7 +504,6 @@ window.selectStageAndLoadCourses = async function(stageKeyword) {
             if(isMatch) {
                 hasCourses = true;
                 
-                // 🚨 قراءة حقل maxViews من الداش بورد 🚨
                 let viewsVal = c.maxViews; 
                 let allowedV = (viewsVal == 0 || viewsVal === "0" || viewsVal === "" || viewsVal === undefined || viewsVal === null) ? "لا محدود" : viewsVal;
                 
@@ -506,7 +540,7 @@ window.buyCourseAction = async function(courseId, price, title) {
         window.currentUserId = userSnap.docs[0].id;
         window.currentUserBalance = parseInt(userData.walletBalance) || 0;
         window.currentUserCourses = userData.myCourses || []; 
-        window.currentUserNotifications = userData.notifications || []; // قائمة إشعارات الطالب
+        window.currentUserNotifications = userData.notifications || []; 
 
         window.pendingCourseId = courseId;
         window.pendingCoursePrice = parseInt(price) || 0;
@@ -527,7 +561,6 @@ async function executePurchaseAndAddCourse(newBalance) {
         window.currentUserCourses.push(window.pendingCourseId);
     }
     
-    // 🚨 إنشاء إشعار الشراء ورفعه لليوزر 🚨
     window.currentUserNotifications.push({
         title: "تم الاشتراك في حصة 📚",
         text: `تم الاشتراك في "${window.pendingCourseTitle}" بنجاح، تقدر تتابعها من قسم كورساتي.`,
@@ -570,7 +603,6 @@ document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async (
 
         await updateDoc(doc(db, "charge_codes", codeDoc.id), { isUsed: true, usedByPhone: loggedInPhone, usedAt: new Date().toISOString() });
 
-        // 🚨 إنشاء إشعار الشحن 🚨
         window.currentUserNotifications.push({
             title: "تم شحن الرصيد 💰",
             text: `تم إضافة ${codeValue} ج.م لمحفظتك بنجاح.`,
@@ -582,7 +614,6 @@ document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async (
             alert(`🎉 تم شحن (${codeValue} ج.م) وشراء الحصة بنجاح!`);
             window.location.href = 'student-dashboard.html';
         } else {
-            // لو الرصيد لسه مش مكفي نرفع الإشعار بس
             await updateDoc(doc(db, "users", window.currentUserId), { 
                 walletBalance: newTempBalance,
                 notifications: window.currentUserNotifications
