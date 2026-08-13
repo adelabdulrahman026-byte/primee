@@ -274,28 +274,6 @@ body:not(.index-body):not(.dashboard-body):not(.watch-page-body):not(.parent-rep
     .teacher-fade-png { max-height: 400px !important; bottom: 60px !important; /* رفعنا المدرس عشان نسيب مساحة للاسم تحت الزراير */ }
     .teacher-glow-bg { width: 220px !important; height: 220px !important; bottom: 25% !important; }
     
-    /* 🚨 3. الأزرار طايرة فوق بدلة المدرس 🚨 */
-    .hero-buttons { 
-        position: absolute !important; 
-        bottom: 80px !important; /* طايرة فوق المدرس */
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: 95% !important;
-        flex-direction: row !important; 
-        justify-content: center !important; 
-        gap: 10px !important;
-        z-index: 30 !important; 
-        margin: 0 !important;
-    }
-    .btn-primary-hero, .btn-secondary-hero { 
-        flex: 1 !important; 
-        padding: 12px 10px !important; 
-        font-size: 14px !important; 
-        justify-content: center !important;
-        border-radius: 12px !important;
-        white-space: nowrap; 
-    }
-    
     /* اللوجو الطاير */
     .flying-logo { width: 80px !important; top: 10px !important; left: 10px !important; animation: smoothFloat 4s ease-in-out infinite alternate !important; }
 
