@@ -14,7 +14,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// 1. إغلاق القوائم عند الضغط خارجها
+// 1. إغلاق القوائم المنسدلة عند الضغط في أي مكان
 // ==========================================
 document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('navDropdown');
@@ -25,7 +25,7 @@ document.addEventListener('click', (e) => {
 });
 
 // ==========================================
-// 2. الهيدر، الأنيميشن، وبيانات الطالب (مع الإشعارات)
+// 2. الهيدر والأنيميشن وبيانات الطالب (والإشعارات)
 // ==========================================
 const phrases = [
     "تعلّم بذكاء،<br><span>وتقدّم بثقة.</span>", 
@@ -78,14 +78,19 @@ async function fetchStudentNavData(phone) {
             const mobMyC = document.getElementById('mobileMyCoursesLink');
             if(mobMyC) mobMyC.style.display = 'block';
             
-            // 🚨 نظام الإشعارات الحقيقي من الداتا بيز 🚨
+            // 🚨 معالجة الإشعارات (الجرس) بناءً على داتا الطالب 🚨
             let notifHtml = '';
             if (data.notifications && data.notifications.length > 0) {
-                const notifs = data.notifications.reverse(); // من الأحدث للأقدم
+                const notifs = data.notifications.reverse(); // نعرض الأحدث الأول
                 notifs.forEach(n => {
+                    // نظبط لون الأيقونة حسب نوع الإشعار (شراء أو شحن)
+                    let iconColor = n.title && n.title.includes('شحن') ? '#3b82f6' : '#10b981';
+                    let iconBg = n.title && n.title.includes('شحن') ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)';
+                    let iconClass = n.title && n.title.includes('شحن') ? 'fa-wallet' : 'fa-check-circle';
+                    
                     notifHtml += `
                     <div class="notif-item">
-                        <div class="notif-icon"><i class="fas fa-bell"></i></div>
+                        <div class="notif-icon" style="color: ${iconColor}; background: ${iconBg};"><i class="fas ${iconClass}"></i></div>
                         <div class="notif-text"><p>${n.text || n.title || 'إشعار جديد'}</p></div>
                     </div>`;
                 });
@@ -99,7 +104,7 @@ async function fetchStudentNavData(phone) {
             const notifContent = document.getElementById('notificationsListContent');
             if(notifContent) notifContent.innerHTML = notifHtml;
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Error fetching student data: ", e); }
 }
 
 document.getElementById('openDrawer')?.addEventListener('click', () => { document.getElementById('stagesDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('active'); document.body.style.overflow='hidden'; });
@@ -163,12 +168,13 @@ document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', ()
 });
 
 // ==========================================
-// 4. المساعد الذكي ماجي (AI Chat)
+// 4. المساعد الذكي ماجي (AI Chat) - مربوط بـ Cloudflare
 // ==========================================
 window.sendMaggieMessage = async function() {
     const input = document.getElementById('maggieInput');
     const msg = input.value.trim();
     if(!msg) return;
+    
     const chatBody = document.getElementById('maggieChatBody');
     chatBody.innerHTML += `<div class="user-msg">${msg}</div>`;
     input.value = '';
@@ -178,11 +184,13 @@ window.sendMaggieMessage = async function() {
     chatBody.innerHTML += `<div class="ai-msg" id="${loadingId}"><i class="fas fa-ellipsis-h fa-fade"></i> ماجي تفكر...</div>`;
     chatBody.scrollTop = chatBody.scrollHeight;
     
-    const CLOUDFLARE_WORKER_URL = "https://your-worker-name.your-username.workers.dev"; // غير الرابط ده للي هتعمله في كلاود فلير
+    // 🚨 حط رابط הـ Cloudflare Worker بتاعك هنا 🚨
+    const CLOUDFLARE_WORKER_URL = "https://your-worker-name.your-username.workers.dev"; 
     
     try {
         const response = await fetch(CLOUDFLARE_WORKER_URL, {
-            method: "POST", headers: { "Content-Type": "application/json" },
+            method: "POST", 
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: msg })
         });
         const data = await response.json();
@@ -238,7 +246,7 @@ function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
 }
 
 // ==========================================
-// 6. المدرسين: سلايدر Fade والمدرس المفرغ
+// 6. المدرسين: سلايدر Fade
 // ==========================================
 let allTeachersData = [];
 let teachersSwiperInstance = null;
@@ -363,8 +371,9 @@ function renderPackages(filterText) {
 fetchPackages();
 setupNestedFilters('packagesMainFilters', 'packagesSubFilters', renderPackages);
 
+
 // ==========================================
-// 8. الحصص (قراءة المشاهدات صح) 🚨
+// 8. الحصص وقراءة المشاهدات بشكل صحيح 🚨
 // ==========================================
 async function fetchCoursesSliders() {
     try {
@@ -383,10 +392,11 @@ async function fetchCoursesSliders() {
         }
 
         const buildCard = (c) => {
-            // 🚨 قراءة حقل maxViews اللي بتكتبه في الداش بورد 🚨
+            // 🚨 قراءة حقل maxViews من الداش بورد 🚨
             let viewsVal = c.maxViews; 
             let allowedV = (viewsVal == 0 || viewsVal === "0" || viewsVal === "" || viewsVal === undefined || viewsVal === null) ? "لا محدود" : viewsVal;
             
+            // الزرار حسب حالة الاشتراك
             const isBought = studentMyCourses.includes(c.id);
             let btnHtml = isBought 
                 ? `<button onclick="window.location.href='student-dashboard.html'" style="background:var(--input-bg); color:#10b981; border:1px solid #10b981; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer;">تم الشراء ✔</button>` 
@@ -415,7 +425,7 @@ async function fetchCoursesSliders() {
 fetchCoursesSliders();
 
 // ==========================================
-// 9. الشراء وإضافة الإشعار للطالب
+// 9. الشراء وإضافة الإشعارات الحقيقية 🚨
 // ==========================================
 window.currentViewingTeacher = "";
 window.pendingCourseId = null;
@@ -496,7 +506,7 @@ window.buyCourseAction = async function(courseId, price, title) {
         window.currentUserId = userSnap.docs[0].id;
         window.currentUserBalance = parseInt(userData.walletBalance) || 0;
         window.currentUserCourses = userData.myCourses || []; 
-        window.currentUserNotifications = userData.notifications || []; // هنجيب الإشعارات القديمة عشان نضيف عليها
+        window.currentUserNotifications = userData.notifications || []; // قائمة إشعارات الطالب
 
         window.pendingCourseId = courseId;
         window.pendingCoursePrice = parseInt(price) || 0;
@@ -517,17 +527,17 @@ async function executePurchaseAndAddCourse(newBalance) {
         window.currentUserCourses.push(window.pendingCourseId);
     }
     
-    // 🚨 إضافة إشعار شراء الحصة للطالب 🚨
+    // 🚨 إنشاء إشعار الشراء ورفعه لليوزر 🚨
     window.currentUserNotifications.push({
-        title: "تم الاشتراك بنجاح 🎉",
-        text: `تم اشتراكك في حصة "${window.pendingCourseTitle}" بنجاح، يمكنك مشاهدتها الآن من قسم كورساتي.`,
+        title: "تم الاشتراك في حصة 📚",
+        text: `تم الاشتراك في "${window.pendingCourseTitle}" بنجاح، تقدر تتابعها من قسم كورساتي.`,
         date: new Date().toISOString()
     });
 
     await updateDoc(doc(db, "users", window.currentUserId), {
         walletBalance: newBalance,
         myCourses: window.currentUserCourses,
-        notifications: window.currentUserNotifications // رفع الإشعار
+        notifications: window.currentUserNotifications
     });
 }
 
@@ -560,10 +570,10 @@ document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async (
 
         await updateDoc(doc(db, "charge_codes", codeDoc.id), { isUsed: true, usedByPhone: loggedInPhone, usedAt: new Date().toISOString() });
 
-        // 🚨 إضافة إشعار شحن الكارت للطالب 🚨
+        // 🚨 إنشاء إشعار الشحن 🚨
         window.currentUserNotifications.push({
             title: "تم شحن الرصيد 💰",
-            text: `تم شحن رصيدك بنجاح بمبلغ ${codeValue} ج.م.`,
+            text: `تم إضافة ${codeValue} ج.م لمحفظتك بنجاح.`,
             date: new Date().toISOString()
         });
 
@@ -572,6 +582,7 @@ document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async (
             alert(`🎉 تم شحن (${codeValue} ج.م) وشراء الحصة بنجاح!`);
             window.location.href = 'student-dashboard.html';
         } else {
+            // لو الرصيد لسه مش مكفي نرفع الإشعار بس
             await updateDoc(doc(db, "users", window.currentUserId), { 
                 walletBalance: newTempBalance,
                 notifications: window.currentUserNotifications
