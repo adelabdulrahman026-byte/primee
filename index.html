@@ -6,39 +6,14 @@
     <title>Primee Academy - المنصة التعليمية الأولى</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-    <link rel="stylesheet" href="style.css?v=120">
-
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        // إيقاف الظهور التلقائي المزعج (إحنا هنتحكم فيه بالزرار بتاعنا)
-        await OneSignal.init({ 
-            appId: "6f7ca840-5b06-4e85-81ec-00d53f2a5b9a",
-            notifyButton: { enable: false },
-            promptOptions: { autoPrompt: false } 
-        });
-      });
-    </script>
+    <link rel="stylesheet" href="style.css?v=130">
 </head>
 <body class="index-body">
 
-    <!-- 🚨 نافذة الإشعارات الخاصة بك فقط 🚨 -->
-    <div id="notificationModal" class="custom-modal-overlay">
-        <div class="custom-modal-content">
-            <div class="modal-icon" style="color: #f59e0b;"><i class="fas fa-bell"></i></div>
-            <h3>فعل الإشعارات الآن! 🚀</h3>
-            <p>عشان يوصلك كل جديد عن مواعيد الحصص، الامتحانات، والمراجعات.</p>
-            <div class="modal-actions">
-                <button class="btn-confirm" id="allowNotifications">موافق، فعلها</button>
-                <button class="btn-cancel" id="closeNotifications">ليس الآن</button>
-            </div>
-        </div>
-    </div>
+    <!-- النوافذ المنبثقة -->
+    <div id="notificationModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: #f59e0b;"><i class="fas fa-bell"></i></div><h3>فعل الإشعارات الآن! 🚀</h3><p>عشان يوصلك كل جديد عن مواعيد الحصص، الامتحانات، والمراجعات.</p><div class="modal-actions"><button class="btn-confirm" id="allowNotifications">موافق، فعلها</button><button class="btn-cancel" id="closeNotifications">ليس الآن</button></div></div></div>
     
-    <!-- النوافذ المنبثقة القديمة -->
     <div id="parentModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: var(--primary-color);"><i class="fas fa-user-shield"></i></div><h3>بوابة ولي الأمر 👨‍👩‍👧</h3><p>أدخل رقم هاتف الطالب لمتابعة مستواه ودرجاته.</p><input type="text" id="parentStudentPhone" placeholder="رقم هاتف الطالب (مثال: 010...)" style="margin-bottom: 20px; width: 100%;"><div class="modal-actions"><button class="btn-confirm" id="btnParentLogin">دخول للمتابعة</button><button class="btn-cancel" onclick="document.getElementById('parentModal').classList.remove('active')">إلغاء</button></div></div></div>
     <div id="teacherCoursesModal" class="custom-modal-overlay"><div class="custom-modal-content" style="max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto; background: var(--bg-body); border: 1px solid var(--input-border); text-align: right;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--input-border); padding-bottom: 15px; margin-bottom: 20px;"><h3 id="modalTeacherName" style="margin: 0; color: var(--text-main); font-size: 24px; font-weight: 900;">حصص الأستاذ</h3><button onclick="document.getElementById('teacherCoursesModal').classList.remove('active')" style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 40px; height: 40px; border-radius: 10px; font-size: 18px; cursor: pointer;"><i class="fas fa-times"></i></button></div><div id="modalCoursesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;"></div></div></div>
     <div id="stageSelectionModal" class="custom-modal-overlay"><div class="custom-modal-content" style="max-width: 600px;"><h3 style="color: var(--primary-color); font-size: 24px; margin-bottom: 10px;">اختر المرحلة الدراسية 📚</h3><p style="color: var(--text-muted); margin-bottom: 25px;">علشان نعرضلك حصص الأستاذ المناسبة ليك</p><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px;"><button onclick="selectStageAndLoadCourses('ابتدائي')" style="background: var(--input-bg); color: #3b82f6; border: 2px solid #3b82f6; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-child" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>ابتدائي</button><button onclick="selectStageAndLoadCourses('إعدادي')" style="background: var(--input-bg); color: #10b981; border: 2px solid #10b981; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-book-reader" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>إعدادي</button><button onclick="selectStageAndLoadCourses('ثانوي')" style="background: var(--input-bg); color: #f59e0b; border: 2px solid #f59e0b; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-graduation-cap" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>ثانوي</button><button onclick="selectStageAndLoadCourses('بكالوريا')" style="background: var(--input-bg); color: #d946ef; border: 2px solid #d946ef; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-university" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>بكالوريا</button></div><button onclick="document.getElementById('stageSelectionModal').classList.remove('active')" style="margin-top: 25px; background: rgba(239,68,68,0.1); color: #ef4444; border: none; padding: 10px 30px; border-radius: 10px; font-weight: bold; cursor: pointer;">إلغاء</button></div></div>
@@ -46,18 +21,16 @@
     <div id="chargeToBuyModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: #ef4444;"><i class="fas fa-wallet"></i></div><h3>رصيدك غير كافٍ! ⚠️</h3><p id="chargeReqText" style="margin-bottom: 15px; font-size: 15px; color: var(--text-muted);"></p><p style="font-size: 13px; color: #f59e0b; margin-bottom: 20px;">أدخل كود الشحن بالأسفل وسيتم الشحن وشراء الحصة تلقائياً.</p><input type="text" id="autoChargeCodeInput" placeholder="أدخل كود الشحن هنا" style="width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-main); font-family: monospace; font-size: 18px; text-align: center; margin-bottom: 20px;"><div class="modal-actions"><button class="btn-confirm" id="btnSubmitChargeBuy" style="background: #3b82f6;">شحن واشتراك 🚀</button><button class="btn-cancel" onclick="document.getElementById('chargeToBuyModal').classList.remove('active')">إغلاق</button></div></div></div>
     <div id="searchTeacherModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: #3b82f6;"><i class="fas fa-search"></i></div><h3>ابحث عن مدرسك</h3><input type="text" id="searchTeacherInput" placeholder="اكتب اسم المدرس هنا..." style="width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-main); margin-bottom: 20px;"><div class="modal-actions"><button class="btn-confirm" id="btnExecuteSearchTeacher" style="background: #3b82f6;">بحث</button><button class="btn-cancel" onclick="document.getElementById('searchTeacherModal').classList.remove('active')">إغلاق</button></div></div></div>
 
-    <!-- 🚨 القائمة الجانبية للموبايل المعدلة الفخمة 🚨 -->
+    <!-- القائمة الجانبية للموبايل -->
     <div id="stagesDrawer" class="side-drawer">
         <div class="drawer-header">
             <div class="nav-brand" style="font-size: 24px;">Primee<span>.</span></div>
             <button id="closeDrawer" class="btn-close-drawer"><i class="fas fa-times"></i></button>
         </div>
-        
         <div id="mobileAuthSection" class="mobile-auth-wrapper">
             <a href="login.html" class="btn-primary-mobile">تسجيل الدخول</a>
             <a href="register.html" class="btn-secondary-mobile">إنشاء حساب</a>
         </div>
-
         <ul class="drawer-links">
             <li><a href="index.html"><i class="fas fa-home"></i> الرئيسية</a></li>
             <li><a href="#" onclick="document.getElementById('parentModal').classList.add('active'); closeDrawer();"><i class="fas fa-user-shield"></i> متابعة ولي الأمر</a></li>
@@ -77,19 +50,16 @@
             <button id="openDrawer" class="btn-hamburger"><i class="fas fa-bars-staggered"></i> القائمة</button>
             <button class="theme-toggle" id="themeToggleBtn" title="تغيير المظهر"><i class="fas fa-moon"></i></button>
             
-            <!-- 🚨 جرس الإشعارات الجديد 🚨 -->
             <div class="nav-bell-wrapper" id="navBellBtn" onclick="document.getElementById('navDropdown').classList.toggle('active')">
                 <i class="fas fa-bell"></i>
                 <span class="badge"></span>
                 <div class="notifications-dropdown" id="navDropdown" onclick="event.stopPropagation()">
                     <h4>آخر الإشعارات</h4>
                     <div id="notificationsListContent">
-                        <!-- هتنزل الداتا هنا من الـ JS -->
                         <div style="text-align:center; color:#94a3b8; padding: 10px;">لا توجد إشعارات حالياً</div>
                     </div>
                 </div>
             </div>
-            
         </div>
         <ul class="nav-links">
             <li><a href="index.html" class="active">الرئيسية</a></li>
@@ -103,9 +73,8 @@
         </div>
     </nav>
 
-    <!-- 🚨 القسم الرئيسي (Hero Section) المحدث - HTML5 Video + Fade Slider 🚨 -->
+    <!-- القسم الرئيسي -->
     <div class="hero-wrapper" style="position: relative; overflow: hidden; border-radius: 30px; margin: 20px auto; max-width: 1350px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); background: var(--bg-card);">
-        
         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;">
             <video id="heroVideoBg" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover; position: absolute; left: 0; top: 0;"></video>
         </div>
@@ -113,7 +82,6 @@
 
         <header class="hero-section" style="position: relative; z-index: 2; margin: 0 auto;">
             <div class="hero-flex-container">
-                
                 <div class="hero-content">
                     <span class="hero-badge">👋 مرحباً بك في Primee Academy</span>
                     <h1 id="heroTitle">تعلّم بذكاء،<br><span>في شاشة واحدة.</span></h1>
@@ -123,10 +91,8 @@
                         <a href="#" onclick="document.getElementById('searchTeacherModal').classList.add('active')" class="btn-secondary-hero"><i class="fas fa-search"></i> بحث عن مدرس</a>
                     </div>
                 </div>
-                
                 <div class="hero-image">
                     <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" class="flying-logo">
-                    
                     <div class="swiper hero-fade-slider">
                         <div class="swiper-wrapper" id="heroTeachersFadeGrid">
                             <div style="text-align:center; padding: 50px; color:var(--text-main); font-weight: bold;">جاري تحميل الأبطال...</div>
@@ -138,21 +104,19 @@
         </header>
     </div>
 
-    <!-- قسم المدرسين مع فيديو خفيف في الخلفية -->
+    <!-- قسم المدرسين -->
     <section id="teachersSection" class="teachers-section" style="position: relative; overflow: hidden; padding: 40px 20px; border-radius: 24px; background: var(--bg-card); box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.15; pointer-events: none;">
             <video autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover; position: absolute; left: 0; top: 0;">
                 <source src="https://cdn.pixabay.com/video/2022/02/16/107775-677688220_tiny.mp4" type="video/mp4">
             </video>
         </div>
-        
         <div style="position: relative; z-index: 1;">
             <div class="section-header">
                 <h2>نخبة المعلمين</h2>
                 <a href="#" id="viewAllTeachersBtn" class="view-all">عرض جميع المدرسين <i class="fas fa-arrow-left"></i></a>
             </div>
-            
-            <div class="packages-filters-container" id="teachersMainFilters" style="margin-top: -10px; margin-bottom: 0px;">
+            <div class="packages-filters-container" id="teachersMainFilters">
                 <button class="modern-filter-btn active" data-filter="all">الكل</button>
                 <button class="modern-filter-btn" data-filter="ابتدائي">ابتدائي</button>
                 <button class="modern-filter-btn" data-filter="إعدادي">إعدادي</button>
@@ -160,7 +124,6 @@
                 <button class="modern-filter-btn" data-filter="بكالوريا">بكالوريا</button>
             </div>
             <div class="sub-filters-container" id="teachersSubFilters"></div>
-            
             <div class="swiper teachers-slider">
                 <div class="swiper-wrapper" id="teachersGrid">
                     <div style="text-align: center; width: 100%; color: #94a3b8; padding: 50px 20px;">جاري انضمام نخبة من المدرسين قريباً...</div>
@@ -172,7 +135,7 @@
         </div>
     </section>
 
-    <!-- أحدث الحصص -->
+    <!-- أحدث الحصص (سلايدر متحرك) -->
     <section style="max-width: 1200px; margin: 60px auto; padding: 0 20px;">
         <div class="section-header"><h2>أحدث الحصص المضافة 🌟</h2></div>
         <div class="swiper latest-courses-slider" style="padding-bottom: 40px; overflow: hidden;">
@@ -181,7 +144,7 @@
         </div>
     </section>
 
-    <!-- الأكثر مشاهدة -->
+    <!-- الأكثر مشاهدة (Top 3 وسلايدر متحرك) -->
     <section style="max-width: 1200px; margin: 60px auto; padding: 0 20px;">
         <div class="section-header"><h2>الحصص الأكثر مشاهدة 🔥</h2></div>
         <div class="swiper top-courses-slider" style="padding-bottom: 40px; overflow: hidden;">
@@ -190,8 +153,8 @@
         </div>
     </section>
 
-    <!-- قسم الباقات الشاملة -->
-    <section class="packages-section" style="max-width: 1200px; margin: 80px auto; padding: 0 20px;">
+    <!-- قسم الباقات الشاملة (تم تحويله لـ سلايدر) -->
+    <section class="packages-section" style="max-width: 1200px; margin: 80px auto; padding: 0 20px; overflow: hidden;">
         <div class="section-header" style="text-align: center; justify-content: center; flex-direction: column; gap: 10px;">
             <h2>الباقات الشاملة <span style="color: #f59e0b;"><i class="fas fa-crown"></i></span></h2>
             <p style="color: var(--text-muted); font-weight: 600;">وفر فلوسك واشترك في باقات مجمعة لأقوى المدرسين</p>
@@ -204,7 +167,11 @@
             <button class="modern-filter-btn" data-filter="بكالوريا">بكالوريا</button>
         </div>
         <div class="sub-filters-container" id="packagesSubFilters"></div>
-        <div class="packages-grid" id="packagesGridContainer"></div>
+        <!-- 🚨 سلايدر الباقات 🚨 -->
+        <div class="swiper packages-slider" style="padding-bottom: 40px;">
+            <div class="swiper-wrapper" id="packagesGridContainer"></div>
+            <div class="swiper-pagination"></div>
+        </div>
     </section>
 
     <!-- قسم النصائح -->
@@ -220,7 +187,7 @@
         </div>
     </section>
 
-    <!-- الفوتر مع تعديل الديفلوبر وإضافة الشروط والأحكام -->
+    <!-- الفوتر -->
     <div class="modern-footer-container">
         <div class="footer-card">
             <div class="footer-logo">
@@ -243,12 +210,10 @@
         </div>
     </div>
 
-    <!-- 🚨 المساعد الذكي ماجي 🚨 -->
+    <!-- المساعد الذكي ماجي -->
     <div class="floating-ai-btn" onclick="document.getElementById('maggieChatModal').classList.add('active')">
         <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Maggie AI"> تواصل مع ماجي
     </div>
-    
-    <!-- نافذة شات ماجي -->
     <div class="ai-chat-modal" id="maggieChatModal">
         <div class="ai-chat-header">
             <h3><img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Maggie"> المساعدة ماجي (AI)</h3>
@@ -263,8 +228,7 @@
         </div>
     </div>
 
-    <!-- مكتبة Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script type="module" src="index-script.js?v=120"></script>
+    <script type="module" src="index-script.js?v=130"></script>
 </body>
 </html>
