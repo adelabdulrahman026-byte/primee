@@ -330,6 +330,11 @@ async function playVideoAndRecordView(videoUrl) {
     const vimeoID = extractVimeoID(videoUrl);
     
     if (vimeoID && vidContainer) {
+        // 🚨 هنا السر: بنلغي الـ flex اللي كان بيعصر الفيديو في النص 🚨
+        vidContainer.style.display = 'block';
+        vidContainer.style.width = '100%';
+        vidContainer.style.height = '100%';
+        
         vidContainer.innerHTML = `<div class="plyr__video-embed" id="player"><iframe src="https://player.vimeo.com/video/${vimeoID}?loop=false&amp;byline=false&amp;portrait=false&amp;title=false&amp;speed=true&amp;transparent=0&amp;gesture=media" allowfullscreen allowtransparency allow="autoplay"></iframe></div>`;
         setTimeout(() => { new Plyr('#player', { speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }}); }, 100);
         
@@ -339,6 +344,7 @@ async function playVideoAndRecordView(videoUrl) {
         await updateDoc(doc(db, "users", currentStudentId), { courseViews: viewsMap });
         
     } else {
+        vidContainer.style.display = 'flex'; // نرجعها flex عشان نسنتر رسالة الخطأ
         vidContainer.innerHTML = `<p style="color:#ef4444; font-weight:bold; font-size:20px;">رابط الفيديو غير متوفر.</p>`;
     }
 }
