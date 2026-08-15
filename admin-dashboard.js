@@ -677,15 +677,47 @@ document.getElementById('filterSpecificExam')?.addEventListener('change', render
 
 window.gradeStudentExam = async function(id, total) {
     if(!await adminConfirm("إعطاء الطالب الدرجة النهائية ونجاحه؟")) return;
-    try { await updateDoc(doc(db,"exam_submissions",id), {status:'passed', score:total || 10}); } catch(e){}
+    try { 
+        const subRef = doc(db,"exam_submissions",id);
+        const subSnap = await getDoc(subRef);
+        if(subSnap.exists()) {
+            const d = subSnap.data();
+            const newScore = total || 10;
+            await updateDoc(subRef, {status:'passed', score:newScore}); 
+            
+            // 🚨 إرسال إشعار الواتساب الفوري بعد النجاح 🚨
+            let waMsg = `مرحباً ولي أمر الطالب/ة: ${d.studentName}\nتم تصحيح وتحديث امتحان (${d.examTitle}) لحصة (${d.courseTitle}).\nالنتيجة: ناجح ✅\nالدرجة: ${newScore} من ${total || 10}\nتم فتح الحصة للطالب بنجاح.`;
+            await sendWhatsAppToParent(d.parentPhone, waMsg);
+            
+            adminAlert("تم", "تم تسجيل النجاح وإرسال رسالة لولي الأمر", "success");
+        }
+    } catch(e){}
 }
+
 window.editStudentScore = async function(id, cur, total) {
     const n = prompt(`الدرجة (من ${total}):`, cur);
     if(!n) return;
     const num = parseInt(n);
-    if(num>=0 && num<=total) { await updateDoc(doc(db,"exam_submissions",id), {score:num, status: num >= (total/2) ? 'passed' : 'failed'}); }
-}
+    if(num>=0 && num<=total) { 
+        try {
+            const subRef = doc(db,"exam_submissions",id);
+            const subSnap = await getDoc(subRef);
+            if(subSnap.exists()){
+                const d = subSnap.data();
+                let newStatus = num >= (total/2) ? 'passed' : 'failed';
+                await updateDoc(subRef, {score:num, status: newStatus});
 
+                // 🚨 إرسال إشعار الواتساب الفوري بالتعديل 🚨
+                let waMsg = `مرحباً ولي أمر الطالب/ة: ${d.studentName}\nتم تصحيح امتحان (${d.examTitle}) لحصة (${d.courseTitle}).\n`;
+                if(newStatus === 'passed') waMsg += `النتيجة: ناجح ✅\nالدرجة: ${num} من ${total}\nتم فتح الحصة للطالب بنجاح.`;
+                else waMsg += `النتيجة: راسب ❌\nالدرجة: ${num} من ${total}\nالحصة مغلقة الآن.`;
+                
+                await sendWhatsAppToParent(d.parentPhone, waMsg);
+                adminAlert("تم", "تم التعديل وإرسال إشعار لولي الأمر", "success");
+            }
+        } catch(e) {}
+    }
+}
 // 🚨 المحفظة (العمليات المالية) 🚨
 let allTransactions = [];
 onSnapshot(query(collection(db, "transactions")), (snap) => {
