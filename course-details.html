@@ -25,11 +25,9 @@
         .video-main { flex: 1; }
         .video-sidebar { width: 320px; background: var(--bg-card); border-radius: 20px; padding: 25px; border: 1px solid var(--input-border); box-shadow: 0 10px 30px rgba(0,0,0,0.03); height: fit-content; }
 
-        /* 🚨 إعدادات الفيديو 🚨 */
         .video-player-wrapper { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 15px; overflow: hidden; border: 1px solid var(--input-border); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
         .plyr { width: 100% !important; height: 100% !important; border-radius: 15px !important; }
         .plyr__video-embed iframe { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; border: none !important; }
-
         #studentWatermark { position: absolute; color: rgba(255, 255, 255, 0.25); z-index: 99; pointer-events: none; font-weight: 900; font-size: 20px; transition: top 4s linear, left 4s linear; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
 
         .video-details-card { background: var(--bg-card); padding: 25px; border-radius: 20px; margin-top: 20px; border: 1px solid var(--input-border); }
@@ -37,7 +35,6 @@
         .video-meta { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;}
         .video-meta span { background: var(--input-bg); padding: 8px 15px; border-radius: 10px; font-size: 14px; font-weight: 800; border: 1px solid var(--input-border); color: var(--text-main); }
         
-        /* 🚨 التقييم بالنجوم 🚨 */
         .rating-stars { display: inline-flex; gap: 5px; direction: ltr; margin: 0 10px;}
         .rating-stars i { font-size: 22px; color: #cbd5e1; cursor: pointer; transition: 0.2s; }
         #ratingStats { font-weight: 900; color: var(--primary-color); font-size: 14px; background: rgba(91, 33, 182, 0.1); padding: 4px 10px; border-radius: 8px;}
@@ -50,75 +47,92 @@
         .playlist-item.locked { opacity: 0.7; }
         .playlist-item i.status-icon { font-size: 18px; }
 
-        /* 🚨 نافذة الامتحان 🚨 */
-        .exam-fullscreen-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-card); z-index: 10; display: flex; flex-direction: column; overflow-y: auto; padding: 30px; }
-        .exam-form-container { background: var(--input-bg); padding: 30px; border-radius: 20px; border: 1px solid var(--input-border); width: 100%; max-width: 800px; margin: 0 auto; }
-        .exam-header-title { text-align: center; margin-bottom: 30px; }
-        .exam-header-title i { font-size: 50px; color: #f59e0b; margin-bottom: 15px; }
-        .exam-header-title h2 { color: var(--text-main); font-size: 28px; margin: 0 0 5px 0; font-weight: 900; }
+        /* ========================================================= */
+        /* 🚨 نافذة الامتحان الشيك (كارت مالي الشاشة) 🚨 */
+        /* ========================================================= */
+        .exam-fullscreen-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.95); z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(10px); }
         
-        .exam-question { margin-bottom: 30px; padding-bottom: 30px; border-bottom: 1px dashed var(--input-border); text-align: right; }
-        .exam-q-text { color: var(--text-main); font-size: 18px; font-weight: 800; margin-bottom: 15px; line-height: 1.6; }
-        .mcq-option { display: flex; align-items: center; background: var(--bg-card); padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--input-border); cursor: pointer; transition: 0.2s; font-size: 16px; font-weight: 700; color: var(--text-main); }
-        .mcq-option:hover { border-color: var(--primary-color); background: rgba(91, 33, 182, 0.05); }
-        .mcq-option input { margin-left: 15px; accent-color: var(--primary-color); transform: scale(1.3); }
-        .essay-input { width: 100%; padding: 20px; background: var(--bg-card); border: 1px solid var(--input-border); border-radius: 12px; color: var(--text-main); font-family: 'Cairo'; resize: vertical; box-sizing: border-box; font-size: 16px; font-weight: 600;}
-        .essay-input:focus { border-color: var(--primary-color); outline: none; }
+        .exam-form-container { background: var(--bg-card); width: 100%; max-width: 1000px; height: 95vh; border-radius: 30px; border: 2px solid var(--primary-color); box-shadow: 0 25px 60px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; }
         
-        .btn-submit-exam { width: 100%; background: #10b981; color: #fff; padding: 15px; border: none; border-radius: 12px; font-size: 18px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; transition: 0.3s; }
-        .btn-submit-exam:hover { background: #059669; transform: translateY(-3px); }
+        .exam-header-title { background: linear-gradient(135deg, var(--primary-color), #d946ef); color: #fff; padding: 30px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.1); z-index: 10; }
+        .exam-header-title i { font-size: 50px; color: #fff; text-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 15px; }
+        .exam-header-title h2 { color: #fff; font-size: 32px; font-weight: 900; margin: 0 0 5px 0; }
+        .exam-header-title p { color: rgba(255,255,255,0.9); font-size: 16px; margin: 0; font-weight: 700;}
+        
+        .exam-body-scroll { flex: 1; overflow-y: auto; padding: 40px; background: var(--bg-body); }
+        .exam-body-scroll::-webkit-scrollbar { width: 8px; }
+        .exam-body-scroll::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 10px; }
 
-        .status-box { text-align: center; margin: auto; padding: 40px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--input-border); max-width: 600px; width: 100%; }
-        .status-box i { font-size: 80px; margin-bottom: 20px; }
+        .exam-question { background: var(--bg-card); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid var(--input-border); margin-bottom: 30px; border-right: 6px solid var(--primary-color); text-align: right; }
+        .exam-q-text { color: var(--text-main); font-size: 20px; font-weight: 900; margin-bottom: 20px; line-height: 1.6; }
+        .mcq-option { display: flex; align-items: center; background: var(--input-bg); padding: 18px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--input-border); cursor: pointer; transition: 0.2s; font-size: 18px; font-weight: 800; color: var(--text-main); }
+        .mcq-option:hover { border-color: var(--primary-color); background: rgba(91, 33, 182, 0.05); transform: translateX(-5px); }
+        .mcq-option input { margin-left: 15px; accent-color: var(--primary-color); transform: scale(1.5); }
+        .essay-input { width: 100%; padding: 20px; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 12px; color: var(--text-main); font-family: 'Cairo'; resize: vertical; box-sizing: border-box; font-size: 16px; font-weight: 700;}
+        .essay-input:focus { border-color: var(--primary-color); outline: none; background: var(--bg-card);}
+        
+        .exam-footer { padding: 25px 40px; background: var(--bg-card); border-top: 1px solid var(--input-border); }
+        .btn-submit-exam { width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 20px; border: none; border-radius: 15px; font-size: 22px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3); }
+        .btn-submit-exam:hover { transform: translateY(-3px); box-shadow: 0 15px 25px rgba(16, 185, 129, 0.4); }
+
+        .status-box { text-align: center; margin: auto; padding: 50px; background: var(--bg-card); border-radius: 30px; border: 2px solid var(--primary-color); max-width: 600px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.2);}
+        .status-box i { font-size: 90px; margin-bottom: 25px; }
 
         /* ========================================================= */
-        /* 🚨 تصميم الشهادة الفخمة (Premium Redesign) 🚨 */
+        /* 🚨 الشهادة الشيك جداً (VIP) والزراير مفصولة عنها 🚨 */
         /* ========================================================= */
-        .cert-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.95); z-index: 999999; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.4s ease; backdrop-filter: blur(8px); overflow-y: auto; padding: 20px;}
+        .cert-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.98); z-index: 999999; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.4s ease; backdrop-filter: blur(10px); }
         .cert-modal.active { opacity: 1; visibility: visible; }
         
-        .cert-controls { width: 100%; max-width: 850px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .btn-close-cert { background: #ef4444; color: #fff; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4); transition: 0.3s; }
+        /* زرار قفل الشهادة عائم برا في الشاشة */
+        .btn-close-cert { position: absolute; top: 30px; left: 30px; background: #ef4444; color: #fff; border: none; width: 55px; height: 55px; border-radius: 50%; font-size: 26px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.5); transition: 0.3s; z-index: 10;}
         .btn-close-cert:hover { transform: scale(1.1) rotate(90deg); background: #dc2626; }
-        .btn-download-cert { background: #f59e0b; color: #fff; border: none; padding: 10px 20px; border-radius: 12px; font-size: 16px; font-weight: 900; cursor: pointer; font-family: 'Cairo'; display: flex; gap: 10px; align-items: center; box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4); transition: 0.3s;}
-        .btn-download-cert:hover { transform: translateY(-3px); background: #d97706; }
+        
+        /* زرار التحميل عائم تحت الشهادة */
+        .btn-download-cert { margin-top: 30px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; padding: 15px 40px; border-radius: 50px; font-size: 20px; font-weight: 900; cursor: pointer; font-family: 'Cairo'; display: flex; gap: 10px; align-items: center; box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4); transition: 0.3s; z-index: 10;}
+        .btn-download-cert:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(245, 158, 11, 0.6); }
 
-        .certificate-wrapper { background: #ffffff; width: 100%; max-width: 850px; min-height: 600px; padding: 15px; border-radius: 8px; position: relative; text-align: center; color: #1e293b; box-shadow: 0 25px 60px rgba(0,0,0,0.6); background-image: url('https://www.transparenttextures.com/patterns/white-diamond-dark.png'); }
-        .cert-inner { border: 4px double #d4af37; height: 100%; min-height: 570px; padding: 40px 50px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; position: relative; background: radial-gradient(circle at center, #ffffff 40%, #fdfbf7 100%); outline: 2px solid #d4af37; outline-offset: -12px;}
+        /* الكارت الفعلي بتاع الشهادة (اللي هيتصور) */
+        .certificate-wrapper { background: #fff; width: 1000px; max-width: 95vw; aspect-ratio: 1.414 / 1; padding: 25px; border-radius: 15px; position: relative; text-align: center; color: #1e293b; box-shadow: 0 30px 60px rgba(0,0,0,0.8); background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); }
+        .cert-inner { border: 6px solid #0f172a; height: 100%; padding: 40px 60px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; position: relative; outline: 4px solid #d4af37; outline-offset: -16px; background-image: url('https://www.transparenttextures.com/patterns/cream-paper.png'); }
         
-        .cert-logo { width: 160px; margin-bottom: 15px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+        .cert-logo { width: 180px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
         
-        .cert-title { font-size: 48px; color: #d4af37; font-weight: 900; margin-bottom: 5px; font-family: 'Cairo'; text-shadow: 1px 2px 4px rgba(212, 175, 55, 0.2); letter-spacing: 1px;}
-        .cert-subtitle { font-size: 20px; font-weight: 800; color: #5b21b6; margin-bottom: 30px; letter-spacing: 1px;}
+        .cert-title { font-size: 55px; color: #d4af37; font-weight: 900; font-family: 'Cairo'; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); margin-top: 10px; margin-bottom: 5px; letter-spacing: 1px;}
+        .cert-subtitle { font-size: 22px; font-weight: 900; color: #1e293b; background: rgba(212, 175, 55, 0.15); padding: 8px 30px; border-radius: 30px; margin-bottom: 25px; letter-spacing: 1px;}
         
-        .cert-intro { font-size: 18px; font-weight: 700; color: #64748b; }
+        .cert-intro { font-size: 20px; font-weight: 800; color: #64748b; }
         
-        .cert-student-wrapper { margin: 15px 0 25px; width: 80%; position: relative; }
-        .cert-student { font-size: 40px; color: #1e293b; font-weight: 900; padding-bottom: 10px; border-bottom: 2px solid #d4af37; width: 100%; display: inline-block;}
+        .cert-student { font-size: 45px; color: #5b21b6; font-weight: 900; margin: 15px 0 25px 0; border-bottom: 3px dashed #d4af37; padding-bottom: 10px; width: 85%; display: inline-block;}
         
-        .cert-text { font-size: 18px; font-weight: 700; line-height: 1.8; max-width: 650px; color: #475569; }
+        .cert-text { font-size: 22px; font-weight: 800; line-height: 1.8; max-width: 800px; color: #334155; }
         
-        .cert-footer { display: flex; justify-content: space-between; align-items: flex-end; width: 90%; margin-top: auto; padding-top: 40px; font-weight: 800; font-size: 20px; position: relative;}
-        .cert-sign-box { text-align: center; border-top: 2px solid #94a3b8; padding-top: 10px; width: 200px; }
+        .cert-footer { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; font-weight: 900; font-size: 22px; color: #0f172a; position: relative;}
+        .cert-sign-box { text-align: center; border-top: 3px solid #94a3b8; padding-top: 10px; width: 220px; }
         
-        .cert-seal { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 80px; height: 80px; background: #d4af37; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 35px; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); border: 2px dashed #fff; outline: 2px solid #d4af37; outline-offset: 2px;}
+        .cert-seal { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 110px; height: 110px; background: linear-gradient(135deg, #d4af37, #fde047); border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; box-shadow: 0 10px 25px rgba(212, 175, 55, 0.5); border: 3px dashed #fff; outline: 3px solid #d4af37; outline-offset: 3px;}
 
         @media (max-width: 991px) {
             .watch-container { flex-direction: column; }
             .video-sidebar { width: 100%; }
             .video-player-wrapper { height: auto; min-height: auto; }
+            .exam-form-container { height: 100vh; border-radius: 0; border: none; }
             
-            /* تظبيط الشهادة على الموبايل */
-            .cert-controls { flex-direction: row-reverse; }
-            .certificate-wrapper { padding: 8px; min-height: auto; }
-            .cert-inner { padding: 30px 15px; outline-offset: -8px; min-height: auto;}
-            .cert-logo { width: 110px; margin-bottom: 10px; }
-            .cert-title { font-size: 30px; }
-            .cert-subtitle { font-size: 14px; margin-bottom: 20px;}
-            .cert-student { font-size: 26px; }
-            .cert-text { font-size: 14px; line-height: 1.6; }
-            .cert-footer { flex-direction: column; gap: 40px; align-items: center; margin-top: 30px;}
-            .cert-seal { position: relative; bottom: 0; transform: none; margin: 10px 0; width: 60px; height: 60px; font-size: 25px;}
+            /* الموبايل للشهادة */
+            .btn-close-cert { top: 15px; left: 15px; width: 45px; height: 45px; font-size: 20px;}
+            .btn-download-cert { font-size: 16px; padding: 12px 25px; margin-top: 20px; }
+            .certificate-wrapper { padding: 10px; aspect-ratio: auto; min-height: 500px; }
+            .cert-inner { padding: 30px 15px; outline-offset: -10px;}
+            .cert-logo { width: 120px; }
+            .cert-title { font-size: 32px; }
+            .cert-subtitle { font-size: 16px; padding: 5px 15px; }
+            .cert-intro { font-size: 16px; }
+            .cert-student { font-size: 28px; width: 95%; margin: 15px 0;}
+            .cert-text { font-size: 14px; }
+            .cert-footer { flex-direction: column; gap: 30px; align-items: center; margin-top: 30px;}
+            .cert-seal { position: relative; bottom: 0; transform: none; margin-bottom: 10px; width: 80px; height: 80px;}
+            .cert-seal i { font-size: 25px !important;}
+            .cert-seal span { font-size: 10px !important;}
         }
     </style>
 </head>
@@ -132,13 +146,13 @@
     </nav>
 
     <div class="watch-container">
-        <!-- قسم الفيديو الرئيسي -->
         <div class="video-main">
             <div class="video-player-wrapper" id="vimeoWrapper">
                 <div id="studentWatermark"></div>
                 
+                <!-- 🚨 شاشة الامتحان الشيك 🚨 -->
                 <div id="examFullscreenOverlay" class="exam-fullscreen-modal" style="display: none;">
-                    <div id="examContentArea" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
+                    <div id="examContentArea" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;"></div>
                 </div>
 
                 <div id="videoContainer" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; color: white;">
@@ -148,7 +162,6 @@
 
             <div class="video-details-card">
                 <h1 id="courseTitle">جاري التحميل...</h1>
-                
                 <div class="video-meta">
                     <span id="viewsCountBadge"><i class="fas fa-eye"></i> المتبقي: <span id="viewsLeftText">...</span></span>
                     <span style="display: flex; align-items: center;">
@@ -171,7 +184,6 @@
             </div>
         </div>
 
-        <!-- القائمة الجانبية -->
         <aside class="video-sidebar">
             <div class="playlist-header"><i class="fas fa-list-ul"></i> محتوى الحصة</div>
             <div class="playlist-items" id="playlistContainer">
@@ -179,7 +191,6 @@
             </div>
 
             <hr style="border: 0; border-top: 1px dashed var(--input-border); margin: 25px 0;">
-            
             <div style="text-align: center;">
                 <div style="width: 70px; height: 70px; background: rgba(91,33,182,0.1); color: var(--primary-color); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; margin: 0 auto 10px;"><i class="fas fa-chalkboard-teacher"></i></div>
                 <small style="color: var(--text-muted); font-weight: 800;">أستاذ المادة</small>
@@ -188,56 +199,53 @@
         </aside>
     </div>
 
-    <!-- 🚨 نافذة الشهادة الفخمة (المعدلة بالكامل) 🚨 -->
+    <!-- 🚨 نافذة الشهادة الفخمة (النسخة الـ VIP المحدثة) 🚨 -->
     <div class="cert-modal" id="certificateModal">
-        <div style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 850px;">
-            
-            <!-- أزرار التحكم (خارج الشهادة عشان متظهرش في الصورة) -->
-            <div class="cert-controls">
-                <button class="btn-download-cert" onclick="downloadCertificate()"><i class="fas fa-download"></i> حفظ الشهادة</button>
-                <button class="btn-close-cert" onclick="document.getElementById('certificateModal').classList.remove('active');" title="إغلاق ومتابعة الحصة"><i class="fas fa-times"></i></button>
-            </div>
+        <!-- زرار الإغلاق (عائم فوق على الشمال) -->
+        <button class="btn-close-cert" onclick="document.getElementById('certificateModal').classList.remove('active');" title="إغلاق ومتابعة الحصة"><i class="fas fa-times"></i></button>
 
-            <!-- محتوى الشهادة الفعلي للطباعة -->
-            <div class="certificate-wrapper" id="certificateToDownload">
-                <div class="cert-inner">
-                    <img src="https://adelabdulrahman026-byte.github.io/primee/logo%20prime.png" class="cert-logo" alt="Primee Academy Logo">
-                    
-                    <div class="cert-title">شهادة تفوق وتقدير</div>
-                    <div class="cert-subtitle">مقدمة بكل فخر من منصة Primee Academy</div>
-                    
-                    <div class="cert-intro">تشهد إدارة المنصة بأن الطالب البطل:</div>
-                    
-                    <div class="cert-student-wrapper">
-                        <div class="cert-student" id="certStudentName">اسم الطالب</div>
+        <!-- محتوى الشهادة الفعلي للطباعة -->
+        <div class="certificate-wrapper" id="certificateToDownload">
+            <div class="cert-inner">
+                <img src="https://adelabdulrahman026-byte.github.io/primee/logo%20prime.png" class="cert-logo" alt="Primee Academy Logo">
+                
+                <div class="cert-title">شهادة تفوق وتقدير</div>
+                <div class="cert-subtitle">مقدمة بكل فخر من منصة Primee Academy</div>
+                
+                <div class="cert-intro">تشهد إدارة المنصة بأن الطالب البطل:</div>
+                
+                <div class="cert-student" id="certStudentName">اسم الطالب</div>
+                
+                <div class="cert-text">
+                    قد اجتاز بتفوق الامتحان الخاص بالحصة وحصل على <strong style="color: #d4af37;">العلامة الكاملة</strong> بامتياز.<br>
+                    متمنين له دوام التوفيق والنجاح في مسيرته التعليمية.
+                </div>
+                
+                <div class="cert-footer">
+                    <div class="cert-sign-box">
+                        <span style="color: #64748b; font-size: 18px; display: block; margin-bottom: 5px;">تاريخ الإصدار</span>
+                        <span id="certDate" style="color: #1e293b; font-family: monospace; font-size: 20px;"></span>
                     </div>
                     
-                    <div class="cert-text">
-                        قد اجتاز بتفوق الامتحان الخاص بالحصة وحصل على <strong style="color: #d4af37;">العلامة الكاملة</strong> بامتياز.<br>
-                        متمنين له دوام التوفيق والنجاح في مسيرته التعليمية.
+                    <div class="cert-seal">
+                        <i class="fas fa-award" style="font-size: 40px; margin-bottom: 5px;"></i>
+                        <span style="font-size: 14px; font-weight: 900; letter-spacing: 1px;">EXCELLENCE</span>
                     </div>
                     
-                    <div class="cert-footer">
-                        <div class="cert-sign-box">
-                            <span style="color: #64748b; font-size: 16px; display: block; margin-bottom: 5px;">تاريخ الإصدار</span>
-                            <span id="certDate" style="color: #1e293b;"></span>
-                        </div>
-                        
-                        <div class="cert-seal"><i class="fas fa-award"></i></div>
-                        
-                        <div class="cert-sign-box">
-                            <span style="color: #64748b; font-size: 16px; display: block; margin-bottom: 5px;">أستاذ المادة</span>
-                            <span style="color: var(--primary-color);" id="certInstructorName">أستاذ المادة</span>
-                        </div>
+                    <div class="cert-sign-box">
+                        <span style="color: #64748b; font-size: 18px; display: block; margin-bottom: 5px;">أستاذ المادة</span>
+                        <span style="color: var(--primary-color);" id="certInstructorName">أستاذ المادة</span>
                     </div>
                 </div>
             </div>
-
         </div>
+
+        <!-- زرار التحميل (عائم تحت الشهادة) -->
+        <button class="btn-download-cert" onclick="downloadCertificate()"><i class="fas fa-download"></i> حفظ الشهادة بجودة عالية</button>
     </div>
 
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
-    <script type="module" src="watch-script.js?v=11"></script>
+    <script type="module" src="watch-script.js?v=13"></script>
     <script>
         // 🚨 دالة تصوير الشهادة بدقة عالية بدون زراير 🚨
         function downloadCertificate() {
