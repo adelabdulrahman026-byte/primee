@@ -25,9 +25,8 @@
         .video-main { flex: 1; }
         .video-sidebar { width: 320px; background: var(--bg-card); border-radius: 20px; padding: 25px; border: 1px solid var(--input-border); box-shadow: 0 10px 30px rgba(0,0,0,0.03); height: fit-content; }
 
-        /* 🚨 الحل السحري للسواد تحت الفيديو: استخدام aspect-ratio بدل الطول الثابت 🚨 */
+        /* 🚨 إعدادات الفيديو 🚨 */
         .video-player-wrapper { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 15px; overflow: hidden; border: 1px solid var(--input-border); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
-        
         .plyr { width: 100% !important; height: 100% !important; border-radius: 15px !important; }
         .plyr__video-embed iframe { position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; border: none !important; }
 
@@ -38,7 +37,7 @@
         .video-meta { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;}
         .video-meta span { background: var(--input-bg); padding: 8px 15px; border-radius: 10px; font-size: 14px; font-weight: 800; border: 1px solid var(--input-border); color: var(--text-main); }
         
-        /* 🚨 تنسيق التقييم 🚨 */
+        /* 🚨 التقييم بالنجوم 🚨 */
         .rating-stars { display: inline-flex; gap: 5px; direction: ltr; margin: 0 10px;}
         .rating-stars i { font-size: 22px; color: #cbd5e1; cursor: pointer; transition: 0.2s; }
         #ratingStats { font-weight: 900; color: var(--primary-color); font-size: 14px; background: rgba(91, 33, 182, 0.1); padding: 4px 10px; border-radius: 8px;}
@@ -51,6 +50,7 @@
         .playlist-item.locked { opacity: 0.7; }
         .playlist-item i.status-icon { font-size: 18px; }
 
+        /* 🚨 نافذة الامتحان 🚨 */
         .exam-fullscreen-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-card); z-index: 10; display: flex; flex-direction: column; overflow-y: auto; padding: 30px; }
         .exam-form-container { background: var(--input-bg); padding: 30px; border-radius: 20px; border: 1px solid var(--input-border); width: 100%; max-width: 800px; margin: 0 auto; }
         .exam-header-title { text-align: center; margin-bottom: 30px; }
@@ -71,27 +71,54 @@
         .status-box { text-align: center; margin: auto; padding: 40px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--input-border); max-width: 600px; width: 100%; }
         .status-box i { font-size: 80px; margin-bottom: 20px; }
 
-        .cert-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 999999; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(5px);}
+        /* ========================================================= */
+        /* 🚨 تصميم الشهادة الفخمة (Premium Redesign) 🚨 */
+        /* ========================================================= */
+        .cert-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.95); z-index: 999999; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.4s ease; backdrop-filter: blur(8px); overflow-y: auto; padding: 20px;}
         .cert-modal.active { opacity: 1; visibility: visible; }
-        .certificate-wrapper { background: #fff; width: 800px; height: 560px; padding: 20px; border-radius: 10px; position: relative; text-align: center; color: #1e293b; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .cert-inner { border: 10px solid #d4af37; height: 100%; padding: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
-        .cert-logo { width: 100px; position: absolute; top: 30px; }
-        .cert-title { font-size: 45px; color: #d4af37; font-weight: 900; margin-bottom: 10px; font-family: 'Cairo'; }
-        .cert-subtitle { font-size: 20px; font-weight: 700; margin-bottom: 30px; }
-        .cert-student { font-size: 35px; color: #5b21b6; font-weight: 900; border-bottom: 2px dashed #cbd5e1; padding-bottom: 10px; margin-bottom: 20px; width: 80%; }
-        .cert-text { font-size: 18px; font-weight: 600; line-height: 1.6; max-width: 600px; }
-        .cert-footer { display: flex; justify-content: space-between; width: 80%; margin-top: 50px; font-weight: 800; font-size: 18px; }
-        .btn-download-cert { position: absolute; bottom: -60px; background: #f59e0b; color: #fff; border: none; padding: 12px 30px; border-radius: 12px; font-size: 18px; font-weight: 900; cursor: pointer; font-family: 'Cairo'; display: flex; gap: 10px; align-items: center;}
         
+        .cert-controls { width: 100%; max-width: 850px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .btn-close-cert { background: #ef4444; color: #fff; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4); transition: 0.3s; }
+        .btn-close-cert:hover { transform: scale(1.1) rotate(90deg); background: #dc2626; }
+        .btn-download-cert { background: #f59e0b; color: #fff; border: none; padding: 10px 20px; border-radius: 12px; font-size: 16px; font-weight: 900; cursor: pointer; font-family: 'Cairo'; display: flex; gap: 10px; align-items: center; box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4); transition: 0.3s;}
+        .btn-download-cert:hover { transform: translateY(-3px); background: #d97706; }
+
+        .certificate-wrapper { background: #ffffff; width: 100%; max-width: 850px; min-height: 600px; padding: 15px; border-radius: 8px; position: relative; text-align: center; color: #1e293b; box-shadow: 0 25px 60px rgba(0,0,0,0.6); background-image: url('https://www.transparenttextures.com/patterns/white-diamond-dark.png'); }
+        .cert-inner { border: 4px double #d4af37; height: 100%; min-height: 570px; padding: 40px 50px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; position: relative; background: radial-gradient(circle at center, #ffffff 40%, #fdfbf7 100%); outline: 2px solid #d4af37; outline-offset: -12px;}
+        
+        .cert-logo { width: 160px; margin-bottom: 15px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+        
+        .cert-title { font-size: 48px; color: #d4af37; font-weight: 900; margin-bottom: 5px; font-family: 'Cairo'; text-shadow: 1px 2px 4px rgba(212, 175, 55, 0.2); letter-spacing: 1px;}
+        .cert-subtitle { font-size: 20px; font-weight: 800; color: #5b21b6; margin-bottom: 30px; letter-spacing: 1px;}
+        
+        .cert-intro { font-size: 18px; font-weight: 700; color: #64748b; }
+        
+        .cert-student-wrapper { margin: 15px 0 25px; width: 80%; position: relative; }
+        .cert-student { font-size: 40px; color: #1e293b; font-weight: 900; padding-bottom: 10px; border-bottom: 2px solid #d4af37; width: 100%; display: inline-block;}
+        
+        .cert-text { font-size: 18px; font-weight: 700; line-height: 1.8; max-width: 650px; color: #475569; }
+        
+        .cert-footer { display: flex; justify-content: space-between; align-items: flex-end; width: 90%; margin-top: auto; padding-top: 40px; font-weight: 800; font-size: 20px; position: relative;}
+        .cert-sign-box { text-align: center; border-top: 2px solid #94a3b8; padding-top: 10px; width: 200px; }
+        
+        .cert-seal { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 80px; height: 80px; background: #d4af37; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 35px; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); border: 2px dashed #fff; outline: 2px solid #d4af37; outline-offset: 2px;}
+
         @media (max-width: 991px) {
             .watch-container { flex-direction: column; }
             .video-sidebar { width: 100%; }
-            .certificate-wrapper { width: 95vw; height: auto; padding: 10px; }
-            .cert-inner { padding: 20px; }
-            .cert-title { font-size: 28px; }
-            .cert-student { font-size: 22px; }
-            .cert-text { font-size: 14px; }
-            .video-player-wrapper { height: auto; min-height: auto; } /* تأكيد للموبايل */
+            .video-player-wrapper { height: auto; min-height: auto; }
+            
+            /* تظبيط الشهادة على الموبايل */
+            .cert-controls { flex-direction: row-reverse; }
+            .certificate-wrapper { padding: 8px; min-height: auto; }
+            .cert-inner { padding: 30px 15px; outline-offset: -8px; min-height: auto;}
+            .cert-logo { width: 110px; margin-bottom: 10px; }
+            .cert-title { font-size: 30px; }
+            .cert-subtitle { font-size: 14px; margin-bottom: 20px;}
+            .cert-student { font-size: 26px; }
+            .cert-text { font-size: 14px; line-height: 1.6; }
+            .cert-footer { flex-direction: column; gap: 40px; align-items: center; margin-top: 30px;}
+            .cert-seal { position: relative; bottom: 0; transform: none; margin: 10px 0; width: 60px; height: 60px; font-size: 25px;}
         }
     </style>
 </head>
@@ -161,39 +188,78 @@
         </aside>
     </div>
 
-    <!-- نافذة الشهادة -->
+    <!-- 🚨 نافذة الشهادة الفخمة (المعدلة بالكامل) 🚨 -->
     <div class="cert-modal" id="certificateModal">
-        <div class="certificate-wrapper" id="certificateToDownload">
-            <div class="cert-inner">
-                <img src="https://adelabdulrahman026-byte.github.io/primee/logo%20prime.png" class="cert-logo">
-                <div class="cert-title">شهادة تفوق وتقدير</div>
-                <div class="cert-subtitle">مقدمة من منصة Primee Academy</div>
-                <div style="font-size: 18px; font-weight: 600; margin-bottom: 10px;">نتشرف بمنح هذه الشهادة للطالب البطل:</div>
-                <div class="cert-student" id="certStudentName">اسم الطالب</div>
-                <div class="cert-text">وذلك لحصوله على الدرجة النهائية (العلامة الكاملة) في امتحان الحصة، متمنين له دوام التوفيق والنجاح.</div>
-                <div class="cert-footer">
-                    <div>التوقيع: <br><span style="color: var(--primary-color);" id="certInstructorName">أستاذ المادة</span></div>
-                    <div>التاريخ: <br><span style="color: #64748b;" id="certDate"></span></div>
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 850px;">
+            
+            <!-- أزرار التحكم (خارج الشهادة عشان متظهرش في الصورة) -->
+            <div class="cert-controls">
+                <button class="btn-download-cert" onclick="downloadCertificate()"><i class="fas fa-download"></i> حفظ الشهادة</button>
+                <button class="btn-close-cert" onclick="document.getElementById('certificateModal').classList.remove('active');" title="إغلاق ومتابعة الحصة"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- محتوى الشهادة الفعلي للطباعة -->
+            <div class="certificate-wrapper" id="certificateToDownload">
+                <div class="cert-inner">
+                    <img src="https://adelabdulrahman026-byte.github.io/primee/logo%20prime.png" class="cert-logo" alt="Primee Academy Logo">
+                    
+                    <div class="cert-title">شهادة تفوق وتقدير</div>
+                    <div class="cert-subtitle">مقدمة بكل فخر من منصة Primee Academy</div>
+                    
+                    <div class="cert-intro">تشهد إدارة المنصة بأن الطالب البطل:</div>
+                    
+                    <div class="cert-student-wrapper">
+                        <div class="cert-student" id="certStudentName">اسم الطالب</div>
+                    </div>
+                    
+                    <div class="cert-text">
+                        قد اجتاز بتفوق الامتحان الخاص بالحصة وحصل على <strong style="color: #d4af37;">العلامة الكاملة</strong> بامتياز.<br>
+                        متمنين له دوام التوفيق والنجاح في مسيرته التعليمية.
+                    </div>
+                    
+                    <div class="cert-footer">
+                        <div class="cert-sign-box">
+                            <span style="color: #64748b; font-size: 16px; display: block; margin-bottom: 5px;">تاريخ الإصدار</span>
+                            <span id="certDate" style="color: #1e293b;"></span>
+                        </div>
+                        
+                        <div class="cert-seal"><i class="fas fa-award"></i></div>
+                        
+                        <div class="cert-sign-box">
+                            <span style="color: #64748b; font-size: 16px; display: block; margin-bottom: 5px;">أستاذ المادة</span>
+                            <span style="color: var(--primary-color);" id="certInstructorName">أستاذ المادة</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <button class="btn-download-cert" onclick="downloadCertificate()"><i class="fas fa-download"></i> حفظ الشهادة</button>
+
         </div>
     </div>
 
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
-    <script type="module" src="watch-script.js?v=8"></script>
+    <script type="module" src="watch-script.js?v=11"></script>
     <script>
+        // 🚨 دالة تصوير الشهادة بدقة عالية بدون زراير 🚨
         function downloadCertificate() {
             const certDiv = document.getElementById('certificateToDownload');
             const btn = document.querySelector('.btn-download-cert');
-            btn.style.display = 'none'; 
+            const originalText = btn.innerHTML;
             
-            html2canvas(certDiv, { scale: 2 }).then(canvas => {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحضير...';
+            btn.disabled = true;
+            
+            html2canvas(certDiv, { 
+                scale: 3, // جودة طباعة ممتازة
+                useCORS: true, 
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = 'شهادة_تقدير_Primee.png';
+                link.download = 'شهادة_تفوق_Primee.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-                btn.style.display = 'flex'; 
+                
+                btn.innerHTML = originalText; 
+                btn.disabled = false;
             });
         }
     </script>
