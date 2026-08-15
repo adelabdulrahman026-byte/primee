@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -96,11 +96,18 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
             return; 
         }
 
-        const courseSnap = await getDoc(doc(db, "courses", courseId));
+        // 🚨 البحث في الكورسات، لو ملقاش هيبحث في الباقات 🚨
+        let courseSnap = await getDoc(doc(db, "courses", courseId));
+        let isPackage = false;
+        if (!courseSnap.exists()) {
+            courseSnap = await getDoc(doc(db, "packages", courseId));
+            isPackage = true;
+        }
+
         if (courseSnap.exists()) {
             courseDataG = courseSnap.data();
             
-            document.getElementById('courseTitle').textContent = courseDataG.title || "حصة بدون عنوان";
+            document.getElementById('courseTitle').textContent = courseDataG.title || courseDataG.name || "حصة بدون عنوان";
             document.getElementById('courseInstructor').textContent = courseDataG.instructor || "أستاذ المادة";
             
             if(courseDataG.pdfUrl && courseDataG.pdfUrl.trim() !== "") {
@@ -108,7 +115,6 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
                 document.getElementById('btnDownloadPdf').href = courseDataG.pdfUrl;
             }
 
-            // فحص المشاهدات
             let studentViewsMap = studentDataG.courseViews || {};
             let myViews = studentViewsMap[courseId] || 0;
             let maxViews = parseInt(courseDataG.maxViews) || 0;
@@ -124,12 +130,10 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
                 document.getElementById('viewsLeftText').textContent = "لا محدود";
             }
 
-            // 🚨 تحديث وتشغيل التقييمات 🚨
             let ratingsArray = courseDataG.ratings || [];
             updateRatingUI(ratingsArray);
             setupRating();
 
-            // بناء القائمة (Playlist)
             let videosList = courseDataG.videos || [];
             if(videosList.length === 0 && courseDataG.videoUrl) {
                 videosList = [{ url: courseDataG.videoUrl, requiredExamId: courseDataG.requiredExamId }];
@@ -143,7 +147,6 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
     } catch (error) { console.error(error); }
 }
 
-// 🚨 دوال التقييم الاحترافية 🚨
 window.updateRatingUI = function(ratings) {
     const statsEl = document.getElementById('ratingStats');
     const stars = document.querySelectorAll('.rating-stars i');
@@ -166,21 +169,16 @@ window.updateRatingUI = function(ratings) {
     let avg = (sum / ratings.length).toFixed(1);
     statsEl.textContent = `(${avg}/5 من ${ratings.length} طالب)`;
 
-    // تلوين النجوم بناءً على تقييم الطالب السابق
     stars.forEach(s => {
         let val = parseInt(s.getAttribute('data-val'));
-        if (val <= myPreviousRating) {
-            s.style.color = '#f59e0b';
-        } else {
-            s.style.color = '#cbd5e1';
-        }
+        if (val <= myPreviousRating) s.style.color = '#f59e0b';
+        else s.style.color = '#cbd5e1';
     });
 }
 
 function setupRating() {
     const stars = document.querySelectorAll('.rating-stars i');
     stars.forEach(star => {
-        // تأثير الهوفر
         star.addEventListener('mouseover', (e) => {
             let hoverVal = parseInt(e.target.getAttribute('data-val'));
             stars.forEach(s => {
@@ -189,40 +187,34 @@ function setupRating() {
             });
         });
 
-        // لما يبعد الماوس يرجع للتقييم المحفوظ
         star.parentElement.addEventListener('mouseleave', () => {
             let ratingsArray = courseDataG.ratings || [];
             updateRatingUI(ratingsArray);
         });
 
-        // عند الضغط للحفظ
         star.addEventListener('click', async (e) => {
             const val = parseInt(e.target.getAttribute('data-val'));
             let ratingsArray = courseDataG.ratings || [];
             
             let existingIndex = ratingsArray.findIndex(r => r.studentId === currentStudentId);
-            if (existingIndex > -1) {
-                ratingsArray[existingIndex].stars = val; // تعديل التقييم
-            } else {
-                ratingsArray.push({ studentId: currentStudentId, stars: val }); // تقييم جديد
-            }
+            if (existingIndex > -1) ratingsArray[existingIndex].stars = val;
+            else ratingsArray.push({ studentId: currentStudentId, stars: val });
 
             courseDataG.ratings = ratingsArray;
-            updateRatingUI(ratingsArray); // تحديث الواجهة فوراً
+            updateRatingUI(ratingsArray); 
 
-            try {
-                await updateDoc(doc(db, "courses", courseIdG), { ratings: ratingsArray });
-            } catch(err) { console.error(err); }
+            try { await updateDoc(doc(db, "courses", courseIdG), { ratings: ratingsArray }); } catch(err) {}
         });
     });
 }
-// 🚨 انتهاء دوال التقييم 🚨
 
 function renderPlaylist(videos) {
     const container = document.getElementById('playlistContainer');
     let html = '';
     videos.forEach((vid, i) => {
-        let icon = vid.requiredExamId ? '<i class="fas fa-lock status-icon"></i>' : '<i class="fas fa-play-circle status-icon"></i>';
+        // فحص ذكي للامتحان (سواء مربوط بالفيديو لوحده أو الكورس كله)
+        let examIdCheck = vid.requiredExamId || courseDataG.requiredExamId;
+        let icon = examIdCheck ? '<i class="fas fa-lock status-icon"></i>' : '<i class="fas fa-play-circle status-icon"></i>';
         html += `<div class="playlist-item" id="playBtn_${i}" onclick="loadVideoIndex(${i})">
             <span>مقطع ${i + 1}</span>
             ${icon}
@@ -242,8 +234,10 @@ window.loadVideoIndex = async function(index) {
     const examOverlay = document.getElementById('examFullscreenOverlay');
     const examArea = document.getElementById('examContentArea');
 
-    if (vidObj.requiredExamId) {
-        let examId = vidObj.requiredExamId;
+    // 🚨 جلب كود الامتحان بشكل دقيق 🚨
+    let examId = vidObj.requiredExamId || courseDataG.requiredExamId;
+
+    if (examId && examId.trim() !== "") {
         const submissionId = `${currentStudentId}_${examId}`;
         const subSnap = await getDoc(doc(db, "exam_submissions", submissionId));
         
@@ -367,7 +361,7 @@ async function submitExam(examData, examId, submissionId) {
         examId: examId,
         examTitle: examData.title,
         courseId: courseIdG,
-        courseTitle: courseDataG.title,
+        courseTitle: courseDataG.title || courseDataG.name,
         instructor: courseDataG.instructor,
         answers: studentAnswers,
         score: score,
@@ -377,7 +371,7 @@ async function submitExam(examData, examId, submissionId) {
         submittedAt: new Date().toISOString()
     });
 
-    let waMsg = `مرحباً ولي أمر الطالب/ة: ${studentDataG.fullName}\nأنهى الطالب امتحان (${examData.title}) لحصة (${courseDataG.title}).\n`;
+    let waMsg = `مرحباً ولي أمر الطالب/ة: ${studentDataG.fullName}\nأنهى الطالب امتحان (${examData.title}) لحصة (${courseDataG.title || courseDataG.name}).\n`;
     if(finalStatus === 'passed') waMsg += `النتيجة: ناجح ✅\nالدرجة: ${score} من ${totalQs}\nتم فتح الحصة للطالب.`;
     else if(finalStatus === 'failed') waMsg += `النتيجة: راسب ❌\nالدرجة: ${score} من ${totalQs}\nتم إغلاق الحصة، يرجى المتابعة.`;
     else waMsg += `النتيجة: قيد المراجعة ⏳\nيحتوي الامتحان على أسئلة مقالية سيصححها المدرس.`;
@@ -407,8 +401,61 @@ async function playVideoAndRecordView(videoUrl) {
         vidContainer.style.width = '100%';
         vidContainer.style.height = '100%';
         
-        vidContainer.innerHTML = `<div class="plyr__video-embed" id="player"><iframe src="https://player.vimeo.com/video/${vimeoID}?loop=false&amp;byline=false&amp;portrait=false&amp;title=false&amp;speed=true&amp;transparent=0&amp;gesture=media" allowfullscreen allowtransparency allow="autoplay"></iframe></div>`;
-        setTimeout(() => { new Plyr('#player', { speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }}); }, 100);
+        // 🚨 إضافة كارت الاستكمال للفيديو (Resume Card) 🚨
+        vidContainer.innerHTML = `
+            <div class="plyr__video-embed" id="player">
+                <iframe src="https://player.vimeo.com/video/${vimeoID}?loop=false&amp;byline=false&amp;portrait=false&amp;title=false&amp;speed=true&amp;transparent=0&amp;gesture=media" allowfullscreen allowtransparency allow="autoplay"></iframe>
+            </div>
+            <div id="resumeCard" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.9); z-index:100; justify-content:center; align-items:center; flex-direction:column; backdrop-filter:blur(5px); border-radius:15px;">
+                <i class="fas fa-history" style="font-size:50px; color:#3b82f6; margin-bottom:15px;"></i>
+                <h3 style="color:#fff; font-family:'Cairo'; font-size:24px; margin:0 0 10px 0; font-weight:900;">توقفت هنا المرة السابقة</h3>
+                <p style="color:#cbd5e1; font-family:'Cairo'; margin-bottom:25px; font-weight:600;">هل تود استكمال الحصة أم البدء من جديد؟</p>
+                <div style="display:flex; gap:15px; flex-wrap:wrap; justify-content:center;">
+                    <button id="btnResumeVid" style="background:#10b981; color:#fff; border:none; padding:12px 25px; border-radius:12px; font-family:'Cairo'; font-weight:900; font-size:16px; cursor:pointer; box-shadow:0 10px 20px rgba(16,185,129,0.3); transition:0.3s;"><i class="fas fa-play"></i> استكمال الحصة</button>
+                    <button id="btnRestartVid" style="background:#ef4444; color:#fff; border:none; padding:12px 25px; border-radius:12px; font-family:'Cairo'; font-weight:900; font-size:16px; cursor:pointer; box-shadow:0 10px 20px rgba(239,68,68,0.3); transition:0.3s;"><i class="fas fa-redo"></i> البدء من الأول</button>
+                </div>
+            </div>
+        `;
+
+        setTimeout(() => { 
+            const player = new Plyr('#player', { speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }}); 
+            
+            const savedTimeKey = `vidTime_${currentStudentId}_${vimeoID}`;
+            const savedTime = parseFloat(localStorage.getItem(savedTimeKey)) || 0;
+            let isFirstPlay = true;
+
+            player.on('ready', () => {
+                if (savedTime > 10 && isFirstPlay) {
+                    const resumeCard = document.getElementById('resumeCard');
+                    resumeCard.style.display = 'flex';
+
+                    document.getElementById('btnResumeVid').onclick = () => {
+                        player.currentTime = savedTime;
+                        player.play();
+                        resumeCard.style.display = 'none';
+                        isFirstPlay = false;
+                    };
+
+                    document.getElementById('btnRestartVid').onclick = () => {
+                        player.currentTime = 0;
+                        player.play();
+                        resumeCard.style.display = 'none';
+                        isFirstPlay = false;
+                    };
+                }
+            });
+
+            player.on('timeupdate', () => {
+                if(!isFirstPlay || savedTime <= 10) {
+                    localStorage.setItem(savedTimeKey, player.currentTime);
+                }
+            });
+
+            player.on('ended', () => {
+                localStorage.removeItem(savedTimeKey);
+            });
+
+        }, 100);
         
         let viewsMap = studentDataG.courseViews || {};
         viewsMap[courseIdG] = (viewsMap[courseIdG] || 0) + 1;
