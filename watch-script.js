@@ -293,17 +293,18 @@ function renderExamForm(examData, examId, submissionId, container) {
     let questions = examData.questions || [];
     let html = `
         <div class="exam-form-container">
-        <div class="exam-header-title">
-            <i class="fas fa-file-signature"></i>
-            <h2>${examData.title}</h2>
-            <p>يجب اجتياز الامتحان لتتمكن من مشاهدة الفيديو</p>
-        </div>
-        <form id="studentExamForm">`;
+            <div class="exam-header-title">
+                <i class="fas fa-file-signature"></i>
+                <h2>${examData.title}</h2>
+                <p>يجب اجتياز الامتحان لتتمكن من مشاهدة الفيديو</p>
+            </div>
+            <form id="studentExamForm" style="display: flex; flex-direction: column; height: 100%; flex: 1; overflow: hidden;">
+                <div class="exam-body-scroll">`;
                 
     questions.forEach((q, index) => {
         html += `<div class="exam-question">
                     <h4 class="exam-q-text">س ${index + 1}: ${q.text}</h4>`;
-        if(q.imageUrl) html += `<img src="${q.imageUrl}" class="exam-q-img" style="max-width: 100%; border-radius: 10px;">`;
+        if(q.imageUrl) html += `<img src="${q.imageUrl}" class="exam-q-img" style="max-width: 100%; border-radius: 10px; margin-bottom: 20px;">`;
         
         if (q.type === 'mcq') {
             q.options.forEach((opt, optIndex) => {
@@ -315,7 +316,12 @@ function renderExamForm(examData, examId, submissionId, container) {
         html += `</div>`;
     });
     
-    html += `<button type="submit" class="btn-submit-exam" id="btnSubmitForm">تسليم الامتحان <i class="fas fa-check-circle"></i></button></form></div>`;
+    html += `   </div>
+                <div class="exam-footer">
+                    <button type="submit" class="btn-submit-exam" id="btnSubmitForm">تسليم الامتحان <i class="fas fa-check-circle"></i></button>
+                </div>
+            </form>
+        </div>`;
     container.innerHTML = html;
 
     document.getElementById('studentExamForm').addEventListener('submit', async (e) => {
