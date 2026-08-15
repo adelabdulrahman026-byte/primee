@@ -111,6 +111,112 @@ async function uploadToVimeo(file, progressCallback) {
     });
 }
 
+// ==========================================
+// 🚨 الإدارة الشاملة للمدرسين (الحل لمشكلة الاختفاء) 🚨
+// ==========================================
+const teachersRef = collection(db, "teachers");
+let editingTeacherId = null;
+
+onSnapshot(query(teachersRef), (snapshot) => {
+    const table = document.getElementById('adminTeachersTable');
+    const selectInstructor = document.getElementById('courseInstructor');
+    const selectAstTeacher = document.getElementById('astTeacher');
+    const reportTeacherSelect = document.getElementById('reportTeacherSelect');
+
+    if(table) table.innerHTML = '';
+    if(selectInstructor) selectInstructor.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
+    if(selectAstTeacher) selectAstTeacher.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
+    if(reportTeacherSelect) reportTeacherSelect.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
+
+    snapshot.forEach(docSnap => {
+        const t = docSnap.data();
+        const safeImageUrl = t.imageUrl || t.image || 'https://via.placeholder.com/150';
+        
+        if(table) {
+            table.innerHTML += `<tr>
+                <td><img src="${safeImageUrl}" style="width:30px; height:30px; border-radius:50%; margin-left:10px; object-fit:cover; vertical-align:middle;"><strong>${t.name}</strong></td>
+                <td>${t.subject}</td>
+                <td>${t.stages}</td>
+                <td style="display:flex; gap:5px; justify-content:center;">
+                    <button onclick="editTeacher('${docSnap.id}')" style="background: rgba(59,130,246,0.1); color:#3b82f6; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteTeacher('${docSnap.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        }
+        
+        if(selectInstructor) selectInstructor.innerHTML += `<option value="${t.name}">${t.name} (${t.subject})</option>`;
+        if(selectAstTeacher) selectAstTeacher.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+        
+        // فلترة تقرير المدرسين للمساعدين
+        if (!(ROLE === 'assistant' && AST_TEACHER && t.name !== AST_TEACHER)) {
+            if(reportTeacherSelect) reportTeacherSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+        }
+    });
+});
+
+window.deleteTeacher = async function(id) {
+    if(await adminConfirm("هل أنت متأكد من مسح هذا المدرس نهائياً؟")) {
+        try { await deleteDoc(doc(db, "teachers", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
+        catch(e) {}
+    }
+};
+
+window.editTeacher = async function(id) {
+    const docSnap = await getDoc(doc(db, "teachers", id));
+    if(docSnap.exists()) {
+        const t = docSnap.data();
+        editingTeacherId = id;
+        document.getElementById('teacherName').value = t.name || '';
+        document.getElementById('teacherSubject').value = t.subject || '';
+        
+        const selectStages = document.getElementById('teacherStages');
+        Array.from(selectStages.options).forEach(opt => {
+            opt.selected = t.stages.includes(opt.value);
+        });
+
+        document.getElementById('btnSaveTeacher').innerHTML = '<i class="fas fa-edit"></i> تحديث بيانات المدرس';
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+};
+
+document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveTeacher');
+    btn.innerHTML = "جاري الحفظ والرفع... ⏳"; btn.disabled = true;
+
+    try {
+        const selectStages = document.getElementById('teacherStages');
+        const selectedStages = Array.from(selectStages.selectedOptions).map(opt => opt.value).join(', ');
+        const imageFile = document.getElementById('teacherImage').files[0];
+        
+        let imageUrl = null;
+        if(imageFile) {
+            imageUrl = await uploadImageToR2(imageFile);
+        }
+
+        const teacherData = {
+            name: document.getElementById('teacherName').value.trim(),
+            subject: document.getElementById('teacherSubject').value.trim(),
+            stages: selectedStages
+        };
+        
+        if(imageUrl) teacherData.imageUrl = imageUrl;
+
+        if(editingTeacherId) {
+            await updateDoc(doc(db, "teachers", editingTeacherId), teacherData);
+            editingTeacherId = null;
+        } else {
+            if(!imageUrl) throw new Error("يجب رفع صورة للمدرس");
+            teacherData.createdAt = new Date().toISOString();
+            await addDoc(teachersRef, teacherData);
+        }
+        adminAlert("تم", "تم حفظ المدرس بنجاح", "success");
+        document.getElementById('addTeacherForm').reset();
+    } catch(err) { adminAlert("خطأ", err.message, "error"); }
+    finally { btn.innerHTML = "<i class='fas fa-plus'></i> إضافة المدرس"; btn.disabled = false; }
+});
+
+
 // 1. مراقبة الطلاب والأرباح
 let allStudentsData = [];
 let teacherCourseIds = []; 
@@ -151,7 +257,7 @@ onSnapshot(query(collection(db, "users")), (snapshot) => {
     renderDashboardStats();
 });
 
-// 2. إدارة الطلاب
+// 2. إدارة الطلاب وتعديل الرصيد
 let currentStudentId = null;
 let currentStudentData = null;
 
@@ -195,7 +301,6 @@ document.getElementById('btnChargeWallet')?.addEventListener('click', async () =
         const newBalance = (parseInt(currentStudentData.walletBalance) || 0) + amount; 
         await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
         
-        // 🚨 تسجيل العملية في المحفظة 🚨
         await addDoc(collection(db, "transactions"), {
             studentId: currentStudentId, studentName: currentStudentData.fullName, studentPhone: currentStudentData.studentPhone,
             type: "charge_admin", amount: amount, courseTitle: "إيداع يدوي (إدارة)", instructor: "-",
@@ -218,7 +323,6 @@ document.getElementById('btnDeductWallet')?.addEventListener('click', async () =
         const newBalance = Math.max(0, currentBalance - amount); 
         await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
         
-        // 🚨 تسجيل العملية 🚨
         await addDoc(collection(db, "transactions"), {
             studentId: currentStudentId, studentName: currentStudentData.fullName, studentPhone: currentStudentData.studentPhone,
             type: "deduct_admin", amount: -amount, courseTitle: "خصم يدوي (إدارة)", instructor: "-",
@@ -242,7 +346,7 @@ document.getElementById('btnToggleBlock')?.addEventListener('click', async () =>
     } catch(e) {}
 });
 
-// 3. إدارة الكورسات (رفع فيديوهات منفصلة) 🚨
+// 3. إدارة الكورسات 🚨
 const coursesRef = collection(db, "courses");
 
 window.deleteCourse = async function(id) {
@@ -264,7 +368,6 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
         const imageFile = document.getElementById('courseImageFile').files[0];
         if(imageFile) imageUrl = await uploadImageToR2(imageFile);
 
-        // 🚨 قراءة الفيديوهات من الصفوف الديناميكية 🚨
         let newVideosArray = []; 
         const videoRows = document.querySelectorAll('#courseVideosContainer .video-row');
         let hasVideosToUpload = false;
@@ -319,7 +422,6 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
     }
 });
 
-// 🚨 تحميل الكورسات وتصدير الإكسيل 🚨
 window.exportCourseExcel = async function(courseId, courseTitle) {
     adminAlert("جاري التحميل", "يتم تجميع تقرير الطلاب...", "success");
     try {
@@ -395,7 +497,7 @@ document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
     document.getElementById('btnCancelEdit').style.display = 'none';
 });
 
-// 4. إدارة الامتحانات (والمزامنة التلقائية للامتحانات المتاحة) 🚨
+// 4. إدارة الامتحانات
 const examsRef = collection(db, "exams");
 let questionCount = 0;
 window.currentExamsData = [];
@@ -415,7 +517,6 @@ onSnapshot(query(examsRef), (snap) => {
         if(filter) filter.innerHTML += `<option value="${ex.id}">${ex.title}</option>`;
     });
     
-    // تحديث كل الـ selects في الصفحة
     document.querySelectorAll('.exam-select-sync').forEach(sel => {
         let currentVal = sel.value;
         sel.innerHTML = window.examOptionsHTML;
@@ -530,7 +631,7 @@ window.editExam = async function(id) {
 }
 document.getElementById('btnCancelExamEdit')?.addEventListener('click', () => { document.getElementById('editingExamId').value=""; document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; document.getElementById('btnCancelExamEdit').style.display='none'; });
 
-// 5. سجل المشاهدات والتصحيح 🚨 (درجات من كذا)
+// 5. سجل المشاهدات والتصحيح
 window.deleteSubmission = async function(id) {
     if(await adminConfirm("تأكيد مسح النتيجة ليتمكن الطالب من الإعادة؟")) {
         try { await deleteDoc(doc(db, "exam_submissions", id)); adminAlert("تم", "تم المسح", "success"); } 
@@ -612,17 +713,7 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
     });
 });
 
-// 🚨 تقرير المدرس (PDF شيك) 🚨
-const teachersRef2 = collection(db, "teachers");
-onSnapshot(query(teachersRef2), (snap) => {
-    const sel = document.getElementById('reportTeacherSelect');
-    if(!sel) return; sel.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
-    snap.forEach(d => {
-        if (ROLE === 'assistant' && AST_TEACHER && d.data().name !== AST_TEACHER) return;
-        sel.innerHTML += `<option value="${d.data().name}">${d.data().name}</option>`;
-    });
-});
-
+// 🚨 تقرير المدرس (PDF) 🚨
 document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     const teacher = document.getElementById('reportTeacherSelect').value;
     const period = document.getElementById('reportPeriodSelect').value;
@@ -632,7 +723,6 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
 
     let filtered = allTransactions.filter(t => t.instructor === teacher && t.type === 'purchase_course');
     
-    // فلترة التاريخ (مبسطة)
     let now = new Date();
     if(period === 'current_month') {
         filtered = filtered.filter(t => new Date(t.createdAt).getMonth() === now.getMonth() && new Date(t.createdAt).getFullYear() === now.getFullYear());
@@ -653,12 +743,11 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     document.getElementById('pdfTeacherName').textContent = teacher;
     document.getElementById('pdfPeriod').textContent = document.getElementById('reportPeriodSelect').options[document.getElementById('reportPeriodSelect').selectedIndex].text;
     document.getElementById('pdfTotalStudents').textContent = studentsSet.size;
-    document.getElementById('pdfCodeSales').textContent = "مدمج"; // لصعوبة فصلها بعد الشحن
+    document.getElementById('pdfCodeSales').textContent = "مدمج"; 
     document.getElementById('pdfGatewaySales').textContent = "مدمج"; 
     document.getElementById('pdfTotalRevenue').textContent = totalRev + " ج.م";
     document.getElementById('pdfGenerateDate').textContent = new Date().toLocaleString('ar-EG');
     
-    // تجميع المحافظات من الطلاب
     let govCounts = {};
     studentsSet.forEach(phone => {
         let s = allStudentsData.find(st => st.studentPhone === phone);
@@ -688,8 +777,7 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     });
 });
 
-
-// 7. مصنع الأكواد (حروف وأرقام فقط) 🚨
+// 7. مصنع الأكواد (حروف وأرقام فقط)
 const codesRef = collection(db, "charge_codes");
 let allCodesData = [];
 
@@ -815,7 +903,7 @@ onSnapshot(query(promoCodesRef), (snap) => {
     });
 });
 
-// 8. إدارة الباقات 🚨
+// 8. إدارة الباقات
 const packagesRef = collection(db, "packages");
 
 window.deletePackage = async function(id) {
