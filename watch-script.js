@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!loggedInPhone || !courseIdG) return window.location.replace("login.html");
     
-    // تحريك العلامة المائية باستمرار
+    // تحريك العلامة المائية
     const watermark = document.getElementById('studentWatermark');
     if (watermark) {
         watermark.textContent = loggedInPhone;
@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     verifyAccessAndLoadCourse(loggedInPhone, courseIdG);
-    setupRating();
 });
 
 function extractVimeoID(url) {
@@ -125,6 +124,11 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
                 document.getElementById('viewsLeftText').textContent = "لا محدود";
             }
 
+            // 🚨 تحديث وتشغيل التقييمات 🚨
+            let ratingsArray = courseDataG.ratings || [];
+            updateRatingUI(ratingsArray);
+            setupRating();
+
             // بناء القائمة (Playlist)
             let videosList = courseDataG.videos || [];
             if(videosList.length === 0 && courseDataG.videoUrl) {
@@ -133,11 +137,86 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
             renderPlaylist(videosList);
             
             if(videosList.length > 0) {
-                window.loadVideoIndex(0); // تشغيل أول فيديو تلقائياً
+                window.loadVideoIndex(0);
             }
         }
     } catch (error) { console.error(error); }
 }
+
+// 🚨 دوال التقييم الاحترافية 🚨
+window.updateRatingUI = function(ratings) {
+    const statsEl = document.getElementById('ratingStats');
+    const stars = document.querySelectorAll('.rating-stars i');
+    
+    if (ratings.length === 0) {
+        statsEl.textContent = "(لم يُقيم بعد)";
+        return;
+    }
+
+    let sum = 0;
+    let myPreviousRating = 0;
+
+    ratings.forEach(r => {
+        sum += r.stars;
+        if (r.studentId === currentStudentId) {
+            myPreviousRating = r.stars;
+        }
+    });
+
+    let avg = (sum / ratings.length).toFixed(1);
+    statsEl.textContent = `(${avg}/5 من ${ratings.length} طالب)`;
+
+    // تلوين النجوم بناءً على تقييم الطالب السابق
+    stars.forEach(s => {
+        let val = parseInt(s.getAttribute('data-val'));
+        if (val <= myPreviousRating) {
+            s.style.color = '#f59e0b';
+        } else {
+            s.style.color = '#cbd5e1';
+        }
+    });
+}
+
+function setupRating() {
+    const stars = document.querySelectorAll('.rating-stars i');
+    stars.forEach(star => {
+        // تأثير الهوفر
+        star.addEventListener('mouseover', (e) => {
+            let hoverVal = parseInt(e.target.getAttribute('data-val'));
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-val')) <= hoverVal) s.style.color = '#f59e0b';
+                else s.style.color = '#cbd5e1';
+            });
+        });
+
+        // لما يبعد الماوس يرجع للتقييم المحفوظ
+        star.parentElement.addEventListener('mouseleave', () => {
+            let ratingsArray = courseDataG.ratings || [];
+            updateRatingUI(ratingsArray);
+        });
+
+        // عند الضغط للحفظ
+        star.addEventListener('click', async (e) => {
+            const val = parseInt(e.target.getAttribute('data-val'));
+            let ratingsArray = courseDataG.ratings || [];
+            
+            let existingIndex = ratingsArray.findIndex(r => r.studentId === currentStudentId);
+            if (existingIndex > -1) {
+                ratingsArray[existingIndex].stars = val; // تعديل التقييم
+            } else {
+                ratingsArray.push({ studentId: currentStudentId, stars: val }); // تقييم جديد
+            }
+
+            courseDataG.ratings = ratingsArray;
+            updateRatingUI(ratingsArray); // تحديث الواجهة فوراً
+
+            try {
+                await updateDoc(doc(db, "courses", courseIdG), { ratings: ratingsArray });
+            } catch(err) { console.error(err); }
+        });
+    });
+}
+// 🚨 انتهاء دوال التقييم 🚨
 
 function renderPlaylist(videos) {
     const container = document.getElementById('playlistContainer');
@@ -157,7 +236,6 @@ window.loadVideoIndex = async function(index) {
     let videosList = courseDataG.videos || [{ url: courseDataG.videoUrl, requiredExamId: courseDataG.requiredExamId }];
     const vidObj = videosList[index];
     
-    // تلوين الزرار النشط
     document.querySelectorAll('.playlist-item').forEach(el => el.classList.remove('active'));
     document.getElementById(`playBtn_${index}`).classList.add('active');
 
@@ -277,12 +355,10 @@ async function submitExam(examData, examId, submissionId) {
     let score = correctCount; 
     let finalStatus = 'pending'; 
     
-    // لو مفيش مقالي، النجاح من النص (50%)
     if(!hasEssay) {
         finalStatus = score >= (totalQs / 2) ? 'passed' : 'failed';
     }
 
-    // حفظ النتيجة
     await setDoc(doc(db, "exam_submissions", submissionId), {
         studentId: currentStudentId,
         studentName: studentDataG.fullName,
@@ -301,7 +377,6 @@ async function submitExam(examData, examId, submissionId) {
         submittedAt: new Date().toISOString()
     });
 
-    // رسالة واتساب لولي الأمر بنظام الدرجات الجديد
     let waMsg = `مرحباً ولي أمر الطالب/ة: ${studentDataG.fullName}\nأنهى الطالب امتحان (${examData.title}) لحصة (${courseDataG.title}).\n`;
     if(finalStatus === 'passed') waMsg += `النتيجة: ناجح ✅\nالدرجة: ${score} من ${totalQs}\nتم فتح الحصة للطالب.`;
     else if(finalStatus === 'failed') waMsg += `النتيجة: راسب ❌\nالدرجة: ${score} من ${totalQs}\nتم إغلاق الحصة، يرجى المتابعة.`;
@@ -309,7 +384,6 @@ async function submitExam(examData, examId, submissionId) {
     
     await sendWhatsAppToParent(studentDataG.parentPhone, waMsg);
 
-    // 🚨 لو قفل الامتحان (الدرجة النهائية ومفيش مقالي) نطلعله الشهادة 🚨
     if(score === totalQs && !hasEssay) {
         document.getElementById('examFullscreenOverlay').style.display = 'none';
         document.getElementById('certStudentName').innerText = studentDataG.fullName;
@@ -317,7 +391,6 @@ async function submitExam(examData, examId, submissionId) {
         document.getElementById('certDate').innerText = new Date().toLocaleDateString('ar-EG');
         document.getElementById('certificateModal').classList.add('active');
         
-        // تشغيل الفيديو في الخلفية عشان لما يقفل الشهادة يلاقيه
         let videosList = courseDataG.videos || [{ url: courseDataG.videoUrl }];
         playVideoAndRecordView(videosList[currentVideoIndex].url);
     } else {
@@ -330,7 +403,6 @@ async function playVideoAndRecordView(videoUrl) {
     const vimeoID = extractVimeoID(videoUrl);
     
     if (vimeoID && vidContainer) {
-        // 🚨 هنا السر: بنلغي الـ flex اللي كان بيعصر الفيديو في النص 🚨
         vidContainer.style.display = 'block';
         vidContainer.style.width = '100%';
         vidContainer.style.height = '100%';
@@ -338,32 +410,12 @@ async function playVideoAndRecordView(videoUrl) {
         vidContainer.innerHTML = `<div class="plyr__video-embed" id="player"><iframe src="https://player.vimeo.com/video/${vimeoID}?loop=false&amp;byline=false&amp;portrait=false&amp;title=false&amp;speed=true&amp;transparent=0&amp;gesture=media" allowfullscreen allowtransparency allow="autoplay"></iframe></div>`;
         setTimeout(() => { new Plyr('#player', { speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }}); }, 100);
         
-        // تسجيل خصم مشاهدة
         let viewsMap = studentDataG.courseViews || {};
         viewsMap[courseIdG] = (viewsMap[courseIdG] || 0) + 1;
         await updateDoc(doc(db, "users", currentStudentId), { courseViews: viewsMap });
         
     } else {
-        vidContainer.style.display = 'flex'; // نرجعها flex عشان نسنتر رسالة الخطأ
+        vidContainer.style.display = 'flex';
         vidContainer.innerHTML = `<p style="color:#ef4444; font-weight:bold; font-size:20px;">رابط الفيديو غير متوفر.</p>`;
     }
-}
-
-// 🚨 التقييم بالنجوم 🚨
-function setupRating() {
-    const stars = document.querySelectorAll('.rating-stars i');
-    stars.forEach(star => {
-        star.addEventListener('click', async (e) => {
-            const val = parseInt(e.target.getAttribute('data-val'));
-            stars.forEach(s => s.classList.remove('active'));
-            e.target.classList.add('active');
-            
-            try {
-                await updateDoc(doc(db, "courses", courseIdG), {
-                    ratings: arrayUnion({ studentId: currentStudentId, stars: val })
-                });
-                alert('شكرًا لتقييمك! ⭐');
-            } catch(err) {}
-        });
-    });
 }
