@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================
     // 2. الشحن بالكود (تحديث فوري)
     // =========================================================
-    document.getElementById('redeemCodeForm')?.addEventListener('submit', async (e) => {
+    document.getElementById('charge_codes')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const codeInput = document.getElementById('chargeCodeInput').value.trim().toUpperCase();
         const btn = document.getElementById('btnRedeem');
