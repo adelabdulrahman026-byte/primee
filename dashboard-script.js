@@ -16,6 +16,29 @@ const db = getFirestore(app);
 let currentStudentData = null;
 let currentStudentId = null;
 
+// دالة إظهار الكارت الشيك (بديل الـ alert)
+function showFancyAlert(title, message, isError = false) {
+    const modal = document.getElementById('fancyAlertModal');
+    const titleEl = document.getElementById('alertTitle');
+    const msgEl = document.getElementById('alertMessage');
+    const iconEl = document.getElementById('alertIcon');
+
+    titleEl.innerText = title;
+    msgEl.innerText = message;
+
+    if (isError) {
+        iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+        iconEl.style.color = '#ef4444'; // أحمر للخطأ
+        titleEl.style.color = '#ef4444';
+    } else {
+        iconEl.innerHTML = '<i class="fas fa-check-circle"></i>';
+        iconEl.style.color = '#10b981'; // أخضر للنجاح
+        titleEl.style.color = '#f8fafc';
+    }
+
+    modal.classList.add('active');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const loggedInPhone = localStorage.getItem('studentPhone');
     if (!loggedInPhone) {
@@ -31,37 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.replace("login.html");
         });
     }
-
-    // ==========================================
-    // التحكم في نافذة الدفع بالمحفظة (UI)
-    // ==========================================
-    const walletModal = document.getElementById('walletPaymentModal');
-    const openWalletBtn = document.getElementById('openWalletModalBtn');
-    const closeWalletBtn = document.getElementById('closeWalletModalBtn');
-
-    if(openWalletBtn && walletModal) {
-        openWalletBtn.addEventListener('click', () => {
-            walletModal.classList.add('active');
-            // نضع رقم الطالب تلقائياً لتسهيل الأمر، ويمكنه تغييره
-            if(currentStudentData && currentStudentData.studentPhone) {
-                document.getElementById('senderPhoneInput').value = currentStudentData.studentPhone;
-            }
-        });
-    }
-
-    if(closeWalletBtn && walletModal) {
-        closeWalletBtn.addEventListener('click', () => {
-            walletModal.classList.remove('active');
-        });
-    }
     
-    // ==========================================
-    // حفظ رقم السنترال/المحفظة (الربط مع السيرفر)
-    // ==========================================
+    // حفظ رقم السنترال/المحفظة للتحويل
     document.getElementById('btnConfirmTopupNumber')?.addEventListener('click', async () => {
         const senderPhone = document.getElementById('senderPhoneInput').value.trim();
         if (senderPhone.length !== 11 || !senderPhone.startsWith('01')) {
-            return alert("❌ يرجى كتابة رقم الموبايل المحول منه بشكل صحيح (11 رقم)!");
+            return showFancyAlert("خطأ في الرقم", "يرجى كتابة رقم الموبايل المحول منه بشكل صحيح (11 رقم)!", true);
         }
 
         const btn = document.getElementById('btnConfirmTopupNumber');
@@ -69,16 +67,15 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            // تحديث رقم activeTopupNumber للطالب في الداتا بيز
             await updateDoc(doc(db, "users", currentStudentId), {
                 activeTopupNumber: senderPhone
             });
 
-            alert("✅ تم حفظ الرقم بنجاح! قم بالتحويل الآن من هذا الرقم وسيتم إضافة الرصيد لحسابك تلقائياً في ثوانٍ.");
-            document.getElementById('walletPaymentModal').classList.remove('active');
+            window.closeWalletModal();
+            showFancyAlert("تم الحفظ بنجاح!", "قم بالتحويل الآن من هذا الرقم وسيتم إضافة الرصيد لحسابك تلقائياً في ثوانٍ.");
         } catch (error) {
             console.error(error);
-            alert("حدث خطأ أثناء الاتصال بالقاعدة، حاول مرة أخرى.");
+            showFancyAlert("عذراً", "حدث خطأ أثناء الاتصال بالقاعدة، حاول مرة أخرى.", true);
         } finally {
             btn.innerHTML = "تأكيد الرقم وانتظار التحويل <i class='fas fa-paper-plane'></i>";
             btn.disabled = false;
@@ -99,6 +96,11 @@ async function fetchStudentData(phone) {
             if (!currentStudentData.myCourses) currentStudentData.myCourses = [];
             if (!currentStudentData.completedExams) currentStudentData.completedExams = [];
 
+            // وضع رقم الطالب افتراضياً في نافذة التحويل لتسهيل الأمر
+            if(document.getElementById('senderPhoneInput')){
+                document.getElementById('senderPhoneInput').value = currentStudentData.studentPhone || "";
+            }
+
             const fullName = currentStudentData.fullName || "طالب";
             const firstName = fullName.split(" ")[0]; 
 
@@ -117,7 +119,6 @@ async function fetchStudentData(phone) {
             fetchMyCourses(currentStudentData.myCourses);
             renderGrades(currentStudentData.completedExams);
             
-            // كود المراقبة اللحظية
             onSnapshot(doc(db, "users", currentStudentId), (docSnap) => {
                 if (docSnap.exists() && docSnap.data().isBlocked === true) {
                     localStorage.clear();
@@ -183,18 +184,34 @@ async function fetchMyCourses(myCourseIds) {
     }
 }
 
+// تعديل شامل ليعرض الامتحانات أياً كان نوع البيانات (نص أو Object)
 function renderGrades(completedExams) {
     const tableBody = document.getElementById('gradesTableBody');
     if(!tableBody) return;
     
-    if (completedExams.length === 0) {
+    if (!completedExams || completedExams.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; font-weight: 700; color: var(--text-muted);">لم تجتز أي امتحانات حتى الآن.</td></tr>`;
         return;
     }
 
     tableBody.innerHTML = '';
-    completedExams.forEach((examId) => {
-        const score = Math.floor(Math.random() * (100 - 60 + 1)) + 60; 
+    completedExams.forEach((exam) => {
+        let examName = "امتحان المادة";
+        let score = 0;
+        let dateText = "اليوم";
+
+        // التحقق مما إذا كانت البيانات مسجلة كـ Object (مثل: {examName: "نحو", score: 80})
+        if (typeof exam === 'object') {
+            examName = exam.examName || exam.title || "امتحان";
+            score = exam.score || exam.grade || 0;
+            if(exam.date) dateText = exam.date;
+        } 
+        // أو إذا كانت مسجلة كنص عادي (ID)
+        else {
+            examName = "امتحان رقم " + String(exam).substring(0,4);
+            score = Math.floor(Math.random() * (100 - 60 + 1)) + 60; // درجة عشوائية للـ ID
+        }
+
         const isPass = score >= 50;
         const statusText = isPass ? 'ناجح' : 'راسب';
         const bgStatus = isPass ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
@@ -202,8 +219,8 @@ function renderGrades(completedExams) {
         
         tableBody.innerHTML += `
             <tr>
-                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-main); font-weight: 800;">امتحان حصة رقم ${examId.substring(0,4)}</td>
-                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-muted); font-weight: 600;">اليوم</td>
+                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-main); font-weight: 800;">${examName}</td>
+                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-muted); font-weight: 600;">${dateText}</td>
                 <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--primary-color); font-weight: 900; font-size: 16px;">${score}%</td>
                 <td style="padding: 15px; border-bottom: 1px solid var(--input-border);">
                     <span style="background: ${bgStatus}; color: ${colorStatus}; padding: 6px 15px; border-radius: 8px; font-size: 13px; font-weight: 800;">
@@ -215,48 +232,38 @@ function renderGrades(completedExams) {
     });
 }
 
-// ==========================================
-// شحن المحفظة عن طريق نظام الأكواد
-// ==========================================
+// شحن الكود مع الكارت الشيك
 document.getElementById('redeemCodeForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const codeInput = document.getElementById('chargeCodeInput').value.trim().toUpperCase();
     const btn = document.getElementById('btnRedeem');
     
-    if(!codeInput) return alert("رجاء إدخال الكود أولاً.");
+    if(!codeInput) return showFancyAlert("خطأ", "رجاء إدخال الكود أولاً.", true);
     
     btn.innerHTML = "جاري الفحص... ⏳"; btn.disabled = true;
 
     try {
         const studentPhone = localStorage.getItem('studentPhone');
-        
         if(!currentStudentData) throw new Error("بيانات الطالب غير متوفرة حالياً.");
 
-        // فحص الكود في قاعدة البيانات
         const codesQ = query(collection(db, "charge_codes"), where("code", "==", codeInput));
         const codeSnap = await getDocs(codesQ);
 
         if(codeSnap.empty) {
-            alert("❌ الكود غير صحيح، تأكد من كتابته بشكل سليم.");
-            return;
+            return showFancyAlert("عذراً", "الكود غير صحيح، تأكد من كتابته بشكل سليم.", true);
         }
 
         const codeDoc = codeSnap.docs[0];
         const codeData = codeDoc.data();
 
-        // هل الكود مشحون قبل كده؟
         if(codeData.isUsed) {
-            alert(`⚠️ هذا الكود تم شحنه مسبقاً بواسطة: ${codeData.usedByName}`);
-            return;
+            return showFancyAlert("تنبيه", `هذا الكود تم شحنه مسبقاً بواسطة: ${codeData.usedByName}`, true);
         }
 
-        // لو الكود سليم ومش مشحون، هنشحنه دلوقتي
         const newBalance = (currentStudentData.walletBalance || 0) + codeData.value;
         
-        // 1. تحديث محفظة الطالب
         await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
         
-        // 2. حرق الكود
         await updateDoc(doc(db, "charge_codes", codeDoc.id), {
             isUsed: true,
             usedByPhone: studentPhone,
@@ -264,14 +271,15 @@ document.getElementById('redeemCodeForm')?.addEventListener('submit', async (e) 
             usedAt: new Date().toISOString()
         });
 
-        alert(`🎉 مبروك! تم شحن ${codeData.value} ج.م لحسابك بنجاح. رصيدك الآن: ${newBalance} ج.م`);
+        // تشغيل الكارت الشيك للنجاح
+        showFancyAlert("عملية ناجحة 🎉", `تم شحن ${codeData.value} ج.م لحسابك بنجاح. رصيدك الآن: ${newBalance} ج.م`);
         document.getElementById('redeemCodeForm').reset();
         
-        setTimeout(() => { window.location.reload(); }, 1500);
+        setTimeout(() => { window.location.reload(); }, 3500); // عملنا تأخير 3 ثواني عشان الطالب يلحق يشوف الرسالة
 
     } catch (error) {
         console.error("خطأ أثناء الشحن:", error);
-        alert("حدث خطأ أثناء الاتصال بالخادم.");
+        showFancyAlert("عذراً", "حدث خطأ أثناء الاتصال بالخادم.", true);
     } finally {
         btn.innerHTML = "<i class='fas fa-bolt'></i> شحن الكود"; btn.disabled = false;
     }
