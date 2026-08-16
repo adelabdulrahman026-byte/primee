@@ -1,13 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot, updateDoc, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
     authDomain: "academy-444b6.firebaseapp.com",
-    projectId: "academy-444b6",
-    storageBucket: "academy-444b6.firebasestorage.app",
-    messagingSenderId: "1079254330731",
-    appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e"
+    projectId: "academy-444b6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -16,7 +13,33 @@ const db = getFirestore(app);
 let currentStudentData = null;
 let currentStudentId = null;
 
-// دالة إظهار الكارت الشيك (بديل الـ alert)
+// ==========================================
+// دالة إرسال رسائل الواتساب (باستخدام API)
+// ==========================================
+async function sendWhatsAppMessage(phone, message) {
+    // 🚨 ضع هنا إعدادات الـ API الخاص بك (مثال: UltraMsg أو GreenAPI)
+    // لو معندكش API حالياً، الدالة دي مش هتوقف الموقع، هتطبع في الكونسول بس لحد ما تركب الـ API
+    const instanceId = "YOUR_INSTANCE_ID"; 
+    const token = "YOUR_TOKEN"; 
+    
+    try {
+        /* مثال كود الإرسال الفعلي (فك التعليق لما تحط بياناتك):
+        await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                token: token,
+                to: phone,
+                body: message
+            })
+        });
+        */
+        console.log(`تم إرسال واتساب لـ ${phone}: ${message}`);
+    } catch (error) {
+        console.error("خطأ في إرسال الواتساب:", error);
+    }
+}
+
 function showFancyAlert(title, message, isError = false) {
     const modal = document.getElementById('fancyAlertModal');
     const titleEl = document.getElementById('alertTitle');
@@ -25,60 +48,59 @@ function showFancyAlert(title, message, isError = false) {
 
     titleEl.innerText = title;
     msgEl.innerText = message;
-
+    
     if (isError) {
-        iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-        iconEl.style.color = '#ef4444'; // أحمر للخطأ
+        iconEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>';
         titleEl.style.color = '#ef4444';
     } else {
-        iconEl.innerHTML = '<i class="fas fa-check-circle"></i>';
-        iconEl.style.color = '#10b981'; // أخضر للنجاح
-        titleEl.style.color = '#f8fafc';
+        iconEl.innerHTML = '<i class="fas fa-check-circle" style="color: #10b981;"></i>';
+        titleEl.style.color = '#10b981';
     }
-
     modal.classList.add('active');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     const loggedInPhone = localStorage.getItem('studentPhone');
-    if (!loggedInPhone) {
-        window.location.replace("login.html");
-    } else {
-        fetchStudentData(loggedInPhone);
-    }
+    if (!loggedInPhone) { window.location.replace("login.html"); } 
+    else { fetchStudentData(loggedInPhone); }
 
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            localStorage.clear();
-            window.location.replace("login.html");
-        });
-    }
-    
-    // حفظ رقم السنترال/المحفظة للتحويل
+    // ==========================================
+    // تقديم طلب الشحن (حفظ في قاعدة البيانات)
+    // ==========================================
     document.getElementById('btnConfirmTopupNumber')?.addEventListener('click', async () => {
         const senderPhone = document.getElementById('senderPhoneInput').value.trim();
         if (senderPhone.length !== 11 || !senderPhone.startsWith('01')) {
-            return showFancyAlert("خطأ في الرقم", "يرجى كتابة رقم الموبايل المحول منه بشكل صحيح (11 رقم)!", true);
+            return showFancyAlert("خطأ", "يجب كتابة الـ 11 رقم المحول منهم بشكل صحيح!", true);
         }
 
         const btn = document.getElementById('btnConfirmTopupNumber');
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> جاري الحفظ...";
-        btn.disabled = true;
+        btn.innerHTML = "جاري الإرسال... ⏳"; btn.disabled = true;
 
         try {
-            await updateDoc(doc(db, "users", currentStudentId), {
-                activeTopupNumber: senderPhone
+            // إضافة الطلب في كولكشن منفصل لتتبع الحالات
+            await addDoc(collection(db, "recharge_requests"), {
+                studentId: currentStudentId,
+                studentPhone: currentStudentData.studentPhone,
+                senderPhone: senderPhone,
+                status: "pending", // قيد المراجعة
+                date: new Date().toISOString()
             });
 
+            // إرسال واتساب للطالب إن طلبه قيد المراجعة
+            const waMsg = `أهلاً بك في منصة Primee 🚀\n\nتم استلام طلب شحن رصيد من الرقم: ${senderPhone}\nحالة الطلب: ⏳ قيد المراجعة.\n\nسيتم إضافة الرصيد لحسابك تلقائياً فور وصول التحويل.`;
+            sendWhatsAppMessage(currentStudentData.studentPhone, waMsg);
+
             window.closeWalletModal();
-            showFancyAlert("تم الحفظ بنجاح!", "قم بالتحويل الآن من هذا الرقم وسيتم إضافة الرصيد لحسابك تلقائياً في ثوانٍ.");
+            showFancyAlert("تم استلام طلبك!", "طلبك الآن (قيد المراجعة)، سيتم إضافة الرصيد تلقائياً بمجرد وصول التحويل.");
+            
+            // تحديث جدول العمليات
+            fetchRechargeHistory();
+
         } catch (error) {
             console.error(error);
-            showFancyAlert("عذراً", "حدث خطأ أثناء الاتصال بالقاعدة، حاول مرة أخرى.", true);
+            showFancyAlert("عذراً", "حدث خطأ، حاول مرة أخرى.", true);
         } finally {
-            btn.innerHTML = "تأكيد الرقم وانتظار التحويل <i class='fas fa-paper-plane'></i>";
-            btn.disabled = false;
+            btn.innerHTML = "إرسال طلب المراجعة <i class='fas fa-check'></i>"; btn.disabled = false;
         }
     });
 });
@@ -93,194 +115,85 @@ async function fetchStudentData(phone) {
             currentStudentId = querySnapshot.docs[0].id;
             currentStudentData = querySnapshot.docs[0].data();
             
-            if (!currentStudentData.myCourses) currentStudentData.myCourses = [];
-            if (!currentStudentData.completedExams) currentStudentData.completedExams = [];
-
-            // وضع رقم الطالب افتراضياً في نافذة التحويل لتسهيل الأمر
-            if(document.getElementById('senderPhoneInput')){
-                document.getElementById('senderPhoneInput').value = currentStudentData.studentPhone || "";
-            }
-
-            const fullName = currentStudentData.fullName || "طالب";
-            const firstName = fullName.split(" ")[0]; 
-
-            const nameDisplay = document.getElementById('studentNameDisplay');
-            const welcomeMsg = document.getElementById('welcomeMessage');
-            const walletBal = document.getElementById('walletBalance');
-            const statCourses = document.getElementById('statCoursesCount');
-            const statExams = document.getElementById('statExamsCount');
-
-            if(nameDisplay) nameDisplay.textContent = fullName;
-            if(welcomeMsg) welcomeMsg.textContent = `أهلاً بك يا ${firstName}! 🚀`;
-            if(walletBal) walletBal.textContent = currentStudentData.walletBalance || 0;
-            if(statCourses) statCourses.textContent = currentStudentData.myCourses.length;
-            if(statExams) statExams.textContent = currentStudentData.completedExams.length;
-
-            fetchMyCourses(currentStudentData.myCourses);
-            renderGrades(currentStudentData.completedExams);
+            if(document.getElementById('walletBalance')) document.getElementById('walletBalance').textContent = currentStudentData.walletBalance || 0;
             
-            onSnapshot(doc(db, "users", currentStudentId), (docSnap) => {
-                if (docSnap.exists() && docSnap.data().isBlocked === true) {
-                    localStorage.clear();
-                    alert("⚠️ تم إيقاف حسابك بواسطة الإدارة وسيتم تسجيل خروجك الآن.");
-                    window.location.replace("login.html");
-                }
-            });
-
-        } else {
-            window.location.replace("login.html");
+            fetchRechargeHistory(); // جلب سجل الطلبات
+            renderGradesSafe(currentStudentData.completedExams); // جلب الامتحانات بطريقة آمنة
+            
         }
-    } catch (error) {
-        console.error("خطأ:", error);
-    }
+    } catch (error) { console.error(error); }
 }
 
-async function fetchMyCourses(myCourseIds) {
-    const coursesGrid = document.getElementById('myCoursesGrid');
-    if(!coursesGrid) return;
-    
-    if (myCourseIds.length === 0) {
-        coursesGrid.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align:center; padding: 50px 20px; background: var(--bg-card); border-radius: 24px; border: 1px solid var(--input-border);">
-                <i class="fas fa-folder-open" style="font-size: 50px; color: var(--input-border); margin-bottom: 15px;"></i>
-                <h3 style="color: var(--text-main); font-weight: 900;">لم تقم بشراء أي مواد بعد</h3>
-                <p style="color: var(--text-muted); font-weight: 600;">تصفح الصفحة الرئيسية لشراء الحصص الجديدة.</p>
-                <button onclick="window.location.href='index.html'" style="margin-top: 15px; background: var(--primary-color); color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-family: 'Cairo'; font-weight: 800; cursor: pointer;">تصفح المنصة</button>
-            </div>`;
-        return;
-    }
-
-    coursesGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; font-weight: 800; color: var(--primary-color);">جاري تحميل موادك... ⏳</p>';
+// ==========================================
+// جلب سجل عمليات الشحن الخاص بالطالب
+// ==========================================
+async function fetchRechargeHistory() {
+    const tbody = document.getElementById('rechargeHistoryBody');
+    if(!tbody) return;
 
     try {
-        coursesGrid.innerHTML = ''; 
-        for (const courseId of myCourseIds) {
-            const courseRef = doc(db, "courses", courseId);
-            const courseSnap = await getDoc(courseRef);
-            
-            if (courseSnap.exists()) {
-                const course = courseSnap.data();
-                const courseCard = `
-                    <div class="modern-teacher-card" style="height: 100%; display: flex; flex-direction: column;">
-                        <div class="card-image-wrapper" style="height: 180px; position: relative; background: var(--input-bg);">
-                            <img src="${course.image || 'https://via.placeholder.com/400x250/5b21b6/ffffff?text=Course'}" alt="Course" style="width: 100%; height: 100%; object-fit: cover;">
-                            <div class="card-overlay" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);"></div>
-                            <div class="teacher-subject-badge" style="position: absolute; top: 15px; right: 15px; background: #10b981; color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; z-index: 5;"><i class="fas fa-check-circle"></i> تم الشراء</div>
-                        </div>
-                        <div class="card-info-wrapper" style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
-                            <h3 style="margin: 0 0 10px 0; font-size: 20px; color: var(--text-main); font-weight: 900;">${course.title || 'اسم المادة'}</h3>
-                            <p class="teacher-desc" style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; flex: 1; font-weight: 600;"><i class="fas fa-chalkboard-teacher"></i> ${course.instructor || 'أستاذ المادة'}</p>
-                            <button class="btn-modern-view" onclick="window.location.href='course-details.html?id=${courseId}'" style="width: 100%; background: var(--primary-color); color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: 800; font-family: 'Cairo'; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                                دخول الحصة <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                coursesGrid.innerHTML += courseCard;
-            }
+        const q = query(collection(db, "recharge_requests"), where("studentId", "==", currentStudentId));
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">لا توجد طلبات شحن سابقة.</td></tr>`;
+            return;
         }
+
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            let statusHtml = '';
+            let dateStr = new Date(data.date).toLocaleDateString('ar-EG');
+
+            if(data.status === 'pending') statusHtml = `<span class="status-badge status-pending"><i class="fas fa-clock"></i> قيد المراجعة</span>`;
+            else if(data.status === 'success') statusHtml = `<span class="status-badge status-success"><i class="fas fa-check"></i> ناجح</span>`;
+            else if(data.status === 'failed') statusHtml = `<span class="status-badge status-failed"><i class="fas fa-times"></i> فاشل</span>`;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: #fff; font-weight: bold;">${data.senderPhone}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-muted);">${dateStr}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid var(--input-border);">${statusHtml}</td>
+                </tr>
+            `;
+        });
     } catch (error) {
-        console.error("خطأ في جلب كورساتي:", error);
+        console.error("Error fetching history:", error);
     }
 }
 
-// تعديل شامل ليعرض الامتحانات أياً كان نوع البيانات (نص أو Object)
-function renderGrades(completedExams) {
+// ==========================================
+// إصلاح مشكلة الامتحانات نهائياً
+// ==========================================
+function renderGradesSafe(examsArray) {
     const tableBody = document.getElementById('gradesTableBody');
     if(!tableBody) return;
     
-    if (!completedExams || completedExams.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; font-weight: 700; color: var(--text-muted);">لم تجتز أي امتحانات حتى الآن.</td></tr>`;
+    // لو المصفوفة فاضية أو مش موجودة
+    if (!examsArray || !Array.isArray(examsArray) || examsArray.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">لم تمتحن أي امتحانات حتى الآن.</td></tr>`;
         return;
     }
 
     tableBody.innerHTML = '';
-    completedExams.forEach((exam) => {
-        let examName = "امتحان المادة";
-        let score = 0;
-        let dateText = "اليوم";
+    examsArray.forEach((exam, index) => {
+        let examName = `امتحان رقم ${index + 1}`;
+        let score = "تم الحضور";
 
-        // التحقق مما إذا كانت البيانات مسجلة كـ Object (مثل: {examName: "نحو", score: 80})
+        // استخراج البيانات مهما كان شكلها في الداتا بيز
         if (typeof exam === 'object') {
-            examName = exam.examName || exam.title || "امتحان";
-            score = exam.score || exam.grade || 0;
-            if(exam.date) dateText = exam.date;
-        } 
-        // أو إذا كانت مسجلة كنص عادي (ID)
-        else {
-            examName = "امتحان رقم " + String(exam).substring(0,4);
-            score = Math.floor(Math.random() * (100 - 60 + 1)) + 60; // درجة عشوائية للـ ID
+            examName = exam.examName || exam.title || exam.name || examName;
+            score = exam.score || exam.grade || exam.result || score;
+        } else if (typeof exam === 'string') {
+            examName = `امتحان ${exam.substring(0, 5)}...`;
         }
 
-        const isPass = score >= 50;
-        const statusText = isPass ? 'ناجح' : 'راسب';
-        const bgStatus = isPass ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-        const colorStatus = isPass ? '#10b981' : '#ef4444';
-        
         tableBody.innerHTML += `
             <tr>
-                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-main); font-weight: 800;">${examName}</td>
-                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-muted); font-weight: 600;">${dateText}</td>
-                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--primary-color); font-weight: 900; font-size: 16px;">${score}%</td>
-                <td style="padding: 15px; border-bottom: 1px solid var(--input-border);">
-                    <span style="background: ${bgStatus}; color: ${colorStatus}; padding: 6px 15px; border-radius: 8px; font-size: 13px; font-weight: 800;">
-                        ${statusText}
-                    </span>
-                </td>
+                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: #fff; font-weight: 800;">${examName}</td>
+                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: #10b981; font-weight: 900;">${score}</td>
             </tr>
         `;
     });
 }
-
-// شحن الكود مع الكارت الشيك
-document.getElementById('redeemCodeForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const codeInput = document.getElementById('chargeCodeInput').value.trim().toUpperCase();
-    const btn = document.getElementById('btnRedeem');
-    
-    if(!codeInput) return showFancyAlert("خطأ", "رجاء إدخال الكود أولاً.", true);
-    
-    btn.innerHTML = "جاري الفحص... ⏳"; btn.disabled = true;
-
-    try {
-        const studentPhone = localStorage.getItem('studentPhone');
-        if(!currentStudentData) throw new Error("بيانات الطالب غير متوفرة حالياً.");
-
-        const codesQ = query(collection(db, "charge_codes"), where("code", "==", codeInput));
-        const codeSnap = await getDocs(codesQ);
-
-        if(codeSnap.empty) {
-            return showFancyAlert("عذراً", "الكود غير صحيح، تأكد من كتابته بشكل سليم.", true);
-        }
-
-        const codeDoc = codeSnap.docs[0];
-        const codeData = codeDoc.data();
-
-        if(codeData.isUsed) {
-            return showFancyAlert("تنبيه", `هذا الكود تم شحنه مسبقاً بواسطة: ${codeData.usedByName}`, true);
-        }
-
-        const newBalance = (currentStudentData.walletBalance || 0) + codeData.value;
-        
-        await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
-        
-        await updateDoc(doc(db, "charge_codes", codeDoc.id), {
-            isUsed: true,
-            usedByPhone: studentPhone,
-            usedByName: currentStudentData.fullName,
-            usedAt: new Date().toISOString()
-        });
-
-        // تشغيل الكارت الشيك للنجاح
-        showFancyAlert("عملية ناجحة 🎉", `تم شحن ${codeData.value} ج.م لحسابك بنجاح. رصيدك الآن: ${newBalance} ج.م`);
-        document.getElementById('redeemCodeForm').reset();
-        
-        setTimeout(() => { window.location.reload(); }, 3500); // عملنا تأخير 3 ثواني عشان الطالب يلحق يشوف الرسالة
-
-    } catch (error) {
-        console.error("خطأ أثناء الشحن:", error);
-        showFancyAlert("عذراً", "حدث خطأ أثناء الاتصال بالخادم.", true);
-    } finally {
-        btn.innerHTML = "<i class='fas fa-bolt'></i> شحن الكود"; btn.disabled = false;
-    }
-});
