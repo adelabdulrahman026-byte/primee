@@ -20,12 +20,12 @@
         .modal-content-box { background: #1e293b; width: 100%; max-width: 500px; padding: 30px; border-radius: 20px; border: 1px solid #334155; transform: translateY(20px); transition: 0.3s; max-height: 90vh; overflow-y: auto; text-align: center; }
         .custom-modal.active .modal-content-box { transform: translateY(0); }
         
-        /* اللوجوهات المضمونة */
+        /* اللوجوهات الخاصة بك */
         .logos-grid { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
-        .company-logo { width: 50px; height: 50px; border-radius: 12px; background: #fff; padding: 5px; object-fit: contain; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .company-logo { width: 55px; height: 55px; border-radius: 12px; background: #fff; padding: 5px; object-fit: contain; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         
         .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 800; }
-        .status-pending { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .status-waiting { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
         .status-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
         .status-failed { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
     </style>
@@ -36,14 +36,14 @@
     <div id="walletPaymentModal" class="custom-modal">
         <div class="modal-content-box">
             <h3 style="color: #f8fafc; font-weight: 900; margin-bottom: 5px;">طلب شحن رصيد <i class="fas fa-paper-plane" style="color: #3b82f6;"></i></h3>
-            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;">سيتم مراجعة طلبك وإضافة الرصيد فور وصول التحويل.</p>
+            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;">سيتم متابعة طلبك وإضافة الرصيد فور وصول التحويل.</p>
             
             <div class="logos-grid">
-                <img src="https://i.imgur.com/K3Vw8Vj.png" class="company-logo" title="إنستا باي" alt="InstaPay">
-                <img src="https://i.imgur.com/Z4cR3tV.png" class="company-logo" title="فودافون كاش" alt="Vodafone">
-                <img src="https://i.imgur.com/Q3q8F9H.png" class="company-logo" title="أورانج كاش" alt="Orange">
-                <img src="https://i.imgur.com/9v1M7wH.png" class="company-logo" title="اتصالات كاش" alt="Etisalat">
-                <img src="https://i.imgur.com/8Q9Z5b3.png" class="company-logo" title="وي باي" alt="WE">
+                <img src="https://pub-ccaed99c36df41e19efe5f7fcecc9803.r2.dev/images%20(2).png" class="company-logo" title="إنستا باي" alt="InstaPay">
+                <img src="https://pub-ccaed99c36df41e19efe5f7fcecc9803.r2.dev/images.png" class="company-logo" title="فودافون كاش" alt="Vodafone">
+                <img src="https://pub-ccaed99c36df41e19efe5f7fcecc9803.r2.dev/images%20(11).jpg" class="company-logo" title="أورانج كاش" alt="Orange">
+                <img src="https://pub-ccaed99c36df41e19efe5f7fcecc9803.r2.dev/images%20(10).jpg" class="company-logo" title="اتصالات كاش" alt="Etisalat">
+                <img src="https://pub-ccaed99c36df41e19efe5f7fcecc9803.r2.dev/images%20(1).png" class="company-logo" title="وي باي" alt="WE">
             </div>
 
             <div style="background: #0f172a; padding: 20px; border-radius: 15px; border: 2px dashed #3b82f6; margin-bottom: 20px;">
@@ -55,11 +55,10 @@
 
             <div style="text-align: right; margin-bottom: 20px;">
                 <label style="font-weight: 800; color: #f8fafc; display: block; margin-bottom: 8px;">رقم الموبايل المُحول منه (الرقم الخاص بك أو السنترال):</label>
-                <!-- الخانة أصبحت فارغة ولا تملأ برقم الطالب تلقائياً -->
                 <input type="text" id="senderPhoneInput" placeholder="اكتب الـ 11 رقم هنا..." maxlength="11" style="width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: #fff; font-weight: 900; font-size: 16px; text-align: center;">
             </div>
             
-            <button id="btnConfirmTopupNumber" style="width: 100%; background: #10b981; color: #fff; border: none; padding: 15px; border-radius: 10px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; margin-bottom: 10px;">إرسال طلب المراجعة <i class="fas fa-check"></i></button>
+            <button id="btnConfirmTopupNumber" style="width: 100%; background: #10b981; color: #fff; border: none; padding: 15px; border-radius: 10px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; margin-bottom: 10px;">إرسال طلب الشحن <i class="fas fa-check"></i></button>
             <button onclick="closeWalletModal()" style="width: 100%; background: transparent; border: none; padding: 10px; color: #64748b; font-weight: 800; font-family: 'Cairo'; cursor: pointer;">إلغاء</button>
         </div>
     </div>
@@ -75,7 +74,6 @@
     </div>
 
     <div class="dashboard-container">
-        
         <aside class="dash-sidebar" id="dashSidebar">
             <div class="dash-brand">Primee<span>.</span></div>
             <ul class="dash-nav">
@@ -86,7 +84,6 @@
         </aside>
 
         <div class="dash-main">
-            
             <div class="wallet-card">
                 <div class="wallet-info">
                     <h3><i class="fas fa-wallet"></i> رصيد المحفظة</h3>
@@ -95,7 +92,6 @@
                 <button class="btn-charge" onclick="document.getElementById('paymentSection').scrollIntoView({behavior: 'smooth'})">شحن الرصيد +</button>
             </div>
 
-            <!-- قسم الشحن -->
             <div class="section-title" id="paymentSection" style="margin-top: 10px;">
                 <h3 style="color: var(--text-main); font-weight: 900;"><i class="fas fa-money-check-alt" style="color: var(--primary-color);"></i> طرق شحن الرصيد</h3>
             </div>
@@ -122,7 +118,7 @@
                 </div>
             </div>
 
-            <!-- سجل عمليات الشحن (جديد) -->
+            <!-- سجل عمليات الشحن -->
             <div class="section-title" style="margin-top: 30px;">
                 <h3 style="color: var(--text-main); font-weight: 900;"><i class="fas fa-history" style="color: var(--primary-color);"></i> سجل طلبات الشحن</h3>
             </div>
@@ -139,7 +135,13 @@
                 </tbody>
             </table>
 
-            <!-- تقرير الدرجات (مُعدل) -->
+            <!-- الكورسات المملوكة -->
+            <div class="section-title" style="margin-top: 30px;">
+                <h3 style="color: var(--text-main); font-weight: 900;"><i class="fas fa-play-circle" style="color: var(--primary-color);"></i> موادي الدراسية</h3>
+            </div>
+            <div class="courses-grid" id="myCoursesGrid"></div>
+
+            <!-- تقرير الدرجات -->
             <div class="section-title" style="margin-top: 20px;">
                 <h3 style="color: var(--text-main); font-weight: 900;"><i class="fas fa-clipboard-list" style="color: var(--primary-color);"></i> تقرير الدرجات</h3>
             </div>
