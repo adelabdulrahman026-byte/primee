@@ -8,59 +8,65 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     
-    <!-- تنسيقات قسم الدفع والمحافظ (متجاوبة مع الموبايل) -->
     <style>
+        /* تنسيقات قسم الدفع */
         .payment-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
         @media (max-width: 768px) { .payment-section { grid-template-columns: 1fr; } }
         
-        .pay-card { background: #1e293b; padding: 25px; border-radius: 15px; border: 1px solid #334155; position: relative; overflow: hidden; transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between;}
+        .pay-card { background: #1e293b; padding: 25px; border-radius: 15px; border: 1px solid #334155; transition: all 0.3s ease; display: flex; flex-direction: column; justify-content: space-between;}
         .pay-card:hover { transform: translateY(-5px); border-color: #10b981; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.15); }
         
-        .wallet-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; justify-content: center; }
-        .badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 5px; }
-        .badge.instapay { background: linear-gradient(45deg, #6b21a8, #9333ea); }
-        .badge.vfcash { background: #e10000; }
-        .badge.orange { background: #f97316; }
-        .badge.etisalat { background: #16a34a; }
-        
-        .secure-badge { text-align: center; font-size: 12px; color: #10b981; font-weight: 800; margin-top: 15px; }
-        
-        /* Modal Styles */
+        /* تنسيقات النوافذ المنبثقة (Modals) */
         .custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(5px); padding: 20px; }
         .custom-modal.active { opacity: 1; visibility: visible; }
-        .modal-content-box { background: #1e293b; width: 100%; max-width: 500px; padding: 30px; border-radius: 20px; border: 1px solid #334155; transform: translateY(20px); transition: 0.3s; max-height: 90vh; overflow-y: auto; text-align: center; }
+        .modal-content-box { background: #1e293b; width: 100%; max-width: 500px; padding: 30px; border-radius: 20px; border: 1px solid #334155; transform: translateY(20px); transition: 0.3s; max-height: 90vh; overflow-y: auto; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);}
         .custom-modal.active .modal-content-box { transform: translateY(0); }
         
+        /* لوجوهات الشركات */
+        .logos-grid { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+        .company-logo { width: 50px; height: 50px; border-radius: 12px; background: #fff; padding: 5px; object-fit: contain; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 2px solid transparent; transition: 0.3s;}
+        .company-logo:hover { transform: scale(1.1); }
+        .logo-instapay { border-color: #9333ea; }
+        .logo-vodafone { border-color: #e60000; }
+        .logo-orange { border-color: #ff6600; }
+        .logo-etisalat { border-color: #008a00; }
+        .logo-we { border-color: #5c2d91; }
+
         .instapay-notice { background: rgba(147, 51, 234, 0.1); border: 1px solid #9333ea; border-radius: 10px; padding: 15px; text-align: right; margin-bottom: 20px; }
+        .secure-badge { text-align: center; font-size: 13px; color: #10b981; font-weight: 800; margin-top: 15px; }
+
+        /* نافذة النجاح الأنيقة */
+        .success-icon { font-size: 70px; color: #10b981; margin-bottom: 15px; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body class="dashboard-body">
 
-    <!-- نافذة الشحن عبر المحفظة / انستا باي -->
+    <!-- 1. نافذة التحويل والمحافظ (بوابة الدفع) -->
     <div id="walletPaymentModal" class="custom-modal">
         <div class="modal-content-box">
-            <div style="font-size: 40px; color: #10b981; margin-bottom: 10px;"><i class="fas fa-shield-alt"></i></div>
-            <h3 style="color: #f8fafc; font-weight: 900; margin-bottom: 5px;">شحن الرصيد الآمن</h3>
-            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">جميع العمليات مشفرة ومؤمنة تماماً تلقائياً.</p>
+            <h3 style="color: #f8fafc; font-weight: 900; margin-bottom: 5px;">شحن الرصيد الآمن <i class="fas fa-shield-alt" style="color: #10b981;"></i></h3>
+            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;">جميع العمليات مشفرة ومؤمنة تماماً.</p>
             
-            <div class="wallet-badges">
-                <span class="badge instapay"><i class="fas fa-bolt"></i> InstaPay</span>
-                <span class="badge vfcash">Vodafone</span>
-                <span class="badge orange">Orange</span>
-                <span class="badge etisalat">Etisalat</span>
+            <!-- لوجوهات الشركات -->
+            <div class="logos-grid">
+                <img src="https://play-lh.googleusercontent.com/BJD9Mw-k50G3XpXmH-O6_sWn5O-M0nS5nI5O8o88y2zT-B1l_wQ1O18qP8qG0Q5_6g" class="company-logo logo-instapay" title="إنستا باي">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Vodafone_icon.svg/512px-Vodafone_icon.svg.png" class="company-logo logo-vodafone" title="فودافون كاش">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Orange_logo.svg/512px-Orange_logo.svg.png" class="company-logo logo-orange" title="أورانج كاش">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Etisalat_logo.svg/512px-Etisalat_logo.svg.png" class="company-logo logo-etisalat" title="اتصالات كاش">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/WE_logo.svg/512px-WE_logo.svg.png" class="company-logo logo-we" title="وي باي">
             </div>
 
-            <!-- ملاحظة انستا باي -->
             <div class="instapay-notice">
                 <p style="margin: 0; color: #d8b4fe; font-size: 13px; font-weight: 700; line-height: 1.6;">
                     <i class="fas fa-info-circle"></i> <b>تنبيه لمستخدمي إنستا باي:</b><br>
-                    الرقم غير مسجل كحساب بنكي على إنستا باي. للتحويل بنجاح، اختر من التطبيق <b>(تحويل لمحفظة إلكترونية)</b> وليس تحويل لحساب.
+                    الرقم الخاص بنا لا يدعم استقبال التحويل كحساب بنكي. للتحويل بنجاح، اختر من تطبيق إنستا باي <b>(تحويل لمحفظة إلكترونية)</b>.
                 </p>
             </div>
 
             <div style="background: #0f172a; padding: 20px; border-radius: 15px; border: 2px dashed #3b82f6; margin-bottom: 20px;">
                 <p style="margin: 0 0 5px 0; font-weight: 800; color: #94a3b8; font-size: 14px;">قم بتحويل المبلغ إلى المحفظة التالية:</p>
-                <h2 style="margin: 0 0 5px 0; color: #3b82f6; font-size: 32px; letter-spacing: 2px; font-family: monospace; user-select: all;">01042720738</h2>
+                <h2 style="margin: 0 0 5px 0; color: #3b82f6; font-size: 35px; letter-spacing: 2px; font-family: monospace; user-select: all;">01042720738</h2>
                 <p style="margin: 0; color: #cbd5e1; font-weight: 700; font-size: 15px;">بإسم: <span style="color: #10b981;">mohamed A......H....S</span></p>
             </div>
 
@@ -69,12 +75,22 @@
                 <input type="text" id="senderPhoneInput" placeholder="أدخل رقمك أو رقم السنترال (11 رقم)" maxlength="11" style="width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: #fff; font-weight: 900; font-size: 16px; text-align: center;">
             </div>
             
-            <button id="btnConfirmTopupNumber" style="width: 100%; background: #10b981; color: #fff; border: none; padding: 15px; border-radius: 10px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; margin-bottom: 10px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">تأكيد الرقم وانتظار التحويل <i class="fas fa-paper-plane"></i></button>
-            <button id="closeWalletModalBtn" style="width: 100%; background: transparent; border: none; padding: 10px; color: #64748b; font-weight: 800; font-family: 'Cairo'; cursor: pointer;">إلغاء وإغلاق</button>
+            <button id="btnConfirmTopupNumber" style="width: 100%; background: #10b981; color: #fff; border: none; padding: 15px; border-radius: 10px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; margin-bottom: 10px;">تأكيد الرقم وانتظار التحويل <i class="fas fa-paper-plane"></i></button>
+            <button onclick="closeWalletModal()" style="width: 100%; background: transparent; border: none; padding: 10px; color: #64748b; font-weight: 800; font-family: 'Cairo'; cursor: pointer;">إلغاء وإغلاق</button>
         </div>
     </div>
 
-    <!-- شريط علوي صغير للموبايل فقط -->
+    <!-- 2. كارت الإشعارات الأنيق (بديل الـ Alert) -->
+    <div id="fancyAlertModal" class="custom-modal">
+        <div class="modal-content-box" style="max-width: 400px;">
+            <div class="success-icon" id="alertIcon"><i class="fas fa-check-circle"></i></div>
+            <h3 id="alertTitle" style="color: #f8fafc; font-weight: 900; margin-bottom: 10px; font-size: 24px;">عملية ناجحة</h3>
+            <p id="alertMessage" style="color: #94a3b8; font-size: 15px; margin-bottom: 25px; line-height: 1.6;">تم تنفيذ طلبك بنجاح.</p>
+            <button onclick="closeFancyAlert()" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; padding: 12px; border-radius: 10px; font-weight: 800; font-family: 'Cairo'; cursor: pointer;">حسناً</button>
+        </div>
+    </div>
+
+    <!-- باقي محتوى الصفحة (الهيدر والقائمة) -->
     <div class="mobile-dash-header">
         <div class="nav-brand" style="font-size: 24px; color: var(--primary-color); font-weight: 900;">Primee<span>.</span></div>
         <button class="btn-hamburger" id="openMobileSidebar"><i class="fas fa-bars-staggered"></i></button>
@@ -82,39 +98,26 @@
 
     <div class="dashboard-container">
         
-        <!-- القائمة الجانبية (Sidebar) -->
         <aside class="dash-sidebar" id="dashSidebar">
             <button class="close-mobile-sidebar" id="closeMobileSidebar"><i class="fas fa-times"></i></button>
             <div class="dash-brand">Primee<span>.</span></div>
-            
             <ul class="dash-nav">
                 <li><a href="index.html"><i class="fas fa-home"></i> الرئيسية</a></li>
                 <li><a href="student-dashboard.html" class="active"><i class="fas fa-book-open"></i> كورساتي</a></li>
                 <li><a href="#paymentSection"><i class="fas fa-wallet"></i> المحفظة</a></li>
-                <li><a href="#"><i class="fas fa-chart-line"></i> تقاريري</a></li>
             </ul>
-            
-            <button class="btn-logout" id="logoutBtn">
-                <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-            </button>
+            <button class="btn-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
         </aside>
 
-        <!-- المحتوى الرئيسي (Main Content) -->
         <div class="dash-main">
-            
             <div class="dash-header">
-                <div class="search-bar">
-                    <input type="text" placeholder="ابحث في موادك...">
-                    <i class="fas fa-search"></i>
-                </div>
+                <div class="search-bar"><input type="text" placeholder="ابحث في موادك..."><i class="fas fa-search"></i></div>
                 <div class="user-quick-info">
                     <div class="user-text">
                         <div id="studentNameDisplay">جاري التحميل...</div>
                         <small style="color: var(--text-muted); font-size: 12px;">طالب بـ Primee</small>
                     </div>
-                    <div class="user-avatar">
-                        <i class="fas fa-user-graduate"></i>
-                    </div>
+                    <div class="user-avatar"><i class="fas fa-user-graduate"></i></div>
                 </div>
             </div>
 
@@ -128,36 +131,26 @@
                     <h3><i class="fas fa-wallet"></i> رصيد المحفظة</h3>
                     <p class="wallet-amount"><span id="walletBalance">0</span> ج.م</p>
                 </div>
-                <!-- الزر ينقله لقسم الدفع -->
                 <button class="btn-charge" onclick="document.getElementById('paymentSection').scrollIntoView({behavior: 'smooth'})">شحن الرصيد +</button>
             </div>
 
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-book-reader"></i></div>
-                    <div class="stat-info"><h3 id="statCoursesCount">0</h3><p>موادي الدراسية</p></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="color: #10b981; background: #d1fae5;"><i class="fas fa-check-circle"></i></div>
-                    <div class="stat-info"><h3 id="statExamsCount">0</h3><p>امتحانات مكتملة</p></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="color: #f59e0b; background: #fef3c7;"><i class="fas fa-star"></i></div>
-                    <div class="stat-info"><h3 id="statAvgScore">100%</h3><p>التقييم العام</p></div>
-                </div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-book-reader"></i></div><div class="stat-info"><h3 id="statCoursesCount">0</h3><p>موادي الدراسية</p></div></div>
+                <div class="stat-card"><div class="stat-icon" style="color: #10b981; background: #d1fae5;"><i class="fas fa-check-circle"></i></div><div class="stat-info"><h3 id="statExamsCount">0</h3><p>امتحانات مكتملة</p></div></div>
+                <div class="stat-card"><div class="stat-icon" style="color: #f59e0b; background: #fef3c7;"><i class="fas fa-star"></i></div><div class="stat-info"><h3 id="statAvgScore">100%</h3><p>التقييم العام</p></div></div>
             </div>
 
-            <!-- قسم طرق الشحن الجديد (الكروت المتجاوبة) -->
+            <!-- قسم الشحن -->
             <div class="section-title" id="paymentSection" style="margin-top: 10px;">
                 <h3 style="color: var(--text-main); font-weight: 900;"><i class="fas fa-money-check-alt" style="color: var(--primary-color);"></i> طرق شحن الرصيد</h3>
             </div>
             
             <div class="payment-section">
-                <!-- الكارت الأول: الشحن بالكود -->
+                <!-- شحن الكود -->
                 <div class="pay-card">
                     <div>
                         <h3 style="color: #10b981; margin: 0 0 10px 0; font-weight: 900;"><i class="fas fa-ticket-alt"></i> شحن بكود التفعيل</h3>
-                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;">قم بخدش الكارت وأدخل الرمز المكون من 8 حروف وأرقام لشحن رصيدك فوراً.</p>
+                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 20px;">قم بإدخال الرمز المكون من 8 حروف وأرقام لشحن رصيدك فوراً.</p>
                         <form id="redeemCodeForm" style="display: flex; flex-direction: column; gap: 10px;">
                             <input type="text" id="chargeCodeInput" placeholder="مثال: PR-XXXX-XXXX" style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-weight: 800; text-transform: uppercase;" required>
                             <button type="submit" id="btnRedeem" style="background: #10b981; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-bolt"></i> شحن الكود</button>
@@ -165,18 +158,19 @@
                     </div>
                 </div>
 
-                <!-- الكارت الثاني: الشحن بالمحافظ و انستا باي -->
+                <!-- شحن المحفظة (البوابة) -->
                 <div class="pay-card">
                     <div>
                         <h3 style="color: #3b82f6; margin: 0 0 10px 0; font-weight: 900;"><i class="fas fa-mobile-alt"></i> شحن بـ محفظة / InstaPay</h3>
-                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">اشحن رصيدك في ثواني من أي محفظة إلكترونية في مصر (فودافون، اتصالات، أورانج) أو عبر تطبيق InstaPay.</p>
-                        <div class="wallet-badges" style="justify-content: flex-start; margin-bottom: 20px;">
-                            <span class="badge instapay"><i class="fas fa-check"></i> InstaPay</span>
-                            <span class="badge vfcash">V-Cash</span>
-                            <span class="badge etisalat">E-Cash</span>
+                        <p style="color: #94a3b8; font-size: 13px; margin-bottom: 15px;">اشحن رصيدك في ثواني من أي محفظة (فودافون، اتصالات، أورانج، وي) أو عبر تطبيق InstaPay.</p>
+                        <div class="logos-grid" style="justify-content: flex-start; margin-bottom: 15px;">
+                            <img src="https://play-lh.googleusercontent.com/BJD9Mw-k50G3XpXmH-O6_sWn5O-M0nS5nI5O8o88y2zT-B1l_wQ1O18qP8qG0Q5_6g" style="width: 30px; height: 30px; border-radius: 8px;">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Vodafone_icon.svg/512px-Vodafone_icon.svg.png" style="width: 30px; height: 30px; border-radius: 8px;">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Orange_logo.svg/512px-Orange_logo.svg.png" style="width: 30px; height: 30px; border-radius: 8px;">
                         </div>
                     </div>
-                    <button id="openWalletModalBtn" style="background: #3b82f6; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(59,130,246,0.3);"><i class="fas fa-arrow-left"></i> عرض بيانات التحويل</button>
+                    <!-- الزر المباشر لفتح البوابة -->
+                    <button type="button" onclick="openWalletModal()" style="background: #3b82f6; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%; box-shadow: 0 4px 15px rgba(59,130,246,0.3);"><i class="fas fa-arrow-left"></i> عرض بيانات التحويل</button>
                 </div>
             </div>
             
@@ -213,9 +207,19 @@
         const openBtn = document.getElementById('openMobileSidebar');
         const closeBtn = document.getElementById('closeMobileSidebar');
         const sidebar = document.getElementById('dashSidebar');
-
         if(openBtn) { openBtn.addEventListener('click', () => { sidebar.classList.add('active'); document.body.style.overflow = 'hidden'; }); }
         if(closeBtn) { closeBtn.addEventListener('click', () => { sidebar.classList.remove('active'); document.body.style.overflow = ''; }); }
+
+        // دوال فتح وقفل النوافذ (Global عشان تشتغل من الـ HTML مباشرة)
+        window.openWalletModal = function() {
+            document.getElementById('walletPaymentModal').classList.add('active');
+        };
+        window.closeWalletModal = function() {
+            document.getElementById('walletPaymentModal').classList.remove('active');
+        };
+        window.closeFancyAlert = function() {
+            document.getElementById('fancyAlertModal').classList.remove('active');
+        };
     </script>
     <script type="module" src="dashboard-script.js"></script>
 </body>
