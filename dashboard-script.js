@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -17,7 +17,7 @@ let currentStudentData = null;
 let currentStudentId = null;
 
 // =========================================================
-// دوال إرسال الواتساب (للطالب وولي الأمر)
+// دوال إرسال الواتساب السريعة (في الخلفية)
 // =========================================================
 async function sendWhatsAppGeneral(phone, msg) {
     if (!phone) return false;
@@ -32,12 +32,11 @@ async function sendWhatsAppGeneral(phone, msg) {
         let chatId = formattedPhone + "@c.us";
         let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
         
-        // استخدام catch لمنع تعطل الكود إذا تأخرت الاستجابة
         fetch(url, {
             method: "POST",
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` },
             body: JSON.stringify({ chat_id: chatId, text: msg })
-        }).catch(e => console.log(e));
+        }).catch(e => console.log("WaPilot Error:", e));
         
         return true;
     } catch (e) { return false; }
@@ -49,11 +48,12 @@ async function notifyBoth(studentMsg, parentMsg) {
 }
 
 // =========================================================
-// دالة الكارت الشيك (بديل نهائي لـ Alert المتصفح)
+// الكارت الشيك للرسائل (بديل الـ Alert)
 // =========================================================
 function showResultModal(title, desc, isSuccess) {
     const modal = document.getElementById('statusResultModal');
     if(!modal) return;
+    
     document.getElementById('statusResultTitle').textContent = title;
     document.getElementById('statusResultDesc').textContent = desc;
 
@@ -67,6 +67,10 @@ function showResultModal(title, desc, isSuccess) {
     }
     modal.classList.add('active');
 }
+
+window.closeResultModal = function() {
+    document.getElementById('statusResultModal').classList.remove('active');
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     const loggedInPhone = localStorage.getItem('studentPhone');
@@ -82,45 +86,44 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =========================================================
-    // 1. الشحن بالمحفظة (تحقق فوري بدون أي انتظار)
+    // 1. الدفع عبر المحفظة (فحص فوري - يا نجاح يا فشل)
     // =========================================================
     document.getElementById('btnConfirmWalletPayment')?.addEventListener('click', async () => {
         const senderPhone = document.getElementById('senderPhoneInput').value.trim();
         if (senderPhone.length !== 11 || !senderPhone.startsWith('01')) {
-            return showResultModal("تنبيه ⚠️", "يرجى كتابة رقم الموبايل المحول منه بشكل صحيح (11 رقم).", false);
+            return showResultModal("تنبيه ⚠️", "يرجى كتابة رقم الموبايل (11 رقم) بشكل صحيح.", false);
         }
 
         const btn = document.getElementById('btnConfirmWalletPayment');
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> جاري الفحص الفوري...";
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> جاري الفحص...";
         btn.disabled = true;
 
         try {
-            // يبحث فوراً هل السيرفر استلم فلوس من الرقم ده ومحدش استخدمها؟
             const transfersQ = query(collection(db, "received_transfers"), where("phone", "==", senderPhone), where("used", "==", false));
             const transfersSnap = await getDocs(transfersQ);
 
+            document.getElementById('walletModal').classList.remove('active');
+
             if (transfersSnap.empty) {
-                // فشل فوري: الفلوس مجتش
-                document.getElementById('walletModal').classList.remove('active');
-                showResultModal("فشلت العملية ❌", "لم نجد أي تحويل مسجل من هذا الرقم، يرجى التأكد من إتمام التحويل من محفظتك أولاً.", false);
-                
+                // الفلوس لسه موصلتش السيرفر
                 await addDoc(collection(db, "recharge_history"), {
                     studentId: currentStudentId, senderPhone: senderPhone, amount: 0, status: "failed", date: new Date().toISOString()
                 });
 
-                const failS = `تنبيه من Primee Academy ⚠️\nفشلت محاولة شحن محفظتك من الرقم ${senderPhone} لعدم وجود تحويل مالي مسجل باسم هذا الرقم.`;
+                showResultModal("فشلت العملية ❌", "لم نجد تحويل مسجل باسم هذا الرقم. تأكد من إرسال المبلغ أولاً.", false);
+                
+                const failS = `تنبيه من Primee Academy ⚠️\nفشلت محاولة شحن محفظتك من الرقم ${senderPhone} لعدم استلامنا لأي تحويل.`;
                 const failP = `إشعار من Primee Academy ⚠️\nفشلت محاولة شحن محفظة الطالب/ة: ${currentStudentData.fullName} لعدم وصول التحويل.`;
                 notifyBoth(failS, failP);
+                
                 if(window.fetchRechargeHistory) window.fetchRechargeHistory();
             } else {
-                // نجاح فوري: الفلوس موجودة في الخزنة
+                // الفلوس موجودة في الخزنة (السيرفر استلمها من الماكرو)
                 const transferDoc = transfersSnap.docs[0];
                 const amountAdded = transferDoc.data().amount;
 
-                // حرق التحويل عشان محدش يستخدمه تاني
                 await updateDoc(doc(db, "received_transfers", transferDoc.id), { used: true, usedBy: currentStudentId });
 
-                // شحن رصيد الطالب
                 const newBalance = (currentStudentData.walletBalance || 0) + amountAdded;
                 await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
 
@@ -128,8 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     studentId: currentStudentId, senderPhone: senderPhone, amount: amountAdded, status: "success", date: new Date().toISOString()
                 });
 
-                document.getElementById('walletModal').classList.remove('active');
-                showResultModal("تم الشحن بنجاح 🎉", `تم إضافة ${amountAdded} ج.م إلى محفظتك في الحال!`, true);
+                showResultModal("عملية ناجحة 🎉", `تم إضافة ${amountAdded} ج.م إلى محفظتك بنجاح!`, true);
 
                 const succS = `أهلاً بك في Primee Academy 🎉\nتم بنجاح شحن محفظتك بمبلغ ${amountAdded} ج.م من الرقم ${senderPhone}.\nرصيدك الحالي: ${newBalance} ج.م\nبالتوفيق! 🚀`;
                 const succP = `إشعار من Primee Academy 🔔\nالسيد ولي الأمر المحترم،\nنجحت عملية الشحن لمحفظة الطالب/ة: *${currentStudentData.fullName}*\nبمبلغ قدره: *${amountAdded} ج.م*.`;
@@ -139,7 +141,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         } catch (error) {
-            showResultModal("خطأ بالنظام ❌", "حدث خطأ أثناء الاتصال بالقاعدة.", false);
+            console.error(error);
+            showResultModal("خطأ ❌", "حدث خطأ أثناء الاتصال بالخادم.", false);
         } finally {
             btn.innerHTML = "تأكيد وبدء التحقق <i class='fas fa-check-circle'></i>";
             btn.disabled = false;
@@ -153,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const codeInput = document.getElementById('chargeCodeInput').value.trim().toUpperCase();
         const btn = document.getElementById('btnRedeem');
+        
         if(!codeInput) return showResultModal("تنبيه ⚠️", "يرجى إدخال الكود أولاً.", false);
         
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> جاري الفحص..."; 
@@ -164,15 +168,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if(codeSnap.empty) {
                 btn.innerHTML = "<i class='fas fa-bolt'></i> شحن الكود"; btn.disabled = false;
-                return showResultModal("كود غير صحيح ❌", "تأكد من كتابة الكود المكون من 8 رموز بشكل سليم.", false);
+                return showResultModal("كود خاطئ ❌", "تأكد من كتابة الكود بشكل سليم.", false);
             }
 
             const codeDoc = codeSnap.docs[0];
             const codeData = codeDoc.data();
-            
+
             if(codeData.isUsed) {
                 btn.innerHTML = "<i class='fas fa-bolt'></i> شحن الكود"; btn.disabled = false;
-                return showResultModal("تنبيه ⚠️", "هذا الكود تم استخدامه وشحنه مسبقاً.", false);
+                return showResultModal("تنبيه ⚠️", "هذا الكود تم شحنه مسبقاً.", false);
             }
 
             const newBalance = (currentStudentData.walletBalance || 0) + codeData.value;
@@ -186,16 +190,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 studentId: currentStudentId, senderPhone: `كود: ${codeInput}`, amount: codeData.value, status: "success", date: new Date().toISOString()
             });
 
-            showResultModal("عملية ناجحة 🎉", `تم إضافة ${codeData.value} ج.م لحسابك عن طريق الكود.`, true);
+            showResultModal("تم الشحن بنجاح 🎉", `تم شحن ${codeData.value} ج.م لحسابك بنجاح.`, true);
+            document.getElementById('redeemCodeForm').reset();
             
-            const studentMsg = `مرحباً بك في Primee Academy 🎉\nتم شحن محفظتك باستخدام كود تفعيل بقيمة *${codeData.value} ج.م* بنجاح.\nبالتوفيق! 🚀`;
+            const studentMsg = `مرحباً بك في Primee Academy 🎉\nتم شحن محفظتك باستخدام كود تفعيل بقيمة *${codeData.value} ج.م* بنجاح.\nرصيدك الآن: ${newBalance} ج.م\nبالتوفيق! 🚀`;
             const parentMsg = `إشعار من Primee Academy 🔔\nالسيد ولي الأمر المحترم،\nقام الطالب/ة: *${currentStudentData.fullName}* بشحن محفظته باستخدام كود تفعيل بقيمة: *${codeData.value} ج.م*.`;
             notifyBoth(studentMsg, parentMsg);
 
-            document.getElementById('redeemCodeForm').reset();
             setTimeout(() => window.location.reload(), 2000);
 
         } catch (error) {
+            console.error(error);
             btn.innerHTML = "<i class='fas fa-bolt'></i> شحن الكود"; btn.disabled = false;
             showResultModal("خطأ ❌", "حدث خطأ بالشبكة، يرجى المحاولة لاحقاً.", false);
         }
@@ -218,7 +223,7 @@ async function fetchStudentData(phone) {
             if(document.getElementById('studentNameDisplay')) document.getElementById('studentNameDisplay').textContent = fullName;
             if(document.getElementById('welcomeMessage')) document.getElementById('welcomeMessage').textContent = `أهلاً بك يا ${firstName}! 🚀`;
             if(document.getElementById('walletBalance')) document.getElementById('walletBalance').textContent = currentStudentData.walletBalance || 0;
-            
+
             fetchMyCoursesSafe(currentStudentData.myCourses);
             fetchRealExams(); 
             
@@ -226,7 +231,7 @@ async function fetchStudentData(phone) {
                 if (docSnap.exists() && docSnap.data().isBlocked === true) {
                     localStorage.clear();
                     showResultModal("تم الإيقاف", "حسابك موقوف بواسطة الإدارة.", false);
-                    setTimeout(() => { window.location.replace("login.html"); }, 2000);
+                    setTimeout(() => window.location.replace("login.html"), 2000);
                 }
             });
 
@@ -241,13 +246,17 @@ async function fetchMyCoursesSafe(coursesArray) {
     if(!coursesGrid) return;
     
     if (!coursesArray || coursesArray.length === 0) {
-        coursesGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px; background: rgba(0,0,0,0.02); border-radius: 20px; border: 1px dashed var(--input-border);"><h3 style="color: var(--text-muted);">لم تقم بشراء أي مواد بعد</h3></div>`;
+        coursesGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align:center; padding: 40px; background: rgba(0,0,0,0.02); border-radius: 20px; border: 1px dashed var(--input-border);">
+                <h3 style="color: var(--text-muted);">لم تقم بشراء أي مواد بعد</h3>
+            </div>`;
         return;
     }
     coursesGrid.innerHTML = ''; 
     for (const item of coursesArray) {
         let courseId = typeof item === 'object' ? (item.courseId || item.id) : item;
         if(!courseId) continue;
+
         try {
             const courseSnap = await getDoc(doc(db, "courses", courseId));
             if (courseSnap.exists()) {
@@ -269,7 +278,7 @@ async function fetchMyCoursesSafe(coursesArray) {
 }
 
 // ==========================================
-// الامتحانات (درجة صافية بدون حسابات عشوائية)
+// 🚨 حساب درجات الامتحانات (كام من كام) و (ناجح/راسب)
 // ==========================================
 async function fetchRealExams() {
     const tableBody = document.getElementById('gradesTableBody');
@@ -292,26 +301,29 @@ async function fetchRealExams() {
         snap.forEach(doc => {
             const exam = doc.data();
             const examName = exam.examTitle || exam.examName || "امتحان";
-            const score = exam.score !== undefined ? exam.score : (exam.studentScore || 0);
-            const fullMark = exam.totalScore || exam.fullMark || null; 
+            
+            // جلب الدرجة اللي الطالب جابها
+            const score = exam.score !== undefined ? Number(exam.score) : (Number(exam.studentScore) || 0);
+            
+            // جلب الدرجة النهائية (لو مفيش هنفترض إنها 100 عشان نقدر نحسب الـ 50%)
+            const fullMark = exam.totalScore || exam.fullMark || exam.totalQuestions || 100; 
+            
             const dateStr = exam.date ? new Date(exam.date).toLocaleDateString('ar-EG') : 'اليوم';
             
-            let statusText = "مكتمل";
-            let bgStatus = "rgba(59, 130, 246, 0.1)";
-            let colorStatus = "#3b82f6";
-            let scoreDisplay = score;
+            // شكل العرض التفصيلي للدرجة (مثال: 5 / 10)
+            const scoreDisplay = `${score} / ${fullMark}`;
 
-            // لو في درجة نهائية بيعرضها بصيغة (15 / 20)
-            if (fullMark) {
-                scoreDisplay = `${score} / ${fullMark}`;
+            // تحديد حالة النجاح والرسوب (أكبر من أو يساوي النص 50% ينجح)
+            let isPass = false;
+            if (exam.isPassed !== undefined) {
+                isPass = exam.isPassed; // لو مسجلها صراحة في الداتا بيز
+            } else {
+                isPass = (score / fullMark) >= 0.5; // الحساب التلقائي للنص
             }
 
-            // تحديد الحالة (مكتمل/ناجح/راسب) فقط لو موجودة
-            if (exam.isPassed === true) {
-                statusText = 'ناجح'; bgStatus = 'rgba(16, 185, 129, 0.1)'; colorStatus = '#10b981';
-            } else if (exam.isPassed === false) {
-                statusText = 'راسب'; bgStatus = 'rgba(239, 68, 68, 0.1)'; colorStatus = '#ef4444';
-            }
+            const statusText = isPass ? 'ناجح' : 'راسب';
+            const bgStatus = isPass ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+            const colorStatus = isPass ? '#10b981' : '#ef4444';
 
             tableBody.innerHTML += `
                 <tr>
@@ -326,7 +338,41 @@ async function fetchRealExams() {
                 </tr>
             `;
         });
-    } catch (error) {
-        console.error("خطأ في جلب الامتحانات:", error);
-    }
+    } catch (error) { console.error("خطأ في جلب الامتحانات:", error); }
 }
+
+window.fetchRechargeHistory = async function() {
+    const tbody = document.getElementById('historyTableBody');
+    if(!tbody || !currentStudentId) return;
+    
+    try {
+        const q = query(collection(db, "recharge_history"), where("studentId", "==", currentStudentId));
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">لا توجد عمليات سابقة.</td></tr>`;
+            return;
+        }
+
+        let requests = [];
+        snap.forEach(doc => requests.push(doc.data()));
+        requests.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        tbody.innerHTML = '';
+        requests.forEach(data => {
+            let dateStr = new Date(data.date).toLocaleDateString('ar-EG', { hour: '2-digit', minute:'2-digit' });
+            let statusHtml = data.status === 'success' 
+                ? `<span class="badge-success">نجاح</span>` 
+                : `<span class="badge-failed">فشل</span>`;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${data.senderPhone}</td>
+                    <td style="color: var(--primary-color); font-weight: 900;">${data.amount || '0'} ج.م</td>
+                    <td>${dateStr}</td>
+                    <td>${statusHtml}</td>
+                </tr>
+            `;
+        });
+    } catch (error) { console.error(error); }
+};
