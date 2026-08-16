@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-// دمجنا onSnapshot هنا فوق مع باقي الاستدعاءات
 import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -17,7 +16,6 @@ const db = getFirestore(app);
 let currentStudentData = null;
 let currentStudentId = null;
 
-// تأكد إن السكريبت يشتغل بعد ما الصفحة تحمل بالكامل
 document.addEventListener('DOMContentLoaded', () => {
     const loggedInPhone = localStorage.getItem('studentPhone');
     if (!loggedInPhone) {
@@ -33,6 +31,59 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.replace("login.html");
         });
     }
+
+    // ==========================================
+    // التحكم في نافذة الدفع بالمحفظة (UI)
+    // ==========================================
+    const walletModal = document.getElementById('walletPaymentModal');
+    const openWalletBtn = document.getElementById('openWalletModalBtn');
+    const closeWalletBtn = document.getElementById('closeWalletModalBtn');
+
+    if(openWalletBtn && walletModal) {
+        openWalletBtn.addEventListener('click', () => {
+            walletModal.classList.add('active');
+            // نضع رقم الطالب تلقائياً لتسهيل الأمر، ويمكنه تغييره
+            if(currentStudentData && currentStudentData.studentPhone) {
+                document.getElementById('senderPhoneInput').value = currentStudentData.studentPhone;
+            }
+        });
+    }
+
+    if(closeWalletBtn && walletModal) {
+        closeWalletBtn.addEventListener('click', () => {
+            walletModal.classList.remove('active');
+        });
+    }
+    
+    // ==========================================
+    // حفظ رقم السنترال/المحفظة (الربط مع السيرفر)
+    // ==========================================
+    document.getElementById('btnConfirmTopupNumber')?.addEventListener('click', async () => {
+        const senderPhone = document.getElementById('senderPhoneInput').value.trim();
+        if (senderPhone.length !== 11 || !senderPhone.startsWith('01')) {
+            return alert("❌ يرجى كتابة رقم الموبايل المحول منه بشكل صحيح (11 رقم)!");
+        }
+
+        const btn = document.getElementById('btnConfirmTopupNumber');
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> جاري الحفظ...";
+        btn.disabled = true;
+
+        try {
+            // تحديث رقم activeTopupNumber للطالب في الداتا بيز
+            await updateDoc(doc(db, "users", currentStudentId), {
+                activeTopupNumber: senderPhone
+            });
+
+            alert("✅ تم حفظ الرقم بنجاح! قم بالتحويل الآن من هذا الرقم وسيتم إضافة الرصيد لحسابك تلقائياً في ثوانٍ.");
+            document.getElementById('walletPaymentModal').classList.remove('active');
+        } catch (error) {
+            console.error(error);
+            alert("حدث خطأ أثناء الاتصال بالقاعدة، حاول مرة أخرى.");
+        } finally {
+            btn.innerHTML = "تأكيد الرقم وانتظار التحويل <i class='fas fa-paper-plane'></i>";
+            btn.disabled = false;
+        }
+    });
 });
 
 async function fetchStudentData(phone) {
@@ -51,7 +102,6 @@ async function fetchStudentData(phone) {
             const fullName = currentStudentData.fullName || "طالب";
             const firstName = fullName.split(" ")[0]; 
 
-            // تحديث بيانات الهيدر بأمان
             const nameDisplay = document.getElementById('studentNameDisplay');
             const welcomeMsg = document.getElementById('welcomeMessage');
             const walletBal = document.getElementById('walletBalance');
@@ -67,9 +117,7 @@ async function fetchStudentData(phone) {
             fetchMyCourses(currentStudentData.myCourses);
             renderGrades(currentStudentData.completedExams);
             
-            // =========================================================
-            // كود المراقبة اللحظية (الطرد لو الأدمن عمل حظر)
-            // =========================================================
+            // كود المراقبة اللحظية
             onSnapshot(doc(db, "users", currentStudentId), (docSnap) => {
                 if (docSnap.exists() && docSnap.data().isBlocked === true) {
                     localStorage.clear();
@@ -166,6 +214,7 @@ function renderGrades(completedExams) {
         `;
     });
 }
+
 // ==========================================
 // شحن المحفظة عن طريق نظام الأكواد
 // ==========================================
@@ -180,14 +229,8 @@ document.getElementById('redeemCodeForm')?.addEventListener('submit', async (e) 
 
     try {
         const studentPhone = localStorage.getItem('studentPhone');
-        // جلب بيانات الطالب الحالي
-        const studentQ = query(collection(db, "users"), where("studentPhone", "==", studentPhone));
-        const studentSnap = await getDocs(studentQ);
-        if(studentSnap.empty) throw new Error("بيانات الطالب غير موجودة.");
         
-        const studentDoc = studentSnap.docs[0];
-        const studentId = studentDoc.id;
-        const studentData = studentDoc.data();
+        if(!currentStudentData) throw new Error("بيانات الطالب غير متوفرة حالياً.");
 
         // فحص الكود في قاعدة البيانات
         const codesQ = query(collection(db, "charge_codes"), where("code", "==", codeInput));
@@ -208,29 +251,28 @@ document.getElementById('redeemCodeForm')?.addEventListener('submit', async (e) 
         }
 
         // لو الكود سليم ومش مشحون، هنشحنه دلوقتي
-        const newBalance = (studentData.walletBalance || 0) + codeData.value;
+        const newBalance = (currentStudentData.walletBalance || 0) + codeData.value;
         
         // 1. تحديث محفظة الطالب
-        await updateDoc(doc(db, "users", studentId), { walletBalance: newBalance });
+        await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
         
-        // 2. حرق الكود (تحديث حالته إنه مستخدم)
+        // 2. حرق الكود
         await updateDoc(doc(db, "charge_codes", codeDoc.id), {
             isUsed: true,
             usedByPhone: studentPhone,
-            usedByName: studentData.fullName,
+            usedByName: currentStudentData.fullName,
             usedAt: new Date().toISOString()
         });
 
         alert(`🎉 مبروك! تم شحن ${codeData.value} ج.م لحسابك بنجاح. رصيدك الآن: ${newBalance} ج.م`);
         document.getElementById('redeemCodeForm').reset();
         
-        // لو عندك كود بيحدث الرصيد في الصفحة، نادي عليه هنا، أو اعمل ريفرش للصفحة
         setTimeout(() => { window.location.reload(); }, 1500);
 
     } catch (error) {
         console.error("خطأ أثناء الشحن:", error);
         alert("حدث خطأ أثناء الاتصال بالخادم.");
     } finally {
-        btn.innerHTML = "<i class='fas fa-bolt'></i> شحن الآن"; btn.disabled = false;
+        btn.innerHTML = "<i class='fas fa-bolt'></i> شحن الكود"; btn.disabled = false;
     }
 });
