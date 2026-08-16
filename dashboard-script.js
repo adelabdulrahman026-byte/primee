@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, getDoc, onSnapshot, updateDoc, addDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -17,7 +17,7 @@ let currentStudentData = null;
 let currentStudentId = null;
 
 // =========================================================
-// دالة إرسال رسائل الواتساب باستخدام WaPilot
+// دوال الواتساب المتكاملة (WaPilot)
 // =========================================================
 async function sendWhatsAppGeneral(phone, msg) {
     if (!phone) return false;
@@ -49,6 +49,26 @@ async function notifyBoth(studentMsg, parentMsg) {
     if (currentStudentData?.parentPhone) await sendWhatsAppGeneral(currentStudentData.parentPhone, parentMsg);
 }
 
+function showResultModal(title, desc, isSuccess) {
+    const modal = document.getElementById('statusResultModal');
+    const iconEl = document.getElementById('statusResultIcon');
+    const titleEl = document.getElementById('statusResultTitle');
+    const descEl = document.getElementById('statusResultDesc');
+
+    titleEl.textContent = title;
+    descEl.textContent = desc;
+
+    if (isSuccess) {
+        iconEl.innerHTML = '<i class="fas fa-check-circle" style="color: #10b981;"></i>';
+        titleEl.style.color = '#10b981';
+    } else {
+        iconEl.innerHTML = '<i class="fas fa-times-circle" style="color: #ef4444;"></i>';
+        titleEl.style.color = '#ef4444';
+    }
+
+    modal.classList.add('active');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const loggedInPhone = localStorage.getItem('studentPhone');
     if (!loggedInPhone) {
@@ -63,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =========================================================
-    // عملية الشحن بالمحفظة (قبول أو رفض أوتوماتيك في 60 ثانية)
+    // 1. الدفع عبر المحفظة (فحص أوتوماتيك بدون مراجعة)
     // =========================================================
     document.getElementById('btnConfirmWalletPayment')?.addEventListener('click', async () => {
         const senderPhone = document.getElementById('senderPhoneInput').value.trim();
@@ -76,64 +96,56 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            // حفظ الرقم عشان الماكرو والسيرفر يلاقوه
-            await updateDoc(doc(db, "users", currentStudentId), {
-                activeTopupNumber: senderPhone
+            // تسجيل الطلب في السجل (recharge_requests)
+            const docRef = await addDoc(collection(db, "recharge_requests"), {
+                studentId: currentStudentId,
+                studentPhone: currentStudentData.studentPhone,
+                senderPhone: senderPhone,
+                status: "waiting", // הסيرفر هيقرأ الكلمة دي
+                date: new Date().toISOString()
             });
 
             document.getElementById('walletModal').classList.remove('active');
-            alert("تم إرسال الطلب، جاري التحقق من عملية الدفع الآن...");
-
-            // رسائل بدء التحقق
+            
+            // رسائل بدء التحقق للطالب وولي الأمر
             const sMsg = `مرحباً بك في Primee Academy ⏳\nتم تسجيل طلب شحن لمحفظتك من الرقم: ${senderPhone}.\nجاري التحقق من عملية الدفع الآن...`;
             const pMsg = `إشعار من Primee Academy 🔔\nالسيد ولي الأمر،\nتم تسجيل طلب شحن لمحفظة الطالب/ة: ${currentStudentData.fullName}.\nجاري التحقق من عملية الدفع الآن...`;
             notifyBoth(sMsg, pMsg);
 
-            let initialBalance = currentStudentData.walletBalance || 0;
-            let isResolved = false;
-
-            // المراقبة اللحظية: لو الرصيد زاد (الماكرو والسيرفر اشتغلوا)
-            const unsub = onSnapshot(doc(db, "users", currentStudentId), async (docSnap) => {
-                const newData = docSnap.data();
-                let newBal = newData.walletBalance || 0;
-                
-                if (newBal > initialBalance && !isResolved) {
-                    isResolved = true;
-                    let diff = newBal - initialBalance;
-                    unsub();
-
-                    // تسجيل في السجل الداخلي
-                    await addDoc(collection(db, "recharge_history"), {
-                        studentId: currentStudentId, senderPhone: senderPhone, amount: diff, status: "success", date: new Date().toISOString()
-                    });
-
-                    // رسائل النجاح (طالب + أب)
-                    const succS = `أهلاً بك في Primee Academy 🎉\nنجحت العملية! تم شحن محفظتك بمبلغ ${diff} ج.م.\nرصيدك الآن: ${newBal} ج.م.`;
-                    const succP = `إشعار من Primee Academy 🔔\nالسيد ولي الأمر المحترم،\nنجحت عملية الشحن لمحفظة الطالب/ة: *${currentStudentData.fullName}*\nبمبلغ قدره: *${diff} ج.م*.`;
-                    notifyBoth(succS, succP);
+            // المراقبة اللحظية للنتيجة من السيرفر
+            const unsub = onSnapshot(doc(db, "recharge_requests", docRef.id), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
                     
-                    alert(`نجاح! تم إضافة ${diff} ج.م لمحفظتك بنجاح.`);
-                    setTimeout(() => window.location.reload(), 1500);
+                    if (data.status === "success") {
+                        unsub();
+                        const amountAdded = data.amount || "المبلغ";
+                        showResultModal("تم الشحن بنجاح 🎉", `تم إضافة ${amountAdded} ج.م إلى محفظتك بنجاح!`, true);
+                        
+                        // رسايل النجاح بيبعتها الـ Cloudflare عشان أسرع وأضمن
+                        setTimeout(() => window.location.reload(), 3000);
+                    } 
+                    else if (data.status === "failed") {
+                        unsub();
+                        showResultModal("فشلت العملية ❌", "تم رفض عملية الشحن.", false);
+                        
+                        // رسايل الفشل
+                        const failS = `تنبيه من Primee Academy ⚠️\nفشلت عملية الشحن من الرقم ${senderPhone} لعدم استلامنا للتحويل.`;
+                        const failP = `إشعار من Primee Academy ⚠️\nفشلت محاولة شحن محفظة الطالب/ة: ${currentStudentData.fullName} لعدم وصول التحويل بنجاح.`;
+                        notifyBoth(failS, failP);
+                        
+                        if(window.fetchRechargeHistory) window.fetchRechargeHistory();
+                    }
                 }
             });
 
-            // مؤقت الفشل السريع (60 ثانية)
+            // لو السيرفر مغيرش الحالة في خلال 60 ثانية تقلب فشل
             setTimeout(async () => {
-                if (!isResolved) {
-                    isResolved = true;
-                    unsub();
-                    
-                    await addDoc(collection(db, "recharge_history"), {
-                        studentId: currentStudentId, senderPhone: senderPhone, amount: 0, status: "failed", date: new Date().toISOString()
-                    });
-
-                    const failS = `تنبيه من Primee Academy ⚠️\nفشلت عملية الشحن من الرقم ${senderPhone} لعدم استلامنا للتحويل.`;
-                    const failP = `إشعار من Primee Academy ⚠️\nفشلت محاولة شحن محفظة الطالب/ة: ${currentStudentData.fullName} لعدم وصول التحويل بنجاح.`;
-                    notifyBoth(failS, failP);
-
-                    alert("فشلت العملية لعدم وصول التحويل في الوقت المحدد.");
+                const checkDoc = await getDoc(docRef);
+                if(checkDoc.exists() && checkDoc.data().status === "waiting") {
+                    await updateDoc(docRef, { status: "failed" });
                 }
-            }, 60000); 
+            }, 60000);
 
         } catch (error) {
             console.error(error);
@@ -145,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =========================================================
-    // شحن الكود (رسائل واتساب للأب والابن)
+    // 2. الشحن بالكود (تحديث فوري)
     // =========================================================
     document.getElementById('redeemCodeForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -165,18 +177,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if(codeData.isUsed) return alert(`⚠️ هذا الكود تم شحنه مسبقاً.`);
 
             const newBalance = (currentStudentData.walletBalance || 0) + codeData.value;
+            
             await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
             await updateDoc(doc(db, "charge_codes", codeDoc.id), {
                 isUsed: true, usedByPhone: currentStudentData.studentPhone, usedByName: currentStudentData.fullName, usedAt: new Date().toISOString()
             });
 
-            await addDoc(collection(db, "recharge_history"), {
+            await addDoc(collection(db, "recharge_requests"), {
                 studentId: currentStudentId, senderPhone: `كود: ${codeInput}`, amount: codeData.value, status: "success", date: new Date().toISOString()
             });
 
-            alert(`🎉 مبروك! تم شحن ${codeData.value} ج.م لحسابك.`);
+            showResultModal("تم الشحن بنجاح 🎉", `تم شحن ${codeData.value} ج.م لحسابك.`, true);
             
-            // رسائل الواتساب
             const studentMsg = `مرحباً بك في Primee Academy 🎉\nتم شحن محفظتك باستخدام كود تفعيل بقيمة *${codeData.value} ج.م* بنجاح.\nبالتوفيق! 🚀`;
             const parentMsg = `إشعار من Primee Academy 🔔\nالسيد ولي الأمر المحترم،\nقام الطالب/ة: *${currentStudentData.fullName}* بشحن محفظته باستخدام كود تفعيل بقيمة: *${codeData.value} ج.م*.`;
             notifyBoth(studentMsg, parentMsg);
@@ -202,31 +214,24 @@ async function fetchStudentData(phone) {
             currentStudentId = querySnapshot.docs[0].id;
             currentStudentData = querySnapshot.docs[0].data();
             
-            if (!currentStudentData.myCourses) currentStudentData.myCourses = [];
-            if (!currentStudentData.completedExams) currentStudentData.completedExams = [];
-
             const fullName = currentStudentData.fullName || "طالب";
             const firstName = fullName.split(" ")[0]; 
 
-            const nameDisplay = document.getElementById('studentNameDisplay');
-            const welcomeMsg = document.getElementById('welcomeMessage');
-            const walletBal = document.getElementById('walletBalance');
-            const statCourses = document.getElementById('statCoursesCount');
-            const statExams = document.getElementById('statExamsCount');
+            if(document.getElementById('studentNameDisplay')) document.getElementById('studentNameDisplay').textContent = fullName;
+            if(document.getElementById('welcomeMessage')) document.getElementById('welcomeMessage').textContent = `أهلاً بك يا ${firstName}! 🚀`;
+            if(document.getElementById('walletBalance')) document.getElementById('walletBalance').textContent = currentStudentData.walletBalance || 0;
+            
+            if(document.getElementById('statCoursesCount')) document.getElementById('statCoursesCount').textContent = (currentStudentData.myCourses || []).length;
 
-            if(nameDisplay) nameDisplay.textContent = fullName;
-            if(welcomeMsg) welcomeMsg.textContent = `أهلاً بك يا ${firstName}! 🚀`;
-            if(walletBal) walletBal.textContent = currentStudentData.walletBalance || 0;
-            if(statCourses) statCourses.textContent = currentStudentData.myCourses.length;
-            if(statExams) statExams.textContent = currentStudentData.completedExams.length;
-
-            fetchMyCourses(currentStudentData.myCourses);
-            renderGrades(currentStudentData.completedExams);
+            fetchMyCoursesSafe(currentStudentData.myCourses);
+            
+            // 🚨 هنا التعديل: جلب الامتحانات من exam_submissions بدل بيانات الطالب
+            fetchRealExams(); 
             
             onSnapshot(doc(db, "users", currentStudentId), (docSnap) => {
                 if (docSnap.exists() && docSnap.data().isBlocked === true) {
                     localStorage.clear();
-                    alert("⚠️ تم إيقاف حسابك بواسطة الإدارة وسيتم تسجيل خروجك الآن.");
+                    alert("⚠️ تم إيقاف حسابك بواسطة الإدارة.");
                     window.location.replace("login.html");
                 }
             });
@@ -237,98 +242,101 @@ async function fetchStudentData(phone) {
     } catch (error) { console.error(error); }
 }
 
-async function fetchMyCourses(myCourseIds) {
+async function fetchMyCoursesSafe(coursesArray) {
     const coursesGrid = document.getElementById('myCoursesGrid');
     if(!coursesGrid) return;
     
-    if (myCourseIds.length === 0) {
-        coursesGrid.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align:center; padding: 50px 20px; background: var(--bg-card); border-radius: 24px; border: 1px solid var(--input-border);">
-                <i class="fas fa-folder-open" style="font-size: 50px; color: var(--input-border); margin-bottom: 15px;"></i>
-                <h3 style="color: var(--text-main); font-weight: 900;">لم تقم بشراء أي مواد بعد</h3>
-            </div>`;
+    if (!coursesArray || coursesArray.length === 0) {
+        coursesGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding: 40px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed #334155;"><h3 style="color: #94a3b8;">لم تقم بشراء أي مواد بعد</h3></div>`;
         return;
     }
-
     coursesGrid.innerHTML = ''; 
-    try {
-        for (const item of myCourseIds) {
-            let courseId = typeof item === 'object' ? (item.courseId || item.id) : item;
-            if(!courseId) continue;
-
+    for (const item of coursesArray) {
+        let courseId = typeof item === 'object' ? (item.courseId || item.id) : item;
+        if(!courseId) continue;
+        try {
             const courseSnap = await getDoc(doc(db, "courses", courseId));
             if (courseSnap.exists()) {
                 const course = courseSnap.data();
+                const img = course.image || 'https://via.placeholder.com/400x200/1e293b/3b82f6?text=Course';
+                const title = course.title || 'اسم المادة';
+                
                 coursesGrid.innerHTML += `
-                    <div class="modern-teacher-card" style="height: 100%; display: flex; flex-direction: column;">
-                        <div class="card-image-wrapper" style="height: 180px; position: relative; background: var(--input-bg);">
-                            <img src="${course.image || 'https://via.placeholder.com/400x250/5b21b6/ffffff?text=Course'}" style="width: 100%; height: 100%; object-fit: cover;">
-                        </div>
-                        <div class="card-info-wrapper" style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
-                            <h3 style="margin: 0 0 10px 0; font-size: 20px; color: var(--text-main); font-weight: 900;">${course.title || 'اسم المادة'}</h3>
-                            <button onclick="window.location.href='course-details.html?id=${courseId}'" style="width: 100%; background: var(--primary-color); color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: 800; font-family: 'Cairo'; cursor: pointer;">دخول الحصة <i class="fas fa-play"></i></button>
+                    <div class="recharge-card" style="padding: 0; overflow: hidden;">
+                        <img src="${img}" style="width: 100%; height: 160px; object-fit: cover; border-bottom: 2px solid var(--input-border);">
+                        <div style="padding: 20px;">
+                            <h3 style="color: var(--text-main); font-size: 18px; font-weight: 900; margin: 0 0 15px 0;">${title}</h3>
+                            <button onclick="window.location.href='course-details.html?id=${courseId}'" style="width: 100%; background: var(--primary-color); color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">دخول الحصة <i class="fas fa-play"></i></button>
                         </div>
                     </div>`;
             }
-        }
-    } catch (error) { console.error(error); }
+        } catch (error) {}
+    }
 }
 
 // ==========================================
-// الامتحانات (درجة صافية ورجوع الكود الأصلي)
+// 🚨 جلب الامتحانات من الكولكشن الصحيح
 // ==========================================
-function renderGrades(completedExams) {
+async function fetchRealExams() {
     const tableBody = document.getElementById('gradesTableBody');
+    const statExams = document.getElementById('statExamsCount');
     if(!tableBody) return;
     
-    if (!completedExams || completedExams.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; font-weight: 700; color: var(--text-muted);">لم تجتز أي امتحانات حتى الآن.</td></tr>`;
-        return;
-    }
-
-    tableBody.innerHTML = '';
-    completedExams.forEach((exams) => {
-        let examName = "امتحان حصة";
-        let score = 0;
-
-        if (typeof exam === 'object' && exams !== null) {
-            examName = exam.examName || exams.title || "امتحان";
-            score = exam.score !== undefined ? exams.score : (exams.grade || 0);
-        } else {
-            examName = `امتحان حصة رقم ${String(exams).substring(0,4)}`;
-            score = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
+    try {
+        // البحث عن امتحانات الطالب ده بس
+        const q = query(collection(db, "exam_submissions"), where("studentPhone", "==", currentStudentData.studentPhone));
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+            tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">لم يتم تسجيل امتحانات.</td></tr>`;
+            if(statExams) statExams.textContent = "0";
+            return;
         }
 
-        const isPass = Number(score) >= 50;
-        const statusText = isPass ? 'ناجح' : 'راسب';
-        const bgStatus = isPass ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-        const colorStatus = isPass ? '#10b981' : '#ef4444';
-        
-        // شيلت الـ % وبقت الدرجة رقم صافي
-        tableBody.innerHTML += `
-            <tr>
-                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-main); font-weight: 800;">${examName}</td>
-                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-muted); font-weight: 600;">اليوم</td>
-                <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--primary-color); font-weight: 900; font-size: 16px;">${score}</td>
-                <td style="padding: 15px; border-bottom: 1px solid var(--input-border);">
-                    <span style="background: ${bgStatus}; color: ${colorStatus}; padding: 6px 15px; border-radius: 8px; font-size: 13px; font-weight: 800;">
-                        ${statusText}
-                    </span>
-                </td>
-            </tr>
-        `;
-    });
+        if(statExams) statExams.textContent = snap.size;
+
+        tableBody.innerHTML = '';
+        snap.forEach(doc => {
+            const exam = doc.data();
+            const examName = exam.examTitle || exam.examName || "امتحان حصة";
+            const score = exam.score || exam.studentScore || 0;
+            const fullMark = exam.totalScore || exam.fullMark || 100;
+            const dateStr = exam.date ? new Date(exam.date).toLocaleDateString('ar-EG') : 'اليوم';
+            
+            // حساب النجاح من 50%
+            const isPass = (score / fullMark) * 100 >= 50;
+            const statusText = isPass ? 'ناجح' : 'راسب';
+            const bgStatus = isPass ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+            const colorStatus = isPass ? '#10b981' : '#ef4444';
+
+            // عرض الدرجة رقم صافي زي ما طلبت (مثلاً 15 / 20)
+            tableBody.innerHTML += `
+                <tr>
+                    <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-main); font-weight: 800;">${examName}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--text-muted); font-weight: 600;">${dateStr}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid var(--input-border); color: var(--primary-color); font-weight: 900; font-size: 18px; direction: ltr; text-align: right;">${score} / ${fullMark}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid var(--input-border);">
+                        <span style="background: ${bgStatus}; color: ${colorStatus}; padding: 6px 15px; border-radius: 8px; font-size: 13px; font-weight: 800;">
+                            ${statusText}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        console.error("خطأ في جلب الامتحانات:", error);
+    }
 }
 
 // ==========================================
-// دالة جلب سجل العمليات في النافذة
+// جلب سجل الشحن في القائمة الجانبية
 // ==========================================
 window.fetchRechargeHistory = async function() {
     const tbody = document.getElementById('historyTableBody');
     if(!tbody || !currentStudentId) return;
     
     try {
-        const q = query(collection(db, "recharge_history"), where("studentId", "==", currentStudentId));
+        const q = query(collection(db, "recharge_requests"), where("studentId", "==", currentStudentId));
         const snap = await getDocs(q);
         
         if (snap.empty) {
@@ -338,19 +346,21 @@ window.fetchRechargeHistory = async function() {
 
         let requests = [];
         snap.forEach(doc => requests.push(doc.data()));
-        requests.sort((a, b) => new Date(b.date) - new Date(a.date)); // الأحدث فوق
+        requests.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         tbody.innerHTML = '';
         requests.forEach(data => {
             let dateStr = new Date(data.date).toLocaleDateString('ar-EG', { hour: '2-digit', minute:'2-digit' });
-            let statusHtml = data.status === 'success' 
-                ? `<span class="badge-success">نجاح</span>` 
-                : `<span class="badge-failed">فشل</span>`;
+            let statusHtml = '';
+            
+            if(data.status === 'success') statusHtml = `<span class="badge-success">نجاح</span>`;
+            else if(data.status === 'failed') statusHtml = `<span class="badge-failed">فشل</span>`;
+            else statusHtml = `<span style="background: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 800;">انتظار</span>`;
 
             tbody.innerHTML += `
                 <tr>
                     <td>${data.senderPhone}</td>
-                    <td style="color: var(--primary-color); font-weight: 900;">${data.amount} ج.م</td>
+                    <td style="color: var(--primary-color); font-weight: 900;">${data.amount || '-'} ج.م</td>
                     <td>${dateStr}</td>
                     <td>${statusHtml}</td>
                 </tr>
