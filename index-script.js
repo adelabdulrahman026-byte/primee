@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-// 🚨 تأكدنا إن setDoc و arrayUnion موجودين هنا 🚨
+// 🚨 تم إضافة setDoc عشان الشات الجديد يشتغل 🚨
 import { getFirestore, collection, query, where, getDocs, updateDoc, doc, getDoc, arrayUnion, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -14,14 +14,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// إنشاء ID ثابت للجهاز (لنظام البلوك)
+// ==========================================
+// 🚨 منع فتح F12 والنسخ 🚨
+// ==========================================
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) || (e.ctrlKey && e.key === 'U')) {
+        e.preventDefault();
+    }
+});
+
+// ==========================================
+// 🚨 إنشاء ID ثابت للجهاز (عشان نظام البلوك يشتغل صح)
+// ==========================================
 let currentDeviceId = localStorage.getItem('deviceId');
 if (!currentDeviceId) {
     currentDeviceId = 'DEV-' + Date.now() + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('deviceId', currentDeviceId);
 }
 
+// ==========================================
 // 1. إغلاق القوائم المنسدلة عند الضغط في أي مكان
+// ==========================================
 document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('navDropdown');
     const bellBtn = document.getElementById('navBellBtn');
@@ -30,7 +44,9 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// 2. الهيدر والأنيميشن وبيانات الطالب
+// ==========================================
+// 2. الهيدر والأنيميشن وبيانات الطالب (والإشعارات)
+// ==========================================
 const phrases = [
     "تعلّم بذكاء،<br><span>وتقدّم بثقة.</span>", 
     "اكتشف قدراتك،<br><span>واصنع مستقبلك.</span>", 
@@ -64,7 +80,7 @@ async function fetchStudentNavData(phone) {
             const studentDoc = userSnap.docs[0];
             const data = studentDoc.data();
             
-            // المراقبة اللحظية للبلوك
+            // 🚨 المراقبة اللحظية: لو الجهاز ده اتبلك، هيطرده فوراً 🚨
             onSnapshot(doc(db, "users", studentDoc.id), (docSnap) => {
                 if (docSnap.exists()) {
                     const latestData = docSnap.data();
@@ -127,7 +143,9 @@ function closeDrawer() { document.getElementById('stagesDrawer')?.classList.remo
 document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
 document.getElementById('btnParentLogin')?.addEventListener('click', () => { const p = document.getElementById('parentStudentPhone').value; if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; else alert("رقم غير صحيح"); });
 
+// ==========================================
 // 3. زرار المود وتغيير الفيديو
+// ==========================================
 const themeBtn = document.getElementById('themeToggleBtn');
 const heroVideoBg = document.getElementById('heroVideoBg');
 const heroOverlayColor = document.getElementById('heroOverlayColor');
@@ -166,6 +184,7 @@ if(themeBtn) {
     });
 }
 
+// بحث المدرسين
 document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', () => {
     const term = document.getElementById('searchTeacherInput').value.trim().toLowerCase();
     document.getElementById('searchTeacherModal').classList.remove('active');
@@ -179,7 +198,9 @@ document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', ()
     }, 500);
 });
 
-// 5. الفلاتر (المدرسين والباقات)
+// ==========================================
+// 4. الفلاتر (المدرسين والباقات)
+// ==========================================
 const subStagesMap = {
     'ابتدائي': ['الأول الابتدائي', 'الثاني الابتدائي', 'الثالث الابتدائي', 'الرابع الابتدائي', 'الخامس الابتدائي', 'السادس الابتدائي'],
     'إعدادي': ['الأول الإعدادي', 'الثاني الإعدادي', 'الثالث الإعدادي'],
@@ -218,7 +239,9 @@ function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
     });
 }
 
-// 6. المدرسين: سلايدر Fade
+// ==========================================
+// 5. المدرسين: سلايدر Fade
+// ==========================================
 let allTeachersData = [];
 let teachersSwiperInstance = null;
 let heroFadeSwiperInstance = null; 
@@ -302,7 +325,9 @@ document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => 
     }
 });
 
-// 7. الباقات 
+// ==========================================
+// 6. الباقات
+// ==========================================
 let allPackagesData = [];
 let packagesSwiperInstance = null;
 
@@ -353,14 +378,16 @@ function renderPackages(filterText) {
     packagesSwiperInstance = new Swiper('.packages-slider', {
         slidesPerView: 'auto',
         spaceBetween: 20,
-        autoplay: { delay: 3500, disableOnInteraction: false },
+        autoplay: { delay: 3500, disableOnInteraction: false }, 
         pagination: { el: '.swiper-pagination', clickable: true }
     });
 }
 fetchPackages();
 setupNestedFilters('packagesMainFilters', 'packagesSubFilters', renderPackages);
 
-// 8. الحصص وقراءة المشاهدات
+// ==========================================
+// 7. الحصص وقراءة المشاهدات
+// ==========================================
 async function fetchCoursesSliders() {
     try {
         const snap = await getDocs(collection(db, "courses"));
@@ -423,7 +450,9 @@ async function fetchCoursesSliders() {
 }
 fetchCoursesSliders();
 
-// 9. الشراء وإضافة الإشعارات
+// ==========================================
+// 8. الشراء وإضافة الإشعارات
+// ==========================================
 window.currentViewingTeacher = "";
 window.pendingCourseId = null;
 window.pendingCoursePrice = 0;
@@ -589,9 +618,9 @@ document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async (
 });
 
 // ==========================================
-// 🚀 المساعدة الذكية ماجي (AI Workflow & Live Chat للطلاب) 🚨
+// 🚀 المساعدة الذكية ماجي (AI Workflow آمن عبر Cloudflare)
 // ==========================================
-const WORKER_URL = "https://ai.adelabdulrahman026.workers.dev"; // رابط كلاود فلير لنقل الأجهزة
+const WORKER_URL = "https://ai.adelabdulrahman026.workers.dev"; // رابط كلاود فلير
 let liveChatInterval = null;
 let currentTransferDocId = null;
 let currentTransferAttempts = null;
@@ -646,7 +675,7 @@ window.resetMaggieChat = function() {
 
             if (isLive) {
                 if (!loggedInPhone) {
-                    appendAiMsg("يرجى تسجيل الدخول أولاً للتواصل مع الدعم.");
+                    appendAiMsg("يرجى تسجيل الدخول أولاً للتواصل مع الدعم الفني المباشر.");
                     inputArea.innerHTML = `<button id="btnBackLive" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
                     inputArea.style.display = 'block';
                     document.getElementById('btnBackLive').onclick = resetMaggieChat;
@@ -670,32 +699,29 @@ window.resetMaggieChat = function() {
                 `;
                 inputArea.style.display = 'flex';
 
-                // جلب اسم الطالب الفعلي
+                // 🚨 الكود الحقيقي لربط الشات بقاعدة البيانات 🚨
                 const userQ = query(collection(db, "users"), where("studentPhone", "==", loggedInPhone));
                 const userSnap = await getDocs(userQ);
                 const sName = userSnap.empty ? "طالب" : (userSnap.docs[0].data().fullName || "طالب");
 
                 const chatRef = doc(db, "live_chats", loggedInPhone);
                 
-                // إنشاء غرفة الشات
                 await setDoc(chatRef, {
                     studentPhone: loggedInPhone,
                     studentName: sName,
                     adminJoined: false,
-                    messages: [],
                     lastUpdated: new Date().toISOString()
                 }, { merge: true });
 
                 let isWaiting = true;
                 window.lastMsgCount = 0;
 
-                // مراقبة ردود الأدمن
                 if(window.liveChatUnsubscribe) window.liveChatUnsubscribe();
                 window.liveChatUnsubscribe = onSnapshot(chatRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data();
                         
-                        // إيقاف رسالة الـ 5 ثواني لو الأدمن دخل
+                        // لو الموظف دخل، وقف رسالة الانتظار فوراً
                         if (data.adminJoined && isWaiting) {
                             isWaiting = false;
                             if (liveChatInterval) clearInterval(liveChatInterval);
@@ -703,7 +729,6 @@ window.resetMaggieChat = function() {
                             appendAiMsg("تم انضمام ممثل خدمة العملاء للمحادثة، يمكنك التحدث الآن. 🎧");
                         }
 
-                        // طباعة الرسايل الجديدة بتاعة الأدمن بس (عشان الطالب طبع رسالته محلياً)
                         const msgs = data.messages || [];
                         if (msgs.length > window.lastMsgCount) {
                             for(let i = window.lastMsgCount; i < msgs.length; i++) {
@@ -715,7 +740,6 @@ window.resetMaggieChat = function() {
                             window.lastMsgCount = msgs.length;
                         }
                     } else {
-                        // لو الأدمن قفل المحادثة
                         appendAiMsg("تم إنهاء المحادثة من قبل الدعم الفني.");
                         inputArea.innerHTML = `<button id="btnBackLive" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
                         inputArea.style.display = 'block';
@@ -760,13 +784,12 @@ window.resetMaggieChat = function() {
                     }
                 };
 
-                // رسالة الانتظار اللي هتقف بمجرد دخول الموظف
                 liveChatInterval = setInterval(() => {
                     if (isWaiting) appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جميع ممثلي خدمة العملاء مشغولون الآن، برجاء الانتظار...");
                 }, 5000);
 
             } else {
-                appendAiMsg("خدمة العملاء الآن خارج أوقات العمل 😴<br>برجاء المحاولة في وقت آخر.");
+                appendAiMsg("خدمة العملاء الآن خارج أوقات العمل 😴<br>برجاء المحاولة في وقت آخر ما بين 12 ظهراً إلى 9 مساءً.");
                 inputArea.innerHTML = `<button id="btnBackLive" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
                 inputArea.style.display = 'block';
                 document.getElementById('btnBackLive').onclick = resetMaggieChat;
@@ -780,7 +803,6 @@ window.resetMaggieChat = function() {
     });
 }
 
-// باقي وظائف النقل والمشاكل زي ما هي شغالة تمام
 window.handleMaggieOption = async function(option) {
     const inputArea = document.getElementById('maggieInputArea');
 
