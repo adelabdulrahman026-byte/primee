@@ -210,24 +210,57 @@
         </div>
     </div>
 
-    <!-- المساعد الذكي ماجي -->
-    <div class="floating-ai-btn" onclick="document.getElementById('maggieChatModal').classList.add('active')">
+   <!-- زرار ماجي العائم -->
+    <div class="floating-ai-btn" onclick="openMaggieChat()">
         <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Maggie AI"> تواصل مع ماجي
     </div>
+
+    <!-- نافذة شات ماجي -->
     <div class="ai-chat-modal" id="maggieChatModal">
         <div class="ai-chat-header">
             <h3><img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Maggie"> المساعدة ماجي (AI)</h3>
-            <button class="ai-close-btn" onclick="document.getElementById('maggieChatModal').classList.remove('active')"><i class="fas fa-times"></i></button>
+            <button class="ai-close-btn" onclick="closeMaggieChat()"><i class="fas fa-times"></i></button>
         </div>
+        
         <div class="ai-chat-body" id="maggieChatBody">
-            <div class="ai-msg">أهلاً بيك في Primee Academy 👋 أنا ماجي المساعدة الذكية، أقدر أساعدك إزاي النهاردة؟</div>
+            <div class="ai-msg">أهلاً بيك في Primee Academy 👋 أنا ماجي، أقدر أساعدك إزاي النهاردة؟ اختار من القايمة اللي تحت:</div>
+            
+            <!-- أزرار الاختيارات الرئيسية -->
+            <div class="maggie-options" id="mainMaggieOptions">
+                <button onclick="handleMaggieOption('transfer')"><i class="fas fa-mobile-alt"></i> نقل الحساب لجهاز آخر</button>
+                <button onclick="handleMaggieOption('wallet_fail')"><i class="fas fa-wallet"></i> مشكلة في شحن المحفظة</button>
+                <button onclick="handleMaggieOption('lesson_prob')"><i class="fas fa-video"></i> مشكلة في تشغيل الحصة</button>
+                <button onclick="handleMaggieOption('live_chat')"><i class="fas fa-headset"></i> تواصل مباشر مع الدعم</button>
+            </div>
         </div>
-        <div class="ai-chat-input">
-            <input type="text" id="maggieInput" placeholder="اكتب سؤالك هنا...">
-            <button onclick="sendMaggieMessage()"><i class="fas fa-paper-plane"></i></button>
+
+        <!-- منطقة الإدخال الديناميكية (بتتغير حسب الاختيار) -->
+        <div class="ai-chat-input" id="maggieInputArea" style="display: none;">
+            <!-- سيتم حقن خانات الإدخال هنا بواسطة الجافاسكريبت -->
         </div>
     </div>
 
+    <style>
+        /* تنسيقات شات ماجي الجديدة */
+        .maggie-options { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .maggie-options button { background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 12px; border-radius: 12px; font-family: 'Cairo'; font-weight: 800; cursor: pointer; text-align: right; transition: 0.3s; display: flex; align-items: center; gap: 10px; }
+        .maggie-options button:hover { background: #3b82f6; border-color: #3b82f6; }
+        .maggie-options button i { color: #3b82f6; font-size: 18px; }
+        .maggie-options button:hover i { color: #fff; }
+        
+        .ai-chat-input { background: #0f172a; padding: 15px; border-top: 1px solid #334155; display: flex; gap: 10px; align-items: center; }
+        .ai-chat-input input { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #fff; font-family: 'Cairo'; outline: none; }
+        .ai-chat-input button { background: #10b981; color: #fff; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 900; }
+        
+        /* زرار رفع الصور في الشات المباشر */
+        .file-upload-btn { background: #334155 !important; padding: 12px !important; }
+        .chat-uploaded-img { max-width: 200px; border-radius: 10px; margin-top: 10px; border: 2px solid #3b82f6; }
+        
+        .support-contact-links { display: flex; gap: 10px; margin-top: 10px; }
+        .support-contact-links a { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-weight: 800; text-decoration: none; color: #fff; font-size: 14px; }
+        .btn-call { background: #3b82f6; }
+        .btn-wa { background: #10b981; }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script type="module" src="index-script.js?v=137"></script>
 </body>
