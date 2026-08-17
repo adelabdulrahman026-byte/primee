@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import * as tus from "https://cdn.skypack.dev/tus-js-client";
 
 const firebaseConfig = {
@@ -14,8 +14,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// 🚨 1. حماية F12 والرايت كليك 🚨
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) || (e.ctrlKey && e.key === 'U')) {
+        e.preventDefault();
+    }
+});
+
+// حماية الصفحة وتطبيق الصلاحيات
 if (localStorage.getItem('adminLoggedIn') !== 'true') window.location.replace('admin-login.html');
-document.getElementById('adminLogoutBtn')?.addEventListener('click', () => { localStorage.clear(); window.location.replace('admin-login.html'); });
+
+document.getElementById('adminLogoutBtn')?.addEventListener('click', () => { 
+    localStorage.clear(); 
+    window.location.replace('admin-login.html'); 
+});
 
 const ROLE = localStorage.getItem('role') || 'superadmin';
 const AST_TEACHER = localStorage.getItem('astTeacher');
@@ -23,6 +36,7 @@ const AST_TEACHER = localStorage.getItem('astTeacher');
 function applyPermissions() {
     if (ROLE === 'assistant') {
         const perms = JSON.parse(localStorage.getItem('astPerms') || "[]");
+        
         if(!perms.includes('students')) document.getElementById('navStudents').style.display = 'none';
         if(!perms.includes('courses')) document.getElementById('navCourses').style.display = 'none';
         if(!perms.includes('exams')) document.getElementById('navExams').style.display = 'none';
@@ -30,7 +44,7 @@ function applyPermissions() {
         if(!perms.includes('codes')) document.getElementById('navCodes').style.display = 'none';
         if(!perms.includes('wallet')) document.getElementById('navWallet').style.display = 'none';
         if(!perms.includes('teacherReport')) document.getElementById('navTeacherReport').style.display = 'none';
-        if(!perms.includes('liveChat')) document.getElementById('navLiveChat').style.display = 'none';
+        if(!perms.includes('liveChat')) { const navLive = document.getElementById('navLiveChat'); if(navLive) navLive.style.display = 'none'; }
         
         document.getElementById('navTeachers').style.display = 'none';
         document.getElementById('navPackages').style.display = 'none';
@@ -40,6 +54,7 @@ function applyPermissions() {
 }
 applyPermissions();
 
+// التنبيهات
 function adminAlert(title, msg, type = 'success') {
     const modal = document.getElementById('customAdminAlert');
     if(!modal) return;
@@ -60,9 +75,7 @@ window.adminConfirm = function(msg) {
     });
 }
 
-// ==========================================
-// 🚨 إرسال واتساب (للطالب وولي الأمر)
-// ==========================================
+// 🚨 دالة إرسال الواتساب (للطالب وولي الأمر) 🚨
 async function sendWhatsAppMessage(phone, msg) {
     if (!phone) return false;
     try {
@@ -73,17 +86,22 @@ async function sendWhatsAppMessage(phone, msg) {
         if (formattedPhone.startsWith('0')) formattedPhone = '2' + formattedPhone;
         let chatId = formattedPhone + "@c.us";
         let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
+        
         fetch(url, { method: "POST", headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` }, body: JSON.stringify({ chat_id: chatId, text: msg }) }).catch(e=>console.log(e));
         return true;
     } catch (e) { return false; }
 }
+window.sendWhatsAppToParent = sendWhatsAppMessage;
 
+// دالة الرفع السريعة للصور (R2)
 async function uploadImageToR2(file) {
-    const formData = new FormData(); formData.append("image", file);
+    const formData = new FormData();
+    formData.append("image", file);
     try {
         const response = await fetch("https://primee-api.adelabdulrahman026.workers.dev/upload-image", { method: "POST", body: formData });
         const data = await response.json();
-        if (data.success) return data.url; throw new Error(data.error);
+        if (data.success) return data.url;
+        throw new Error(data.error);
     } catch (error) { throw new Error("فشل الرفع"); }
 }
 
@@ -93,7 +111,8 @@ async function uploadToVimeo(file, progressCallback) {
     if (!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo غير موجود");
 
     const createResponse = await fetch("https://api.vimeo.com/me/videos", {
-        method: "POST", headers: { Authorization: `Bearer ${keys.vimeo_token}`, "Content-Type": "application/json", Accept: "application/vnd.vimeo.*+json;version=3.4" },
+        method: "POST",
+        headers: { Authorization: `Bearer ${keys.vimeo_token}`, "Content-Type": "application/json", Accept: "application/vnd.vimeo.*+json;version=3.4" },
         body: JSON.stringify({ upload: { approach: "tus", size: file.size.toString() } })
     });
     if (!createResponse.ok) throw new Error(await createResponse.text());
@@ -101,12 +120,17 @@ async function uploadToVimeo(file, progressCallback) {
 
     return new Promise((resolve, reject) => {
         const upload = new tus.Upload(file, {
-            uploadUrl: video.upload.upload_link, retryDelays: [0,3000,5000,10000], headers: { Authorization: `Bearer ${keys.vimeo_token}` },
+            uploadUrl: video.upload.upload_link,
+            retryDelays: [0,3000,5000,10000],
+            headers: { Authorization: `Bearer ${keys.vimeo_token}` },
             metadata: { filename: file.name, filetype: file.type },
             onError(error){ reject(error); },
             onProgress(bytesUploaded, bytesTotal){ progressCallback(((bytesUploaded / bytesTotal) * 100).toFixed(2)); },
             async onSuccess(){
-                await fetch(video.uri,{ method:"PATCH", headers:{ Authorization:`Bearer ${keys.vimeo_token}`, "Content-Type":"application/json" }, body:JSON.stringify({ privacy:{ view:"disable" } }) });
+                await fetch(video.uri,{
+                    method:"PATCH", headers:{ Authorization:`Bearer ${keys.vimeo_token}`, "Content-Type":"application/json" },
+                    body:JSON.stringify({ privacy:{ view:"disable" } })
+                });
                 resolve("https://player.vimeo.com/video/" + video.uri.split("/").pop());
             }
         });
@@ -115,43 +139,31 @@ async function uploadToVimeo(file, progressCallback) {
 }
 
 // ==========================================
-// 🚨 خدمة العملاء (Live Chat) 🚨
+// 🚨 شات الدعم الفني (Live Chat) 🚨
 // ==========================================
-const supportRef = doc(db, "settings", "support");
 let isLiveChatActive = false;
 let currentChatStudent = null;
+let chatUnsubscribe = null;
 
-// زرار الأونلاين/أوفلاين
+// تفعيل وتحديث حالة الأونلاين/أوفلاين في الداتا بيز
 document.getElementById('toggleLiveModeBtn')?.addEventListener('click', async () => {
     isLiveChatActive = !isLiveChatActive;
     try {
-        await setDoc(supportRef, { isLive: isLiveChatActive }, { merge: true });
+        await setDoc(doc(db, "settings", "support"), { isLive: isLiveChatActive }, { merge: true });
         const btn = document.getElementById('toggleLiveModeBtn');
         if (isLiveChatActive) {
             btn.innerHTML = '<i class="fas fa-satellite-dish"></i> الدعم الفني: أونلاين';
             btn.style.background = 'rgba(16, 185, 129, 0.1)'; btn.style.color = '#10b981'; btn.style.borderColor = '#10b981';
-            adminAlert("تم", "أنت الآن متصل وتستقبل الرسائل المباشرة", "success");
+            adminAlert("تم", "أنت الآن أونلاين وتستقبل رسائل الطلاب.", "success");
         } else {
             btn.innerHTML = '<i class="fas fa-power-off"></i> الدعم الفني: أوفلاين';
             btn.style.background = 'rgba(239, 68, 68, 0.1)'; btn.style.color = '#ef4444'; btn.style.borderColor = '#ef4444';
-            adminAlert("تم", "تم إغلاق استقبال الرسائل المباشرة", "success");
+            adminAlert("تم", "تم تحويلك لأوفلاين.", "success");
         }
-    } catch(e) { console.error(e); }
+    } catch(e) {}
 });
 
-// استرجاع حالة الأونلاين أول ما الصفحة تفتح
-getDoc(supportRef).then(snap => {
-    if (snap.exists()) {
-        isLiveChatActive = snap.data().isLive;
-        const btn = document.getElementById('toggleLiveModeBtn');
-        if (isLiveChatActive && btn) {
-            btn.innerHTML = '<i class="fas fa-satellite-dish"></i> الدعم الفني: أونلاين';
-            btn.style.background = 'rgba(16, 185, 129, 0.1)'; btn.style.color = '#10b981'; btn.style.borderColor = '#10b981';
-        }
-    }
-});
-
-// عرض الشات النشط للطلاب
+// مراقبة المحادثات النشطة
 onSnapshot(collection(db, "live_chats"), (snap) => {
     const container = document.getElementById('chatUsersContainer');
     if(!container) return;
@@ -161,41 +173,38 @@ onSnapshot(collection(db, "live_chats"), (snap) => {
     snap.forEach(docSnap => {
         const chat = docSnap.data();
         hasChats = true;
-        let lastMsg = chat.messages ? chat.messages[chat.messages.length - 1].text : "لا توجد رسائل";
-        
         container.innerHTML += `
             <div onclick="openStudentChat('${docSnap.id}', '${chat.studentName}', '${chat.studentPhone}')" style="padding: 15px; border-bottom: 1px solid #334155; cursor: pointer; transition: 0.3s;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='transparent'">
                 <strong style="color: #f8fafc; font-size: 15px;">${chat.studentName}</strong><br>
-                <small style="color: #94a3b8;">${chat.studentPhone}</small>
+                <small style="color: #f59e0b;">${chat.studentPhone}</small>
             </div>
         `;
     });
     if(!hasChats) container.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">لا توجد محادثات نشطة.</div>';
 });
 
-let chatUnsubscribe = null;
 window.openStudentChat = function(chatId, sName, sPhone) {
     currentChatStudent = chatId;
     const mainArea = document.getElementById('chatMainArea');
     mainArea.innerHTML = `
-        <div style="padding: 15px; background: #1e293b; border-bottom: 1px solid #334155; display:flex; justify-content:space-between;">
+        <div style="padding: 15px; background: #1e293b; border-bottom: 1px solid #334155; display:flex; justify-content:space-between; align-items:center;">
             <strong style="color: #f8fafc;">${sName} (${sPhone})</strong>
-            <button onclick="endStudentChat('${chatId}')" style="background: rgba(239,68,68,0.1); color: #ef4444; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer;">إنهاء المحادثة <i class="fas fa-times"></i></button>
+            <button onclick="endStudentChat('${chatId}')" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; cursor: pointer;">إنهاء المحادثة <i class="fas fa-times"></i></button>
         </div>
-        <div class="chat-messages" id="liveChatMessagesArea"></div>
+        <div class="chat-messages" id="liveChatMessagesArea" style="flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;"></div>
         <div style="padding: 15px; background: #1e293b; border-top: 1px solid #334155; display: flex; gap: 10px;">
-            <input type="text" id="adminChatInput" placeholder="اكتب ردك هنا..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';">
-            <button onclick="sendAdminReply('${chatId}')" style="background: #3b82f6; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 800; cursor: pointer;"><i class="fas fa-paper-plane"></i></button>
+            <input type="text" id="adminChatInput" placeholder="اكتب ردك هنا..." style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; outline:none;">
+            <button onclick="sendAdminReply('${chatId}')" style="background: #10b981; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 900; cursor: pointer;"><i class="fas fa-paper-plane"></i></button>
         </div>
     `;
 
     if(chatUnsubscribe) chatUnsubscribe();
     
-    // مراقبة الرسايل
+    // مراقبة الرسايل وإيقاف رسالة الـ 5 ثواني
     chatUnsubscribe = onSnapshot(doc(db, "live_chats", chatId), (docSnap) => {
         if(!docSnap.exists()) { mainArea.innerHTML = '<div style="flex: 1; display: flex; justify-content: center; align-items: center; color: #94a3b8;"><p>تم إنهاء المحادثة.</p></div>'; return; }
         
-        // إبلاغ الطالب إن الأدمن دخل يرد عشان يوقف رسالة (5 ثواني)
+        // بمجرد ما الأدمن يفتح الشات، رسالة الطالب الأوتوماتيك هتقف
         updateDoc(doc(db, "live_chats", chatId), { adminJoined: true });
 
         const data = docSnap.data();
@@ -204,7 +213,8 @@ window.openStudentChat = function(chatId, sName, sPhone) {
         if(data.messages) {
             data.messages.forEach(m => {
                 const isSys = m.sender === 'admin';
-                msgArea.innerHTML += `<div class="msg-bubble ${isSys ? 'msg-admin' : 'msg-student'}">${m.text}</div>`;
+                const alignment = isSys ? 'align-self: flex-end; background: #3b82f6;' : 'align-self: flex-start; background: #334155;';
+                msgArea.innerHTML += `<div style="max-width: 70%; padding: 12px; border-radius: 12px; color: #fff; ${alignment}">${m.text}</div>`;
             });
             msgArea.scrollTop = msgArea.scrollHeight;
         }
@@ -222,7 +232,7 @@ window.sendAdminReply = async function(chatId) {
 };
 
 window.endStudentChat = async function(chatId) {
-    if(await adminConfirm("تأكيد إنهاء وحذف المحادثة؟")) {
+    if(await adminConfirm("تأكيد إنهاء وحذف المحادثة للطرفين؟")) {
         if(chatUnsubscribe) chatUnsubscribe();
         await deleteDoc(doc(db, "live_chats", chatId));
         document.getElementById('chatMainArea').innerHTML = '<div style="flex: 1; display: flex; justify-content: center; align-items: center; color: #94a3b8;"><p>اختر طالباً للرد...</p></div>';
@@ -230,7 +240,111 @@ window.endStudentChat = async function(chatId) {
 };
 
 // ==========================================
-// 1. مراقبة الطلاب والحماية 🚨
+// 🚨 الإدارة الشاملة للمدرسين 🚨
+// ==========================================
+const teachersRef = collection(db, "teachers");
+let editingTeacherId = null;
+
+onSnapshot(query(teachersRef), (snapshot) => {
+    const table = document.getElementById('adminTeachersTable');
+    const selectInstructor = document.getElementById('courseInstructor');
+    const selectAstTeacher = document.getElementById('astTeacher');
+    const reportTeacherSelect = document.getElementById('reportTeacherSelect');
+
+    if(table) table.innerHTML = '';
+    if(selectInstructor) selectInstructor.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
+    if(selectAstTeacher) selectAstTeacher.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
+    if(reportTeacherSelect) reportTeacherSelect.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
+
+    snapshot.forEach(docSnap => {
+        const t = docSnap.data();
+        const safeImageUrl = t.imageUrl || t.image || 'https://via.placeholder.com/150';
+        
+        if(table) {
+            table.innerHTML += `<tr>
+                <td><img src="${safeImageUrl}" style="width:30px; height:30px; border-radius:50%; margin-left:10px; object-fit:cover; vertical-align:middle;"><strong>${t.name}</strong></td>
+                <td>${t.subject}</td>
+                <td>${t.stages}</td>
+                <td style="display:flex; gap:5px; justify-content:center;">
+                    <button onclick="editTeacher('${docSnap.id}')" style="background: rgba(59,130,246,0.1); color:#3b82f6; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteTeacher('${docSnap.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        }
+        
+        if(selectInstructor) selectInstructor.innerHTML += `<option value="${t.name}">${t.name} (${t.subject})</option>`;
+        if(selectAstTeacher) selectAstTeacher.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+        
+        if (!(ROLE === 'assistant' && AST_TEACHER && t.name !== AST_TEACHER)) {
+            if(reportTeacherSelect) reportTeacherSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`;
+        }
+    });
+});
+
+window.deleteTeacher = async function(id) {
+    if(await adminConfirm("هل أنت متأكد من مسح هذا المدرس نهائياً؟")) {
+        try { await deleteDoc(doc(db, "teachers", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
+        catch(e) {}
+    }
+};
+
+window.editTeacher = async function(id) {
+    const docSnap = await getDoc(doc(db, "teachers", id));
+    if(docSnap.exists()) {
+        const t = docSnap.data();
+        editingTeacherId = id;
+        document.getElementById('teacherName').value = t.name || '';
+        document.getElementById('teacherSubject').value = t.subject || '';
+        
+        const selectStages = document.getElementById('teacherStages');
+        Array.from(selectStages.options).forEach(opt => {
+            opt.selected = t.stages.includes(opt.value);
+        });
+
+        document.getElementById('btnSaveTeacher').innerHTML = '<i class="fas fa-edit"></i> تحديث بيانات المدرس';
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+};
+
+document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveTeacher');
+    btn.innerHTML = "جاري الحفظ والرفع... ⏳"; btn.disabled = true;
+
+    try {
+        const selectStages = document.getElementById('teacherStages');
+        const selectedStages = Array.from(selectStages.selectedOptions).map(opt => opt.value).join(', ');
+        const imageFile = document.getElementById('teacherImage').files[0];
+        
+        let imageUrl = null;
+        if(imageFile) {
+            imageUrl = await uploadImageToR2(imageFile);
+        }
+
+        const teacherData = {
+            name: document.getElementById('teacherName').value.trim(),
+            subject: document.getElementById('teacherSubject').value.trim(),
+            stages: selectedStages
+        };
+        
+        if(imageUrl) teacherData.imageUrl = imageUrl;
+
+        if(editingTeacherId) {
+            await updateDoc(doc(db, "teachers", editingTeacherId), teacherData);
+            editingTeacherId = null;
+        } else {
+            if(!imageUrl) throw new Error("يجب رفع صورة للمدرس");
+            teacherData.createdAt = new Date().toISOString();
+            await addDoc(teachersRef, teacherData);
+        }
+        adminAlert("تم", "تم حفظ المدرس بنجاح", "success");
+        document.getElementById('addTeacherForm').reset();
+    } catch(err) { adminAlert("خطأ", err.message, "error"); }
+    finally { btn.innerHTML = "<i class='fas fa-plus'></i> إضافة المدرس"; btn.disabled = false; }
+});
+
+// ==========================================
+// 1. مراقبة الطلاب والأرباح وإدارة الأجهزة 🚨
 // ==========================================
 let allStudentsData = [];
 let teacherCourseIds = []; 
@@ -271,7 +385,7 @@ onSnapshot(query(collection(db, "users")), (snapshot) => {
     renderDashboardStats();
 });
 
-// 2. إدارة الطلاب وفك حظر الأجهزة 🚨
+// 2. إدارة الطلاب وتعديل الرصيد وحماية الأجهزة 🚨
 let currentStudentId = null;
 let currentStudentData = null;
 
@@ -292,10 +406,26 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
             document.getElementById('resStudentGrade').textContent = currentStudentData.grade || '-';
             document.getElementById('resStudentWallet').textContent = (currentStudentData.walletBalance || 0) + ' ج.م';
             
-            // 🚨 بيانات الحماية 🚨
-            document.getElementById('resTransferAttempts').textContent = currentStudentData.transferAttempts !== undefined ? currentStudentData.transferAttempts : 3;
-            let blockedArr = currentStudentData.blockedDevices || [];
-            document.getElementById('resBlockedCount').textContent = blockedArr.length;
+            // حقن أدوات التحكم في الأجهزة
+            let devicesHtml = `
+                <div style="margin-top: 15px; padding: 15px; background: rgba(245,158,11,0.05); border: 1px dashed #f59e0b; border-radius: 10px;">
+                    <h5 style="margin: 0 0 10px 0; color: #f59e0b;"><i class="fas fa-mobile-alt"></i> حماية الأجهزة والمحاولات</h5>
+                    <p style="margin: 0 0 5px 0; color: #cbd5e1; font-size: 13px;">المحاولات المتبقية لنقل الحساب: <strong style="color: #10b981; font-size:16px;">${currentStudentData.transferAttempts !== undefined ? currentStudentData.transferAttempts : 3}</strong> 
+                        <button onclick="resetStudentAttempts('${currentStudentId}')" style="background: none; border: none; color: #3b82f6; cursor: pointer; text-decoration: underline; font-family: 'Cairo';">إرجاع المحاولات لـ 3</button>
+                    </p>
+                    <div style="margin-top: 10px; font-size: 13px; color: #ef4444;">
+                        <strong>الأجهزة المحظورة:</strong> ${currentStudentData.blockedDevices ? currentStudentData.blockedDevices.length : 0} جهاز
+                        <button onclick="unblockStudentDevices('${currentStudentId}')" style="background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid #10b981; padding: 3px 8px; border-radius: 5px; cursor: pointer; font-family: 'Cairo'; font-size: 12px; margin-right: 10px;">فك الحظر عن الأجهزة</button>
+                    </div>
+                </div>
+            `;
+            
+            // إضافة كود الحماية للمستطيل
+            let infoDiv = document.getElementById('resStudentName').parentElement;
+            if(!document.getElementById('deviceControlArea')) {
+                infoDiv.insertAdjacentHTML('beforeend', `<div id="deviceControlArea"></div>`);
+            }
+            document.getElementById('deviceControlArea').innerHTML = devicesHtml;
 
             const statusSpan = document.getElementById('resStudentStatus');
             const btnToggleBlock = document.getElementById('btnToggleBlock');
@@ -313,24 +443,20 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
     } catch(error) {} finally { document.getElementById('btnSearchStudent').innerHTML = '<i class="fas fa-search"></i> بحث'; }
 });
 
-// فك حظر الأجهزة وإرجاع المحاولات 🚨
-document.getElementById('btnResetAttempts')?.addEventListener('click', async () => {
-    if(!currentStudentId) return;
-    if(await adminConfirm("هل تريد إعادة محاولات النقل للطالب لتصبح 3 محاولات؟")) {
-        await updateDoc(doc(db, "users", currentStudentId), { transferAttempts: 3 });
-        document.getElementById('resTransferAttempts').textContent = 3;
-        adminAlert("تم", "تم إعادة المحاولات بنجاح", "success");
+window.resetStudentAttempts = async function(id) {
+    if(await adminConfirm("تأكيد إرجاع محاولات نقل الجهاز إلى 3؟")) {
+        await updateDoc(doc(db, "users", id), { transferAttempts: 3 });
+        adminAlert("تم", "تم إرجاع المحاولات", "success");
+        document.getElementById('btnSearchStudent').click();
     }
-});
-
-document.getElementById('btnUnblockDevices')?.addEventListener('click', async () => {
-    if(!currentStudentId) return;
-    if(await adminConfirm("تأكيد مسح جميع الأجهزة المحظورة للطالب؟")) {
-        await updateDoc(doc(db, "users", currentStudentId), { blockedDevices: [] });
-        document.getElementById('resBlockedCount').textContent = 0;
-        adminAlert("تم", "تم مسح سجل الأجهزة المحظورة بنجاح", "success");
+};
+window.unblockStudentDevices = async function(id) {
+    if(await adminConfirm("تأكيد فك الحظر عن الأجهزة القديمة؟")) {
+        await updateDoc(doc(db, "users", id), { blockedDevices: [] });
+        adminAlert("تم", "تم تفريغ قائمة الأجهزة المحظورة", "success");
+        document.getElementById('btnSearchStudent').click();
     }
-});
+};
 
 document.getElementById('btnChargeWallet')?.addEventListener('click', async () => {
     const amount = parseInt(document.getElementById('chargeAmount').value);
@@ -377,14 +503,14 @@ document.getElementById('btnDeductWallet')?.addEventListener('click', async () =
 document.getElementById('btnToggleBlock')?.addEventListener('click', async () => {
     if(!currentStudentId) return;
     const newStatus = !currentStudentData.isBlocked;
-    if(!await adminConfirm(newStatus ? "تأكيد الحظر الكلي للحساب؟" : "تأكيد فك الحظر؟")) return;
+    if(!await adminConfirm(newStatus ? "تأكيد الحظر الكلي للحساب؟" : "تأكيد فك الحظر عن الحساب؟")) return;
     try {
         await updateDoc(doc(db, "users", currentStudentId), { isBlocked: newStatus });
         document.getElementById('btnSearchStudent').click();
     } catch(e) {}
 });
 
-// 3. إدارة الكورسات 🚨 (تم إضافة اسم المقطع)
+// 3. إدارة الكورسات 🚨 (إضافة اسم المقطع)
 const coursesRef = collection(db, "courses");
 
 window.deleteCourse = async function(id) {
@@ -393,6 +519,25 @@ window.deleteCourse = async function(id) {
         catch (e) {}
     }
 };
+
+window.addCourseVideoRow = function() {
+    const container = document.getElementById('courseVideosContainer');
+    const row = document.createElement('div');
+    row.className = 'video-row form-group-admin';
+    row.style.cssText = 'background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 10px; position: relative;';
+    row.innerHTML = `
+        <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 10px; left: 10px; background: rgba(239,68,68,0.1); color: #ef4444; border: none; border-radius: 8px; cursor: pointer; padding: 5px 10px;"><i class="fas fa-trash"></i></button>
+        <label>اسم المقطع (مثال: الجزء الأول) ✍️</label>
+        <input type="text" class="course-video-title" placeholder="اكتب اسم المقطع..." style="width:100%; background: #0f172a; margin-bottom:10px;" required>
+        <label>فيديو الحصة 🎥</label>
+        <input type="file" class="course-video-file" accept="video/mp4,video/x-m4v,video/*" style="margin-bottom: 10px; width:100%; background: #0f172a;">
+        <label>الامتحان الشرطي لهذا الفيديو</label>
+        <select class="course-video-exam exam-select-sync" style="width:100%; background: #0f172a;">
+            ${window.examOptionsHTML || '<option value="">بدون امتحان (مفتوحة)</option>'}
+        </select>
+    `;
+    container.appendChild(row);
+}
 
 document.getElementById('addCourseForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -417,17 +562,12 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
                 const titleInput = videoRows[i].querySelector('.course-video-title');
                 const fileInput = videoRows[i].querySelector('.course-video-file');
                 const examSelect = videoRows[i].querySelector('.course-video-exam');
-                
                 if(fileInput.files.length > 0) {
                     document.getElementById('videoStatus').textContent = `جاري رفع المقطع (${titleInput.value})...`;
                     let vUrl = await uploadToVimeo(fileInput.files[0], (p) => {
                         document.getElementById('videoProgressBar').style.width = p + '%';
                     });
-                    newVideosArray.push({ 
-                        title: titleInput.value.trim(), 
-                        url: vUrl, 
-                        requiredExamId: examSelect.value || null 
-                    });
+                    newVideosArray.push({ title: titleInput.value.trim(), url: vUrl, requiredExamId: examSelect.value || null });
                 }
             }
             document.getElementById('videoStatus').textContent = `تم رفع الفيديوهات بنجاح ✔️`;
@@ -466,9 +606,8 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
     }
 });
 
-// تصدير إكسيل لطلاب الحصة
 window.exportCourseExcel = async function(courseId, courseTitle) {
-    adminAlert("جاري التحضير", "يتم تجميع البيانات...", "success");
+    adminAlert("جاري التحميل", "يتم تجميع تقرير الطلاب...", "success");
     try {
         const q = query(collection(db, "users"), where("myCourses", "array-contains", courseId));
         const usersSnap = await getDocs(q);
@@ -502,8 +641,7 @@ onSnapshot(query(coursesRef), (snapshot) => {
         const c = docSnap.data();
         if (ROLE === 'assistant' && AST_TEACHER && c.instructor !== AST_TEACHER) return;
         teacherCourseIds.push(docSnap.id);
-        
-        // حساب عدد الطلاب المشتركين بالحصة
+
         let stdCount = allStudentsData.filter(s => s.myCourses && s.myCourses.includes(docSnap.id)).length;
 
         table.innerHTML += `<tr>
@@ -512,9 +650,9 @@ onSnapshot(query(coursesRef), (snapshot) => {
             <td>${c.grade}</td>
             <td><span style="color:#10b981; font-weight:900;">${stdCount} طالب</span><br><small style="color:#f59e0b;">${c.views || 0} مشاهدة عامة</small></td>
             <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
-                <button onclick="exportCourseExcel('${docSnap.id}', '${c.title}')" style="background:#10b981; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل الإكسيل"><i class="fas fa-file-excel"></i></button>
-                <button onclick="editCourse('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer;"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteCourse('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer;"><i class="fas fa-trash"></i></button>
+                <button onclick="exportCourseExcel('${docSnap.id}', '${c.title}')" style="background:#10b981; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل الإكسيل"><i class="fas fa-file-excel"></i> إكسيل</button>
+                <button onclick="editCourse('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer;"><i class="fas fa-edit"></i> تعديل</button>
+                <button onclick="deleteCourse('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer;"><i class="fas fa-trash"></i> مسح</button>
             </td>
         </tr>`;
     });
@@ -545,7 +683,7 @@ document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
     document.getElementById('btnCancelEdit').style.display = 'none';
 });
 
-// 4. إدارة الامتحانات 🚨 (الذكاء الاصطناعي والموديل أنسر وتصدير PDF)
+// 4. إدارة الامتحانات 🚨 (تحديث AI وتصدير PDF)
 const examsRef = collection(db, "exams");
 let questionCount = 0;
 window.currentExamsData = [];
@@ -580,6 +718,18 @@ window.deleteExam = async function(id) {
     }
 };
 
+window.toggleQType = function(id) {
+    const type = document.getElementById(`qType_${id}`).value;
+    document.getElementById(`mcqContainer_${id}`).style.display = type === 'mcq' ? 'block' : 'none';
+    const aiCont = document.getElementById(`essayAiContainer_${id}`);
+    if(aiCont) aiCont.style.display = type === 'essay' ? 'block' : 'none';
+}
+
+window.toggleAiModelAnswer = function(id) {
+    const isChecked = document.getElementById(`qAiGrade_${id}`).checked;
+    document.getElementById(`qModelAnswer_${id}`).style.display = isChecked ? 'block' : 'none';
+}
+
 document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
     questionCount++;
     const container = document.getElementById('questionsContainer');
@@ -603,10 +753,10 @@ document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
                 <select class="q-correct" style="width: 100%; padding: 10px; border-radius: 8px;"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
             </div>
 
-            <!-- 🚨 إعدادات المقالي للذكاء الاصطناعي 🚨 -->
-            <div id="essayAiContainer_${questionCount}" style="display:none;">
-                <label style="color:#cbd5e1; cursor:pointer;"><input type="checkbox" class="q-ai-grade" id="qAiGrade_${questionCount}" onchange="toggleAiModelAnswer(${questionCount})"> تفعيل التصحيح الآلي (AI) لهذا السؤال</label>
-                <textarea class="q-model-answer" id="qModelAnswer_${questionCount}" placeholder="اكتب الإجابة النموذجية أو النقاط الأساسية (مثال: الناتج النهائي 50، الخطوات، الكلمات المفتاحية...)" style="width:100%; padding:10px; border-radius:8px; margin-top:10px; background:var(--input-bg); color:#fff; display:none;"></textarea>
+            <!-- إعدادات المقالي للـ AI -->
+            <div id="essayAiContainer_${questionCount}" style="display:none; padding:10px; background: rgba(16, 185, 129, 0.05); border-radius: 8px;">
+                <label style="color:#10b981; font-weight:800; cursor:pointer;"><input type="checkbox" class="q-ai-grade" id="qAiGrade_${questionCount}" onchange="window.toggleAiModelAnswer(${questionCount})"> تفعيل التصحيح الآلي (AI) لهذا السؤال</label>
+                <textarea class="q-model-answer" id="qModelAnswer_${questionCount}" placeholder="اكتب الإجابة النموذجية أو النقاط الأساسية (مثال: الخطوات، الكلمات المفتاحية...)" style="width:100%; padding:10px; border-radius:8px; margin-top:10px; background:var(--input-bg); color:#fff; display:none;"></textarea>
             </div>
         </div>
     `);
@@ -622,8 +772,8 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
 
     try {
         let pdfUrl = null;
-        const pdfFile = document.getElementById('examPdfFile').files[0];
-        if (pdfFile) pdfUrl = await uploadImageToR2(pdfFile); // تقدر تستخدم نفس الـ endpoint للـ PDF
+        const pdfFile = document.getElementById('examPdfFile')?.files[0];
+        if (pdfFile) pdfUrl = await uploadImageToR2(pdfFile);
 
         const qs = [];
         for (const box of qBoxes) {
@@ -640,16 +790,25 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
                 qs.push({ type:'essay', text:text, imageUrl:imageUrl, isAiGraded: isAiGraded, modelAnswer: modelAnswer });
             }
         }
-        const data = { title: document.getElementById('examTitle').value, questions: qs, pdfUrl: pdfUrl };
-        
+        const data = { title: document.getElementById('examTitle').value, questions: qs };
+        if(pdfUrl) data.pdfUrl = pdfUrl;
+
         if(editingId) { await updateDoc(doc(db, "exams", editingId), data); document.getElementById('btnCancelExamEdit').click(); }
         else { data.createdAt = new Date().toISOString(); await addDoc(examsRef, data); document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; }
         adminAlert("تم", "تم الحفظ بنجاح", "success");
     } catch(e) {} finally { btn.innerHTML = '<i class="fas fa-save"></i> حفظ الامتحان'; btn.disabled = false; }
 });
 
-// تصدير نتيجة الامتحان PDF شيك 🚨
+// تصدير PDF لنتيجة الامتحان 🚨
 window.exportExamPDF = async function(examId, examTitle) {
+    if (!document.getElementById('examPdfReportContent')) {
+        document.body.insertAdjacentHTML('beforeend', `<div id="examPdfReportContent" style="display:none; background:#fff; color:#000; padding:40px; direction:rtl; font-family:'Cairo';">
+            <div style="text-align: center; margin-bottom: 30px;"><img src="https://www.primeeacademy.com/logo%20prime.png" style="width: 120px;"><h1 style="color: #5b21b6; margin: 10px 0;">Primee Academy</h1><h2 style="border-bottom: 2px solid #cbd5e1; padding-bottom: 10px;">نتيجة امتحان: <span id="pdfExamName" style="color: #ef4444;"></span></h2></div>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;" border="1"><thead><tr style="background: #f8fafc;"><th style="padding: 10px;">م</th><th style="padding: 10px;">اسم الطالب</th><th style="padding: 10px;">رقم الطالب</th><th style="padding: 10px;">رقم ولي الأمر</th><th style="padding: 10px;">الدرجة</th><th style="padding: 10px;">الحالة</th></tr></thead><tbody id="pdfExamTableBody"></tbody></table>
+            <div style="margin-top: 50px; text-align: left;"><p style="font-weight: 800;">إدارة منصة Primee</p></div>
+        </div>`);
+    }
+
     adminAlert("جاري التحضير", "يتم تجميع النتيجة...", "success");
     try {
         const exQ = query(collection(db, "exam_submissions"), where("examId", "==", examId));
@@ -665,12 +824,12 @@ window.exportExamPDF = async function(examId, examTitle) {
             const statusText = sub.status === 'passed' ? 'ناجح' : (sub.status === 'failed' ? 'راسب' : 'مراجعة');
             
             html += `<tr>
-                <td style="padding: 10px; border: 1px solid #cbd5e1;">${counter++}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align:center;">${counter++}</td>
                 <td style="padding: 10px; border: 1px solid #cbd5e1;">${sub.studentName}</td>
-                <td style="padding: 10px; border: 1px solid #cbd5e1;" dir="ltr">${sub.studentPhone}</td>
-                <td style="padding: 10px; border: 1px solid #cbd5e1;" dir="ltr">${sub.parentPhone || '-'}</td>
-                <td style="padding: 10px; border: 1px solid #cbd5e1;">${scoreText}</td>
-                <td style="padding: 10px; border: 1px solid #cbd5e1;">${statusText}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align:center;" dir="ltr">${sub.studentPhone}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align:center;" dir="ltr">${sub.parentPhone || '-'}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align:center;">${scoreText}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align:center;">${statusText}</td>
             </tr>`;
         });
 
@@ -681,14 +840,9 @@ window.exportExamPDF = async function(examId, examTitle) {
         element.style.display = 'block';
         
         html2pdf().set({
-            margin: 10,
-            filename: `نتيجة_امتحان_${examTitle}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        }).from(element).save().then(() => {
-            element.style.display = 'none';
-        });
+            margin: 10, filename: `نتيجة_امتحان_${examTitle}.pdf`, image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(element).save().then(() => { element.style.display = 'none'; });
 
     } catch(e) { adminAlert("خطأ", "فشل تحميل التقرير", "error"); }
 };
@@ -711,7 +865,7 @@ function renderExamsTable() {
             <td>${ex.questions ? ex.questions.length : 0}</td>
             <td style="color:#10b981; font-weight:900;">${studentsCount} طالب</td>
             <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
-                <button onclick="exportExamPDF('${ex.id}', '${ex.title}')" style="background:#ef4444; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل PDF"><i class="fas fa-file-pdf"></i> النتيجة</button>
+                <button onclick="exportExamPDF('${ex.id}', '${ex.title}')" style="background:#ef4444; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل نتيجة PDF"><i class="fas fa-file-pdf"></i></button>
                 <button onclick="editExam('${ex.id}')" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-edit"></i></button>
                 <button onclick="deleteExam('${ex.id}')" style="background:rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-trash"></i></button>
             </td>
@@ -746,13 +900,33 @@ window.editExam = async function(id) {
 }
 document.getElementById('btnCancelExamEdit')?.addEventListener('click', () => { document.getElementById('editingExamId').value=""; document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; document.getElementById('btnCancelExamEdit').style.display='none'; });
 
-// 5. سجل المشاهدات والتصحيح 🚨 (تعديل المقالي ورقم الوالد)
+// 5. سجل المشاهدات والتصحيح 🚨 (تحديث رقم الأب وتصحيح المقالي)
 window.deleteSubmission = async function(id) {
     if(await adminConfirm("تأكيد مسح النتيجة ليتمكن الطالب من الإعادة؟")) {
         try { await deleteDoc(doc(db, "exam_submissions", id)); adminAlert("تم", "تم المسح", "success"); } 
         catch(e) {}
     }
 };
+
+// إنشاء نافذة تصحيح المقالي برمجياً لو مش موجودة في הHTML
+if (!document.getElementById('essayGradingModal')) {
+    document.body.insertAdjacentHTML('beforeend', `
+        <div class="modal-overlay" id="essayGradingModal">
+            <div class="modal-content" style="max-width: 600px; text-align: right;">
+                <h3 style="color: #3b82f6; margin-bottom: 15px;"><i class="fas fa-marker"></i> تصحيح إجابة مقالية</h3>
+                <div id="essayGradingContent" style="color: #f8fafc; font-size: 15px; margin-bottom: 20px; background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155;"></div>
+                <div class="form-group-admin">
+                    <label style="color: #10b981;">الدرجة المستحقة (من إجمالي الامتحان)</label>
+                    <input type="number" id="essayScoreInput" placeholder="أدخل الدرجة..." required>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button id="btnSaveEssayGrade" class="admin-modal-btn" style="background: #10b981; color: #fff; flex: 1;">حفظ وإرسال واتس</button>
+                    <button onclick="document.getElementById('essayGradingModal').classList.remove('active')" class="admin-modal-btn" style="background: #ef4444; color: #fff; flex: 1;">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    `);
+}
 
 function renderGradingTable() {
     const table = document.getElementById('adminGradingTable');
@@ -772,7 +946,6 @@ function renderGradingTable() {
         let tText = sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('ar-EG') : '-';
         let scoreText = sub.hasEssay && sub.status === 'pending' ? 'مراجعة' : `${sub.score} / ${sub.fullMark || sub.totalQuestions || 10}`;
         
-        // إظهار لو اتصحح بالذكاء الاصطناعي
         let aiBadge = sub.gradedByAi ? '<br><small style="color:#d946ef; font-weight:800;"><i class="fas fa-robot"></i> مصحح بالذكاء الاصطناعي</small>' : '';
 
         table.innerHTML += `<tr>
@@ -793,7 +966,6 @@ function renderGradingTable() {
 document.getElementById('filterGradingStatus')?.addEventListener('change', renderGradingTable);
 document.getElementById('filterSpecificExam')?.addEventListener('change', renderGradingTable);
 
-// دالة تصحيح المقالي 🚨
 window.currentGradingSubId = null;
 window.openEssayGradingModal = async function(subId) {
     const sub = allSubmissionsForExams.find(s => s.id === subId);
@@ -804,7 +976,7 @@ window.openEssayGradingModal = async function(subId) {
     
     sub.essayAnswers.forEach((ans, idx) => {
         html += `<div style="margin-bottom: 15px;">
-            <p style="color:#f59e0b; font-weight:800;">سؤال ${idx+1}: ${ans.questionText}</p>
+            <p style="color:#f59e0b; font-weight:800;">السؤال: ${ans.questionText}</p>
             <p style="color:#10b981;">إجابة الطالب: ${ans.answer}</p>
         </div>`;
     });
@@ -887,7 +1059,17 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
     });
 });
 
-// 🚨 تقرير المدرس (PDF تفصيلي للكورسات) 🚨
+// 🚨 تقرير المدرس (PDF تفصيلي) 🚨
+if (!document.getElementById('pdfReportContent')) {
+    document.body.insertAdjacentHTML('beforeend', `<div id="pdfReportContent" style="display:none; background:#fff; color:#000; padding:40px; direction:rtl; font-family:'Cairo';">
+        <div style="text-align: center; margin-bottom: 30px;"><img src="https://www.primeeacademy.com/logo%20prime.png" style="width: 120px;"><h1 style="color: #5b21b6; margin: 10px 0;">Primee Academy</h1><h2 style="border-bottom: 2px solid #cbd5e1; padding-bottom: 10px;">التقرير المالي والإحصائي للأستاذ: <span id="pdfTeacherName" style="color: #f59e0b;"></span></h2><p>الفترة الزمنية: <span id="pdfPeriod"></span></p></div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;" border="1"><thead><tr style="background: #f8fafc;"><th style="padding: 10px;">إجمالي الطلاب (مكرر)</th><th style="padding: 10px;">عدد الكورسات المباعة</th><th style="padding: 10px; font-size: 20px;">إجمالي الأرباح</th></tr></thead><tbody><tr><td style="padding: 10px; text-align: center;" id="pdfTotalStudents">0</td><td style="padding: 10px; text-align: center;" id="pdfTotalSalesCount">0</td><td style="padding: 10px; text-align: center; color:#10b981; font-weight: bold; font-size: 20px;" id="pdfTotalRevenue">0 ج.م</td></tr></tbody></table>
+        <h3 style="color: #5b21b6;">تفاصيل مبيعات الحصص والباقات</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;" border="1"><thead><tr style="background: #f8fafc;"><th style="padding: 10px;">اسم الحصة / الباقة</th><th style="padding: 10px;">سعر الوحدة</th><th style="padding: 10px;">عدد المبيعات</th><th style="padding: 10px;">الإجمالي</th></tr></thead><tbody id="pdfTeacherCoursesTableBody"></tbody></table>
+        <div style="margin-top: 50px; text-align: left;"><p>تاريخ الاستخراج: <span id="pdfGenerateDate"></span></p><p style="font-weight: 800;">إدارة منصة Primee</p></div>
+    </div>`);
+}
+
 document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     const teacher = document.getElementById('reportTeacherSelect').value;
     const period = document.getElementById('reportPeriodSelect').value;
@@ -916,9 +1098,7 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
         totalRev += amt;
         studentsSet.add(t.studentPhone);
         
-        if(!courseStats[t.courseTitle]) {
-            courseStats[t.courseTitle] = { count: 0, price: amt, total: 0 };
-        }
+        if(!courseStats[t.courseTitle]) { courseStats[t.courseTitle] = { count: 0, price: amt, total: 0 }; }
         courseStats[t.courseTitle].count += 1;
         courseStats[t.courseTitle].total += amt;
     });
@@ -934,8 +1114,8 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     for(let cName in courseStats) {
         cHtml += `<tr>
             <td style="padding:10px; border:1px solid #cbd5e1; color:#000;">${cName}</td>
-            <td style="padding:10px; border:1px solid #cbd5e1; color:#000; text-align:center;">${courseStats[cName].count}</td>
             <td style="padding:10px; border:1px solid #cbd5e1; color:#000; text-align:center;">${courseStats[cName].price} ج</td>
+            <td style="padding:10px; border:1px solid #cbd5e1; color:#000; text-align:center;">${courseStats[cName].count}</td>
             <td style="padding:10px; border:1px solid #cbd5e1; color:#10b981; font-weight:bold; text-align:center;">${courseStats[cName].total} ج</td>
         </tr>`;
     }
@@ -945,17 +1125,12 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     element.style.display = 'block';
     
     html2pdf().set({
-        margin: 10,
-        filename: `تقرير_${teacher}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(element).save().then(() => {
-        element.style.display = 'none';
-    });
+        margin: 10, filename: `تقرير_${teacher}.pdf`, image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(element).save().then(() => { element.style.display = 'none'; });
 });
 
-// 7. مصنع الأكواد والبرومو كود (كما هي)
+// 7. مصنع الأكواد (حروف وأرقام فقط)
 const codesRef = collection(db, "charge_codes");
 let allCodesData = [];
 
@@ -987,7 +1162,10 @@ document.getElementById('generateCodesForm')?.addEventListener('submit', async (
         for (let i = 0; i < count; i++) {
             const uniqueCode = "PR-" + generateAlphanumericCode();
             csv += `${uniqueCode},${price},${delegate},wallet\n`; 
-            await addDoc(codesRef, { code: uniqueCode, value: price, delegate: delegate, type: 'wallet', isUsed: false, usedByPhone: null, usedByName: null, usedAt: null, createdAt: batchDate });
+            await addDoc(codesRef, {
+                code: uniqueCode, value: price, delegate: delegate, type: 'wallet',
+                isUsed: false, usedByPhone: null, usedByName: null, usedAt: null, createdAt: batchDate
+            });
         }
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
@@ -1006,8 +1184,14 @@ onSnapshot(query(codesRef), (snapshot) => {
 function renderCodesTable() {
     const table = document.getElementById('adminCodesTable');
     if(!table) return; table.innerHTML = '';
-    
+    const searchTerm = document.getElementById('searchCodeInput')?.value.toUpperCase() || '';
+    const filterStatus = document.getElementById('filterCodeStatus')?.value || 'all';
+
     allCodesData.forEach(c => {
+        if (filterStatus === 'used' && !c.isUsed) return;
+        if (filterStatus === 'unused' && c.isUsed) return;
+        if (searchTerm && !c.code.includes(searchTerm) && !c.delegate.toUpperCase().includes(searchTerm)) return;
+
         let stText = c.isUsed ? `<span style="color:#ef4444;">${c.usedByName} (${c.usedByPhone})</span>` : `<span style="color:#10b981;">جديد</span>`;
         let tText = c.createdAt ? new Date(c.createdAt).toLocaleDateString('ar-EG') : '-';
         table.innerHTML += `<tr>
@@ -1020,8 +1204,59 @@ function renderCodesTable() {
         </tr>`;
     });
 }
+document.getElementById('searchCodeInput')?.addEventListener('input', renderCodesTable);
+document.getElementById('filterCodeStatus')?.addEventListener('change', renderCodesTable);
 
-// 8. إدارة الباقات (تحديث إضافة اسم المقطع)
+document.getElementById('btnExportAllCodes')?.addEventListener('click', () => {
+    let csv = "\uFEFFالكود,القيمة,المندوب,الحالة,الطالب,رقم الطالب\n";
+    allCodesData.forEach(c => csv += `${c.code},${c.value},${c.delegate},${c.isUsed?'مستخدم':'جديد'},${c.usedByName||'-'},${c.usedByPhone||'-'}\n`);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+    link.download = `سجل_الأكواد.csv`; link.click();
+});
+
+// 🚨 قسم البرومو كود 🚨
+const promoCodesRef = collection(db, "promo_codes");
+document.getElementById('addPromoCodeForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSavePromoCode');
+    btn.innerHTML = "جاري الحفظ... ⏳"; btn.disabled = true;
+
+    try {
+        await addDoc(promoCodesRef, {
+            code: document.getElementById('promoCodeString').value.toUpperCase().trim(),
+            discount: parseInt(document.getElementById('promoCodeDiscount').value),
+            expiry: document.getElementById('promoCodeExpiry').value,
+            createdAt: new Date().toISOString()
+        });
+        adminAlert("تم", "تم إنشاء البرومو كود", "success");
+        document.getElementById('addPromoCodeForm').reset();
+    } catch(err) {} finally { btn.innerHTML = "<i class='fas fa-plus'></i> إنشاء البرومو كود"; btn.disabled = false; }
+});
+
+window.deletePromoCode = async function(id) {
+    if(await adminConfirm("تأكيد مسح البرومو كود؟")) {
+        try { await deleteDoc(doc(db, "promo_codes", id)); } catch(e) {}
+    }
+}
+
+onSnapshot(query(promoCodesRef), (snap) => {
+    const table = document.getElementById('adminPromoCodesTable');
+    if(!table) return; table.innerHTML = '';
+    snap.forEach(docSnap => {
+        const p = docSnap.data();
+        let isExpired = new Date() > new Date(p.expiry);
+        let color = isExpired ? '#ef4444' : '#10b981';
+        table.innerHTML += `<tr>
+            <td style="font-family:monospace; font-weight:900; color:#d946ef; font-size:18px;">${p.code}</td>
+            <td>${p.discount}%</td>
+            <td style="color:${color}; font-weight:bold;" dir="ltr">${p.expiry}</td>
+            <td><button onclick="deletePromoCode('${docSnap.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+    });
+});
+
+// 8. إدارة الباقات (مع إضافة اسم المقطع)
 const packagesRef = collection(db, "packages");
 
 window.deletePackage = async function(id) {
@@ -1030,6 +1265,25 @@ window.deletePackage = async function(id) {
         catch(e) { adminAlert("خطأ", "فشل المسح", "error"); }
     }
 };
+
+window.addPackageVideoRow = function() {
+    const container = document.getElementById('packageVideosContainer');
+    const row = document.createElement('div');
+    row.className = 'video-row form-group-admin';
+    row.style.cssText = 'background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 10px; position: relative;';
+    row.innerHTML = `
+        <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 10px; left: 10px; background: rgba(239,68,68,0.1); color: #ef4444; border: none; border-radius: 8px; cursor: pointer; padding: 5px 10px;"><i class="fas fa-trash"></i></button>
+        <label>اسم المقطع</label>
+        <input type="text" class="pkg-video-title" placeholder="اسم المقطع..." style="width:100%; background: #0f172a; margin-bottom:10px;" required>
+        <label>فيديو الباقة 🎥</label>
+        <input type="file" class="pkg-video-file" accept="video/mp4,video/x-m4v,video/*" style="margin-bottom: 10px; width:100%; background: #0f172a;">
+        <label>الامتحان المربوط</label>
+        <select class="pkg-video-exam exam-select-sync" style="width:100%; background: #0f172a;">
+            ${window.examOptionsHTML || '<option value="">بدون امتحان (مفتوحة)</option>'}
+        </select>
+    `;
+    container.appendChild(row);
+}
 
 document.getElementById('addPackageForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1101,7 +1355,7 @@ onSnapshot(query(packagesRef), (snapshot) => {
     if(!table) return; table.innerHTML = '';
     snapshot.forEach(docSnap => {
         const pkg = docSnap.data();
-        let stdCount = allStudentsData.filter(s => s.myPackages && s.myPackages.includes(docSnap.id)).length; // افتراض
+        let stdCount = allStudentsData.filter(s => s.myPackages && s.myPackages.includes(docSnap.id)).length; 
 
         table.innerHTML += `<tr>
             <td><img src="${pkg.imageUrl}" style="width:40px; border-radius:8px; vertical-align:middle;"> <strong>${pkg.name}</strong></td>
@@ -1141,7 +1395,7 @@ document.getElementById('btnCancelPkgEdit')?.addEventListener('click', () => {
     document.getElementById('btnCancelPkgEdit').style.display = 'none';
 });
 
-// 9. إدارة المساعدين (كما هي بدون تغيير يذكر)
+// 9. إدارة المساعدين
 const assistantsRef = collection(db, "assistants");
 let editingAssistantId = null;
 
@@ -1162,9 +1416,12 @@ document.getElementById('addAssistantForm')?.addEventListener('submit', async (e
         document.querySelectorAll('.ast-perm:checked').forEach(cb => perms.push(cb.value));
 
         const astData = {
-            name: document.getElementById('astName').value, username: document.getElementById('astUsername').value,
-            password: document.getElementById('astPassword').value, targetTeacher: document.getElementById('astTeacher').value, 
-            permissions: perms, role: "assistant"
+            name: document.getElementById('astName').value,
+            username: document.getElementById('astUsername').value,
+            password: document.getElementById('astPassword').value,
+            targetTeacher: document.getElementById('astTeacher').value, 
+            permissions: perms, 
+            role: "assistant"
         };
 
         if(editingAssistantId) {
