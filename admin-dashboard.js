@@ -13,7 +13,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🚨 1. منع F12 والرايت كليك 🚨
+// 🚨 1. منع F12 🚨
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('keydown', e => {
     if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) || (e.ctrlKey && e.key === 'U')) {
@@ -21,7 +21,6 @@ document.addEventListener('keydown', e => {
     }
 });
 
-// حماية الصفحة وتطبيق الصلاحيات
 if (localStorage.getItem('adminLoggedIn') !== 'true') window.location.replace('admin-login.html');
 
 document.getElementById('adminLogoutBtn')?.addEventListener('click', () => { 
@@ -196,7 +195,7 @@ window.openStudentChat = function(chatId, sName, sPhone) {
     mainArea.innerHTML = `
         <div style="padding: 15px; background: #1e293b; border-bottom: 1px solid #334155; display:flex; justify-content:space-between; align-items:center;">
             <strong style="color: #f8fafc;">${sName} (${sPhone})</strong>
-            <button onclick="endStudentChat('${chatId}')" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; cursor: pointer;">إنهاء <i class="fas fa-times"></i></button>
+            <button onclick="endStudentChat('${chatId}')" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid #ef4444; padding: 5px 10px; border-radius: 6px; cursor: pointer;">إنهاء المحادثة <i class="fas fa-times"></i></button>
         </div>
         <div class="chat-messages" id="liveChatMessagesArea" style="flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;"></div>
         <div style="padding: 15px; background: #1e293b; border-top: 1px solid #334155; display: flex; gap: 10px;">
@@ -214,6 +213,7 @@ window.openStudentChat = function(chatId, sName, sPhone) {
         const data = docSnap.data();
         const msgArea = document.getElementById('liveChatMessagesArea');
         
+        // 🚨 صوت رسالة جديدة في الشات
         const prevMessagesCount = msgArea.children.length;
         if(data.messages && data.messages.length > prevMessagesCount) {
             const lastMsg = data.messages[data.messages.length - 1];
@@ -248,7 +248,7 @@ window.sendAdminReply = async function(chatId) {
 };
 
 window.endStudentChat = async function(chatId) {
-    if(await adminConfirm("تأكيد إنهاء وحذف المحادثة؟")) {
+    if(await adminConfirm("تأكيد إنهاء وحذف المحادثة للطرفين؟")) {
         if(chatUnsubscribe) chatUnsubscribe();
         try { await deleteDoc(doc(db, "live_chats", chatId)); } catch(e) {}
         document.getElementById('chatMainArea').innerHTML = '<div style="flex: 1; display: flex; justify-content: center; align-items: center; color: #94a3b8;"><p>اختر طالباً للرد...</p></div>';
@@ -256,7 +256,7 @@ window.endStudentChat = async function(chatId) {
 };
 
 // ==========================================
-// 1. مراقبة الطلاب والأرباح وإدارة الأجهزة (صوت الطالب الجديد 🚨)
+// 1. مراقبة الطلاب والأرباح (صوت الطالب الجديد)
 // ==========================================
 let allStudentsData = [];
 let allCoursesData = []; 
@@ -300,7 +300,7 @@ try {
         allStudentsData = [];
         snapshot.forEach(doc => allStudentsData.push({id: doc.id, ...doc.data()}));
         
-        // صوت الإشعارات لطالب جديد
+        // 🚨 صوت الإشعارات لطالب جديد
         if (!initialLoad && allStudentsData.length > previousStudentCount) {
             const audio = document.getElementById('notificationSound');
             if(audio) audio.play().catch(e=>{});
@@ -340,11 +340,11 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
             const btnToggleBlock = document.getElementById('btnToggleBlock');
             if(currentStudentData.isBlocked) {
                 statusSpan.textContent = 'محظور كلياً ⛔'; statusSpan.style.color = '#ef4444';
-                btnToggleBlock.innerHTML = '<i class="fas fa-unlock"></i> فك الحظر عن الحساب';
+                btnToggleBlock.innerHTML = '<i class="fas fa-unlock"></i> فك الحظر';
                 btnToggleBlock.style.background = 'rgba(16, 185, 129, 0.1)'; btnToggleBlock.style.color = '#10b981';
             } else {
                 statusSpan.textContent = 'نشط 🟢'; statusSpan.style.color = '#10b981';
-                btnToggleBlock.innerHTML = '<i class="fas fa-ban"></i> حظر الحساب بالكامل';
+                btnToggleBlock.innerHTML = '<i class="fas fa-ban"></i> حظر الطالب';
                 btnToggleBlock.style.background = 'rgba(239, 68, 68, 0.1)'; btnToggleBlock.style.color = '#ef4444';
             }
             document.getElementById('studentResultCard').style.display = 'block';
@@ -553,7 +553,7 @@ try {
                 <td><strong>${c.title}</strong></td>
                 <td>${c.instructor}</td>
                 <td>${c.grade}</td>
-                <td style="color:#10b981; font-weight:900;">${stdCount} طالب</td>
+                <td><span style="color:#10b981; font-weight:900;">${stdCount} طالب</span></td>
                 <td style="font-weight:900;">${hasExams}</td>
                 <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
                     <button onclick="exportCourseExcel('${docSnap.id}', '${c.title}')" style="background:#10b981; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل الإكسيل"><i class="fas fa-file-excel"></i></button>
@@ -566,6 +566,7 @@ try {
     });
 } catch(e) {}
 
+// 🚨 تصليح تعديل الامتحان واختفاء البيانات 🚨
 window.editCourse = async function(id) {
     const docSnap = await getDoc(doc(db, "courses", id));
     if(docSnap.exists()) {
@@ -591,7 +592,7 @@ document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
 });
 
 // ==========================================
-// 4. إدارة الامتحانات 🚨 (تعديل الـ PDF المخفي لطباعة صحيحة)
+// 4. إدارة الامتحانات 🚨
 // ==========================================
 const examsRef = collection(db, "exams");
 let questionCount = 0;
@@ -629,7 +630,7 @@ window.deleteExam = async function(id) {
     }
 };
 
-// 🚨 تصدير نتيجة الامتحان PDF 🚨
+// 🚨 تصدير نتيجة الامتحان PDF (يظهر ويختفي للطباعة النظيفة) 🚨
 window.exportExamPDF = async function(examId, examTitle) {
     adminAlert("جاري التحضير", "يتم تجميع النتيجة...", "success");
     try {
@@ -660,13 +661,13 @@ window.exportExamPDF = async function(examId, examTitle) {
 
         const element = document.getElementById('examPdfReportContent');
         
-        // السر هنا في الـ display block عشان يطبع وهو بره الشاشة
-        element.style.display = 'block';
+        // السر هنا عشان الـ PDF يطبع صح: إظهاره ثانية واحدة والطباعة 
+        element.style.top = "0";
         html2pdf().set({
             margin: 10, filename: `نتيجة_امتحان_${examTitle}.pdf`, image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         }).from(element).save().then(() => {
-            element.style.display = 'none';
+            element.style.top = "-9999px"; // إرجاعه مخفي تاني
         });
 
     } catch(e) { adminAlert("خطأ", "فشل تحميل التقرير", "error"); }
@@ -700,6 +701,7 @@ function renderExamsTable() {
     });
 }
 
+// 🚨 تصليح ألوان الأسئلة المقالية وتعديل الامتحان 🚨
 document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
     questionCount++;
     const container = document.getElementById('questionsContainer');
@@ -759,6 +761,8 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
                 qs.push({ type:'essay', text:text, imageUrl:imageUrl, isAiGraded: isAiGraded, modelAnswer: modelAnswer });
             }
         }
+        
+        // 🚨 تصليح الحفظ عشان الـ PDF ميتمسحش في التعديل 🚨
         const data = { title: document.getElementById('examTitle').value, questions: qs };
         if(pdfUrl) data.pdfUrl = pdfUrl; 
 
@@ -804,7 +808,7 @@ window.editExam = async function(id) {
 document.getElementById('btnCancelExamEdit')?.addEventListener('click', () => { document.getElementById('editingExamId').value=""; document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; document.getElementById('btnCancelExamEdit').style.display='none'; });
 
 // ==========================================
-// 5. سجل المشاهدات والتصحيح 🚨
+// 5. سجل المشاهدات والتصحيح 🚨 (رقم ولي الأمر وتصحيح المقالي)
 // ==========================================
 window.deleteSubmission = async function(id) {
     if(await adminConfirm("تأكيد مسح النتيجة ليتمكن الطالب من الإعادة؟")) {
@@ -830,7 +834,6 @@ function renderGradingTable() {
         let stText = sub.status === 'passed' ? '<span style="color:#10b981;">ناجح (شاهد)</span>' : (sub.status === 'failed' ? '<span style="color:#ef4444;">راسب (مغلق)</span>' : '<span style="color:#f59e0b;">مراجعة مقالي</span>');
         let tText = sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('ar-EG') : '-';
         let scoreText = sub.hasEssay && sub.status === 'pending' ? 'مراجعة' : `${sub.score} / ${sub.fullMark || sub.totalQuestions || 10}`;
-        
         let aiBadge = sub.gradedByAi ? '<br><small style="color:#d946ef; font-weight:800;"><i class="fas fa-robot"></i> مصحح بالذكاء الاصطناعي</small>' : '';
 
         table.innerHTML += `<tr>
@@ -927,7 +930,7 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
     allTransactions = [];
     snap.forEach(d => allTransactions.push({id: d.id, ...d.data()}));
     
-    // حل مشكلة NaN بسبب التواريخ الفارغة
+    // حل مشكلة اختفاء الجدول لو التاريخ NaN
     let filteredTrans = [...allTransactions].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     
     if (ROLE === 'assistant' && AST_TEACHER) {
@@ -1010,13 +1013,13 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     document.getElementById('pdfTeacherCoursesTableBody').innerHTML = cHtml || `<tr><td colspan="4" style="text-align:center;">لا توجد مبيعات</td></tr>`;
 
     const element = document.getElementById('pdfReportContent');
-    element.style.display = 'block';
-    
+    // إظهاره عشان يطبع بس
+    element.style.top = "0";
     html2pdf().set({
         margin: 10, filename: `تقرير_${teacher}.pdf`, image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(element).save().then(() => {
-        element.style.display = 'none';
+        element.style.top = "-9999px";
     });
 });
 
@@ -1048,7 +1051,6 @@ document.getElementById('generateCodesForm')?.addEventListener('submit', async (
 
     try {
         const batchDate = new Date().toISOString();
-        // علامات تنصيص لضمان التنسيق في إكسيل
         let csv = "\uFEFF\"الكود\",\"القيمة\",\"المندوب\",\"النوع\"\n";
         for (let i = 0; i < count; i++) {
             const uniqueCode = "PR-" + generateAlphanumericCode();
@@ -1292,7 +1294,7 @@ document.getElementById('btnCancelPkgEdit')?.addEventListener('click', () => {
     document.getElementById('editingPkgId').value = "";
     document.getElementById('addPackageForm').reset();
     document.getElementById('packageVideosContainer').innerHTML = '';
-    document.getElementById('btnSavePackage').innerHTML = 'حفظ ونشر';
+    document.getElementById('btnSavePackage').innerHTML = '<i class="fas fa-plus"></i> حفظ ونشر الباقة';
     document.getElementById('btnCancelPkgEdit').style.display = 'none';
 });
 
