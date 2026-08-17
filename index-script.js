@@ -167,19 +167,23 @@ document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', ()
 });
 
 // ==========================================
-// 4. المساعد الذكي ماجي (AI Chat Workflow) 🚨 التعديل الجديد 🚨
+// 🚀 المساعدة الذكية ماجي (AI Workflow آمن عبر Cloudflare)
 // ==========================================
-let currentTransferOTP = null;
+const WORKER_URL = "https://ai.adelabdulrahman026.workers.dev"; // رابط كلاود فلير بتاعك
 let liveChatInterval = null;
+let currentTransferDocId = null;
+let currentTransferAttempts = null;
+let currentOldDeviceId = null;
 
-window.openMaggieChat = function() {
+// ربط الأزرار برمجياً لمنع مشاكل الـ module
+document.getElementById('openMaggieBtn')?.addEventListener('click', () => {
     document.getElementById('maggieChatModal').classList.add('active');
     resetMaggieChat();
-}
-window.closeMaggieChat = function() {
+});
+document.getElementById('closeMaggieBtn')?.addEventListener('click', () => {
     document.getElementById('maggieChatModal').classList.remove('active');
     if(liveChatInterval) clearInterval(liveChatInterval);
-}
+});
 
 function appendAiMsg(text) {
     const chatBody = document.getElementById('maggieChatBody');
@@ -192,220 +196,199 @@ function appendUserMsg(text) {
     chatBody.scrollTop = chatBody.scrollHeight;
 }
 
-window.resetMaggieChat = function() {
+function resetMaggieChat() {
     document.getElementById('maggieChatBody').innerHTML = `
         <div class="ai-msg">أهلاً بيك في Primee Academy 👋 أنا ماجي، أقدر أساعدك إزاي النهاردة؟</div>
         <div class="maggie-options" id="mainMaggieOptions">
-            <button onclick="handleMaggieOption('transfer')"><i class="fas fa-mobile-alt"></i> نقل الحساب لجهاز آخر</button>
-            <button onclick="handleMaggieOption('wallet_fail')"><i class="fas fa-wallet"></i> مشكلة في شحن المحفظة</button>
-            <button onclick="handleMaggieOption('lesson_prob')"><i class="fas fa-video"></i> مشكلة في تشغيل الحصة</button>
-            <button onclick="handleMaggieOption('live_chat')"><i class="fas fa-headset"></i> تواصل مباشر مع الدعم</button>
+            <button id="btnOptTransfer"><i class="fas fa-mobile-alt"></i> نقل الحساب لجهاز آخر</button>
+            <button id="btnOptWallet"><i class="fas fa-wallet"></i> مشكلة في شحن المحفظة</button>
+            <button id="btnOptLesson"><i class="fas fa-video"></i> مشكلة في تشغيل الحصة</button>
+            <button id="btnOptLive"><i class="fas fa-headset"></i> تواصل مباشر مع الدعم</button>
         </div>
     `;
     document.getElementById('maggieInputArea').style.display = 'none';
     if(liveChatInterval) clearInterval(liveChatInterval);
+    attachMaggieOptions();
 }
 
-async function sendMaggieWhatsApp(phone, msg) {
-    if(!phone) return false;
-    try {
-        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
-        if (!docSnap.exists()) return false;
-        const keys = docSnap.data();
-        let formattedPhone = phone.toString().trim();
-        if (formattedPhone.startsWith('0')) formattedPhone = '2' + formattedPhone;
-        let chatId = formattedPhone + "@c.us";
-        let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
-        
-        await fetch(url, {
-            method: "POST",
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` },
-            body: JSON.stringify({ chat_id: chatId, text: msg })
-        });
-        return true;
-    } catch (e) { return false; }
-}
-
-window.handleMaggieOption = async function(option) {
-    document.getElementById('mainMaggieOptions').style.display = 'none';
-    const inputArea = document.getElementById('maggieInputArea');
-
-    if (option === 'transfer') {
+// دالة ربط أزرار الخيارات الداخلية
+function attachMaggieOptions() {
+    document.getElementById('btnOptTransfer')?.addEventListener('click', () => {
+        document.getElementById('mainMaggieOptions').style.display = 'none';
         appendUserMsg("نقل الحساب لجهاز آخر");
-        appendAiMsg("⚠️ <b>تنبيه هام:</b> حفاظاً على سرية بياناتك، غير مسموح بفتح الحساب من أكثر من جهاز. <br><br>لك <b>3 محاولات فقط</b> لنقل الحساب لجهاز جديد. وإذا قمت بفتح الحساب من الجهاز القديم مرة أخرى لن تتمكن من فتحه.<br><br>هل أنت متأكد من رغبتك في نقل الحساب؟");
+        appendAiMsg("⚠️ <b>تنبيه هام:</b> حفاظاً على سرية بياناتك، غير مسموح بفتح الحساب من أكثر من جهاز. <br><br>لك <b>3 محاولات فقط</b> لنقل الحساب لجهاز جديد. وإذا قمت بفتح الحساب من الجهاز القديم سيتم حظره.<br><br>هل أنت متأكد من رغبتك في النقل؟");
         
+        const inputArea = document.getElementById('maggieInputArea');
         inputArea.innerHTML = `
-            <button onclick="startTransferProcess()" style="background:#10b981; width:100%;">موافق، أريد النقل</button>
-            <button onclick="resetMaggieChat()" style="background:#ef4444; width:100%;">إلغاء</button>
+            <button id="btnAcceptTransfer" style="background:#10b981; width:100%; border:none; padding:12px; color:#fff; border-radius:10px; font-weight:bold; cursor:pointer;">موافق، أريد النقل</button>
+            <button id="btnCancelTransfer" style="background:#ef4444; width:100%; border:none; padding:12px; color:#fff; border-radius:10px; font-weight:bold; cursor:pointer; margin-top:5px;">إلغاء</button>
         `;
-        inputArea.style.display = 'flex';
-        inputArea.style.flexDirection = 'column';
-    } 
-    else if (option === 'wallet_fail') {
+        inputArea.style.display = 'block';
+
+        document.getElementById('btnCancelTransfer').onclick = resetMaggieChat;
+        document.getElementById('btnAcceptTransfer').onclick = async () => {
+            const studentPhone = localStorage.getItem('studentPhone');
+            if(!studentPhone) return appendAiMsg("يرجى تسجيل الدخول أولاً.");
+            
+            appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري فحص حسابك والتواصل مع السيرفر...");
+            inputArea.style.display = 'none';
+
+            try {
+                // الاتصال بـ Cloudflare عشان يبعت الـ OTP
+                const res = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'request_transfer', phone: studentPhone })
+                });
+                const data = await res.json();
+
+                if(!data.success) {
+                    appendAiMsg(`❌ ${data.error}`);
+                    inputArea.innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; font-weight:bold;">الرجوع للقائمة</button>`;
+                    inputArea.style.display = 'block';
+                    return;
+                }
+
+                currentTransferDocId = data.docId;
+                currentTransferAttempts = data.attempts;
+                currentOldDeviceId = data.oldDeviceId;
+
+                appendAiMsg(`تم إرسال كود (OTP) في رسالة واتساب للرقم ${studentPhone}.<br>متبقي لك <b>${data.attempts} محاولات</b>.<br>يرجى إدخال الكود هنا:`);
+                
+                inputArea.innerHTML = `
+                    <input type="text" id="otpInput" placeholder="أدخل الكود (4 أرقام)..." style="flex:1;">
+                    <button id="btnVerifyOTP" style="background:#10b981;"><i class="fas fa-check"></i> تأكيد</button>
+                `;
+                inputArea.style.display = 'flex';
+
+                document.getElementById('btnVerifyOTP').onclick = async () => {
+                    const otp = document.getElementById('otpInput').value.trim();
+                    if(!otp) return;
+                    appendUserMsg(otp);
+                    appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري التحقق...");
+
+                    let newDeviceId = localStorage.getItem('deviceId');
+                    if (!newDeviceId) {
+                        newDeviceId = 'DEV-' + Date.now() + Math.random().toString(36).substr(2, 9);
+                        localStorage.setItem('deviceId', newDeviceId);
+                    }
+
+                    // الاتصال بـ Cloudflare للتحقق
+                    const vRes = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            action: 'verify_transfer', 
+                            docId: currentTransferDocId, 
+                            otp: otp, 
+                            newDeviceId: newDeviceId, 
+                            oldDeviceId: currentOldDeviceId, 
+                            attemptsLeft: currentTransferAttempts 
+                        })
+                    });
+                    const vData = await vRes.json();
+
+                    if(vData.success) {
+                        appendAiMsg(`✅ تم نقل الحساب بنجاح!<br>متبقي لك <b>${vData.newAttempts} محاولات</b>.<br>تذكر: الجهاز القديم أصبح محظوراً.`);
+                        inputArea.innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px;">إنهاء</button>`;
+                    } else {
+                        appendAiMsg(`❌ ${vData.error}`);
+                    }
+                };
+
+            } catch (err) {
+                appendAiMsg("❌ حدث خطأ في الاتصال بالخادم.");
+            }
+        };
+    });
+
+    document.getElementById('btnOptWallet')?.addEventListener('click', () => {
+        document.getElementById('mainMaggieOptions').style.display = 'none';
         appendUserMsg("مشكلة في شحن المحفظة");
-        appendAiMsg(`
-            علشان تشحن من المحفظة (شخصية، سنترال، أو منفذ بيع)، لازم تتأكد 100% من <b>الرقم اللي اتحول منه المبلغ</b> وتكتبه صح في خانة الشحن، والرصيد هيتضاف فوراً.<br><br>
-            لو متأكد إنك عملت العملية صح ومفيش رصيد نزل، برجاء المحاولة مرة تانية خلال (نصف ساعة إلى ساعتين).<br><br>
-            لو المشكلة استمرت، تقدر تتواصل مع الدعم التقني للمدفوعات من هنا:
+        appendAiMsg(`علشان تشحن من المحفظة، لازم تتأكد 100% من <b>الرقم اللي اتحول منه المبلغ</b>.<br><br>لو متأكد إنك عملت العملية ومفيش رصيد، المحاولة بتتم آلياً. لو فيه مشكلة مستمرة تقدر تتواصل مع الدعم التقني للمدفوعات:
             <div class="support-contact-links">
                 <a href="tel:01093139047" class="btn-call"><i class="fas fa-phone-alt"></i> اتصال</a>
                 <a href="https://wa.me/201093139047" class="btn-wa" target="_blank"><i class="fab fa-whatsapp"></i> واتساب</a>
-            </div>
-        `);
-        inputArea.innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6;">الرجوع للقائمة</button>`;
-        inputArea.style.display = 'flex';
-    }
-    else if (option === 'lesson_prob') {
+            </div>`);
+        const inputArea = document.getElementById('maggieInputArea');
+        inputArea.innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
+        inputArea.style.display = 'block';
+    });
+
+    document.getElementById('btnOptLesson')?.addEventListener('click', () => {
+        document.getElementById('mainMaggieOptions').style.display = 'none';
         appendUserMsg("مشكلة في تشغيل الحصة");
-        appendAiMsg("علشان نقدر نحل المشكلة بسرعة، اكتب المشكلة اللي بتواجهك بالتفصيل، ولما تدوس إرسال هيفتح معاك الواتساب المباشر للدعم الفني عشان يتابعوا معاك.");
+        appendAiMsg("اكتب المشكلة اللي بتواجهك بالتفصيل، وسيتم تحويلك لدعم الواتساب الفني.");
         
+        const inputArea = document.getElementById('maggieInputArea');
         inputArea.innerHTML = `
-            <input type="text" id="lessonProblemInput" placeholder="اكتب المشكلة هنا...">
-            <button onclick="sendLessonProblem()"><i class="fas fa-paper-plane"></i></button>
+            <input type="text" id="lessonProblemInput" placeholder="اكتب المشكلة هنا..." style="flex:1;">
+            <button id="btnSendLessonProb"><i class="fas fa-paper-plane"></i></button>
         `;
         inputArea.style.display = 'flex';
-        inputArea.style.flexDirection = 'row';
-    }
-    else if (option === 'live_chat') {
+
+        document.getElementById('btnSendLessonProb').onclick = () => {
+            const prob = document.getElementById('lessonProblemInput').value.trim();
+            if(!prob) return;
+            appendUserMsg(prob);
+            window.open(`https://wa.me/201042728734?text=${encodeURIComponent("عندي مشكلة في الحصة:\n" + prob)}`, '_blank');
+            appendAiMsg("تم توجيهك للواتساب، شكراً لك!");
+            document.getElementById('lessonProblemInput').value = '';
+        };
+    });
+
+    document.getElementById('btnOptLive')?.addEventListener('click', () => {
+        document.getElementById('mainMaggieOptions').style.display = 'none';
         appendUserMsg("تواصل مباشر مع الدعم");
         
         const currentHour = new Date().getHours();
+        const inputArea = document.getElementById('maggieInputArea');
+
         if (currentHour >= 12 && currentHour < 21) {
             appendAiMsg(`
                 <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px;">
-                    ⚠️ <b>تنبيه:</b> جميع الرسائل والصور تختفي بعد إنهاء الجلسة. إذا أرسل لك الموظف رقماً أو صورة يرجى أخذ Screenshot والاحتفاظ بها.
+                    ⚠️ <b>تنبيه:</b> جميع الرسائل تختفي بعد الجلسة. احتفظ بصورة (Screenshot) لأي معلومات هامة.
                 </div>
-                جاري توجيهك لخدمة العملاء، في انتظار الرد... ⏳
+                جاري توجيهك لخدمة العملاء... ⏳
             `);
             
             inputArea.innerHTML = `
-                <label class="file-upload-btn" style="cursor:pointer; color:#fff; border-radius:10px;">
+                <label class="file-upload-btn" style="cursor:pointer; color:#fff; border-radius:10px; background:#334155; padding:10px;">
                     <i class="fas fa-image"></i>
-                    <input type="file" id="chatImageInput" accept="image/*" style="display:none;" onchange="previewChatImage(event)">
+                    <input type="file" id="chatImageInput" accept="image/*" style="display:none;">
                 </label>
-                <input type="text" id="liveChatInput" placeholder="اكتب رسالتك للموظف...">
-                <button onclick="sendLiveChatMessage()"><i class="fas fa-paper-plane"></i></button>
+                <input type="text" id="liveChatInput" placeholder="اكتب رسالتك للموظف..." style="flex:1;">
+                <button id="btnSendLiveChat"><i class="fas fa-paper-plane"></i></button>
             `;
             inputArea.style.display = 'flex';
-            inputArea.style.flexDirection = 'row';
+
+            document.getElementById('chatImageInput').onchange = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) { appendUserMsg(`<img src="${e.target.result}" class="chat-uploaded-img">`); }
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            document.getElementById('btnSendLiveChat').onclick = () => {
+                const msg = document.getElementById('liveChatInput').value.trim();
+                if(msg) { appendUserMsg(msg); document.getElementById('liveChatInput').value = ''; }
+            };
 
             liveChatInterval = setInterval(() => {
-                appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جميع ممثلي خدمة العملاء مشغولون الآن في الرد على طلاب آخرين، برجاء الانتظار...");
+                appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جميع ممثلي خدمة العملاء مشغولون الآن، برجاء الانتظار...");
             }, 5000);
 
         } else {
-            appendAiMsg("خدمة العملاء الآن خارج أوقات العمل 😴<br>برجاء المحاولة في وقت آخر ما بين الساعة 12 ظهراً إلى 9 مساءً.");
-            inputArea.innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6;">الرجوع للقائمة</button>`;
-            inputArea.style.display = 'flex';
+            appendAiMsg("خدمة العملاء الآن خارج أوقات العمل 😴<br>برجاء المحاولة في وقت آخر ما بين 12 ظهراً إلى 9 مساءً.");
+            inputArea.innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px;">الرجوع للقائمة</button>`;
+            inputArea.style.display = 'block';
         }
-    }
-};
-
-window.startTransferProcess = async function() {
-    if(!loggedInPhone) return appendAiMsg("يرجى تسجيل الدخول أولاً.");
-
-    const inputArea = document.getElementById('maggieInputArea');
-    appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري فحص حسابك...");
-    
-    const q = query(collection(db, "users"), where("studentPhone", "==", loggedInPhone));
-    const snap = await getDocs(q);
-    
-    if(snap.empty) return appendAiMsg("حسابك غير موجود!");
-    const studentDoc = snap.docs[0];
-    const studentData = studentDoc.data();
-    
-    let attemptsLeft = studentData.transferAttempts !== undefined ? studentData.transferAttempts : 3;
-    
-    if(attemptsLeft <= 0) {
-        appendAiMsg("❌ عذراً، لقد استنفذت الـ 3 محاولات المتاحة لك. لا يمكن نقل الحساب لهذا الجهاز نهائياً. تواصل مع الإدارة.");
-        inputArea.innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6;">الرجوع للقائمة</button>`;
-        return;
-    }
-
-    appendAiMsg(`متبقي لك <b>${attemptsLeft} محاولات</b>.<br>لتأكيد النقل، سيتم إرسال كود OTP لرقمك المسجل (${loggedInPhone}).`);
-    
-    currentTransferOTP = Math.floor(1000 + Math.random() * 9000).toString();
-    
-    const waMsg = `تنبيه من Primee Academy ⚠️\n\nيوجد طلب لنقل حسابك إلى جهاز جديد.\nكود التأكيد الخاص بك هو: *${currentTransferOTP}*\n\nإذا لم تكن أنت من طلب ذلك، أرسل "أرفض نقل الحساب" ولا تشارك الكود مع أحد.`;
-    
-    await sendMaggieWhatsApp(loggedInPhone, waMsg);
-
-    appendAiMsg("تم إرسال الكود في رسالة واتساب. يرجى إدخال الكود هنا:");
-    inputArea.innerHTML = `
-        <input type="text" id="otpInput" placeholder="أدخل الكود (4 أرقام)...">
-        <button onclick="verifyTransferOTP('${studentDoc.id}', ${attemptsLeft}, '${studentData.deviceId || ''}')"><i class="fas fa-check"></i> تأكيد</button>
-    `;
-    inputArea.style.flexDirection = 'row';
-};
-
-window.verifyTransferOTP = async function(docId, attemptsLeft, oldDeviceId) {
-    const enteredOTP = document.getElementById('otpInput').value.trim();
-    if(!enteredOTP) return;
-    
-    appendUserMsg(enteredOTP);
-    
-    if(enteredOTP === currentTransferOTP) {
-        const newAttempts = attemptsLeft - 1;
-        
-        // 🚨 إنشاء ID للجهاز الجديد ووضع القديم في قائمة البلوك 🚨
-        let newDeviceId = localStorage.getItem('deviceId');
-        if (!newDeviceId) {
-            newDeviceId = 'DEV-' + Date.now() + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('deviceId', newDeviceId);
-        }
-
-        let updatePayload = {
-            transferAttempts: newAttempts,
-            deviceId: newDeviceId
-        };
-
-        // لو فيه جهاز قديم متسجل في الداتا بيز ومختلف عن الجديد، نحطه في البلوك
-        if (oldDeviceId && oldDeviceId !== newDeviceId) {
-            updatePayload.blockedDevices = arrayUnion(oldDeviceId);
-        }
-        
-        await updateDoc(doc(db, "users", docId), updatePayload);
-        
-        appendAiMsg(`✅ تم نقل الحساب وتأكيد الجهاز الجديد بنجاح!<br>متبقي لك <b>${newAttempts} محاولات</b> مستقبلاً.<br>تذكر: الجهاز القديم أصبح محظوراً من الدخول.`);
-        document.getElementById('maggieInputArea').innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6;">إنهاء</button>`;
-    } else {
-        appendAiMsg("❌ الكود غير صحيح. يرجى المحاولة مرة أخرى.");
-    }
-};
-
-window.sendLessonProblem = function() {
-    const prob = document.getElementById('lessonProblemInput').value.trim();
-    if(!prob) return;
-    appendUserMsg(prob);
-    
-    const waLink = `https://wa.me/201042728734?text=${encodeURIComponent("عندي مشكلة في الحصة:\n" + prob)}`;
-    window.open(waLink, '_blank');
-    
-    appendAiMsg("تم توجيهك للواتساب للتواصل مع الدعم الفني، شكراً لك!");
-    document.getElementById('lessonProblemInput').value = '';
-};
-
-window.sendLiveChatMessage = function() {
-    const msg = document.getElementById('liveChatInput').value.trim();
-    if(msg) {
-        appendUserMsg(msg);
-        document.getElementById('liveChatInput').value = '';
-    }
-};
-
-window.previewChatImage = function(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const chatBody = document.getElementById('maggieChatBody');
-            chatBody.innerHTML += `<div class="user-msg"><img src="${e.target.result}" class="chat-uploaded-img"></div>`;
-            chatBody.scrollTop = chatBody.scrollHeight;
-        }
-        reader.readAsDataURL(file);
-    }
-};
-
+    });
+}
+// تعريف الدالة برمجياً في الويندوز عشان تستدعى من الأزرار اللي بيتم إنشاءها
+window.resetMaggieChat = resetMaggieChat;
 // ==========================================
 // 5. الفلاتر (المدرسين والباقات)
 // ==========================================
