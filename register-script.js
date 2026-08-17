@@ -30,33 +30,53 @@ let pendingUserData = {};
 async function sendWhatsAppOTP(phone, otpCode) {
     try {
         const docSnap = await getDoc(doc(db, "settings", "api_keys"));
-        if (!docSnap.exists()) return false;
-        
+        if (!docSnap.exists()) {
+            console.error("مفاتيح الـ API غير موجودة في قاعدة البيانات.");
+            return false;
+        }
+
         const keys = docSnap.data();
-        let formattedPhone = phone.startsWith('0') ? '2' + phone : phone;
-        let chatId = formattedPhone + "@c.us";
+        
+        // 🚨 تنظيف الرقم من أي مسافات أو حروف، وإضافة مفتاح مصر 🚨
+        let cleanPhone = phone.replace(/\D/g, ''); 
+        if (cleanPhone.startsWith('0')) cleanPhone = '2' + cleanPhone;
+        else if (!cleanPhone.startsWith('20')) cleanPhone = '20' + cleanPhone;
+
+        let chatId = cleanPhone + "@c.us";
         let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
-        
+
         const msg = `مرحباً بك في منصة Primee Academy 🚀\n\nكود التأكيد الخاص بك هو: *${otpCode}*\n\nلا تشارك هذا الكود مع أحد حفاظاً على سرية حسابك.`;
-        
-        await fetch(url, {
+
+        const response = await fetch(url, {
             method: "POST",
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` },
             body: JSON.stringify({ chat_id: chatId, text: msg })
         });
+
+        // 🚨 التأكد إن السيرفر استقبل الأمر بنجاح 🚨
+        if (!response.ok) {
+            const errData = await response.json();
+            console.error("خطأ من WaPilot:", errData);
+            return false;
+        }
+        
         return true;
-    } catch (e) { return false; }
+    } catch (e) { 
+        console.error("فشل الاتصال بـ WaPilot:", e);
+        return false; 
+    }
 }
 
 // 1. عند الضغط على إنشاء حساب (نرسل الـ OTP أولاً)
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
-    
+
     const phone = document.getElementById('studentPhone').value.trim();
     if (phone.length < 11) return showAlert('تنبيه', 'رقم الهاتف غير صحيح.');
 
-    btn.innerHTML = "جاري التحقق... ⏳"; btn.disabled = true;
+    btn.innerHTML = "جاري التحقق وإرسال الكود... ⏳"; 
+    btn.disabled = true;
 
     try {
         // التأكد إن الرقم مش مسجل قبل كده
@@ -67,7 +87,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             return showAlert('خطأ', 'رقم الهاتف هذا مسجل لدينا بالفعل!');
         }
 
-        // تجهيز بيانات الطالب (من غير أي إشارة للصورة)
+        // تجهيز بيانات الطالب
         pendingUserData = {
             fullName: document.getElementById('fullName').value.trim(),
             studentPhone: phone,
@@ -80,18 +100,24 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
         // توليد 4 أرقام عشوائية
         generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
+
+        // 🚨 إرسال الواتساب والتحقق من نجاح الإرسال قبل فتح النافذة 🚨
+        const isSent = await sendWhatsAppOTP(phone, generatedOTP);
         
-        // إرسال الواتساب
-        await sendWhatsAppOTP(phone, generatedOTP);
-        
-        // فتح نافذة الـ OTP
+        if (!isSent) {
+            btn.innerHTML = "إنشاء الحساب الآن"; btn.disabled = false;
+            return showAlert('عذراً', 'فشل إرسال كود التأكيد. يرجى التأكد من صحة الرقم أو المحاولة لاحقاً.');
+        }
+
+        // فتح نافذة الـ OTP (لو الإرسال تم بنجاح فقط)
         document.getElementById('displayOtpPhone').textContent = phone;
         document.getElementById('otpModal').classList.add('active');
         document.getElementById('otpInput').value = '';
         document.getElementById('otpInput').focus();
 
     } catch (error) {
-        showAlert('خطأ', 'حدث خطأ، يرجى المحاولة لاحقاً.');
+        console.error(error);
+        showAlert('خطأ', 'حدث خطأ في النظام، يرجى المحاولة لاحقاً.');
     } finally {
         btn.innerHTML = "إنشاء الحساب الآن"; btn.disabled = false;
     }
@@ -99,7 +125,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
 // 2. عند إدخال الـ OTP والتأكيد
 document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
-    const inputOtp = document.getElementById('otpInput').value;
+    const inputOtp = document.getElementById('otpInput').value.trim();
     if (inputOtp !== generatedOTP) {
         document.getElementById('otpInput').style.borderColor = '#ef4444';
         return; 
@@ -114,7 +140,7 @@ document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
         const userCredential = await createUserWithEmailAndPassword(auth, fakeEmail, pendingUserData.password);
         const user = userCredential.user;
 
-        // حفظ باقي البيانات في Firestore (بدون ملفات أو صور)
+        // حفظ باقي البيانات في Firestore
         await setDoc(doc(db, "users", user.uid), {
             fullName: pendingUserData.fullName,
             studentPhone: pendingUserData.studentPhone,
@@ -133,9 +159,9 @@ document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
     } catch (error) {
         console.error("تفاصيل الخطأ:", error); 
         document.getElementById('otpModal').classList.remove('active');
-        
+
         let errorMsg = error.message; 
-        
+
         if (error.code === 'auth/weak-password') {
             errorMsg = "كلمة المرور ضعيفة جداً، يجب أن تكون 6 أحرف أو أرقام على الأقل.";
         } else if (error.code === 'auth/email-already-in-use') {
@@ -145,7 +171,7 @@ document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
         } else if (error.code === 'auth/invalid-email') {
             errorMsg = "رقم الهاتف غير صحيح.";
         }
-        
+
         showAlert('خطأ في التسجيل', errorMsg);
     } finally {
         btn.innerHTML = "تأكيد الكود وإنشاء الحساب"; 
