@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 🚨 ضفنا هنا arrayUnion عشان نقدر نحط الأجهزة القديمة في البلوك 🚨
+import { getFirestore, collection, query, where, getDocs, updateDoc, doc, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -166,40 +167,244 @@ document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', ()
 });
 
 // ==========================================
-// 4. المساعد الذكي ماجي (AI Chat)
+// 4. المساعد الذكي ماجي (AI Chat Workflow) 🚨 التعديل الجديد 🚨
 // ==========================================
-window.sendMaggieMessage = async function() {
-    const input = document.getElementById('maggieInput');
-    const msg = input.value.trim();
-    if(!msg) return;
-    
+let currentTransferOTP = null;
+let liveChatInterval = null;
+
+window.openMaggieChat = function() {
+    document.getElementById('maggieChatModal').classList.add('active');
+    resetMaggieChat();
+}
+window.closeMaggieChat = function() {
+    document.getElementById('maggieChatModal').classList.remove('active');
+    if(liveChatInterval) clearInterval(liveChatInterval);
+}
+
+function appendAiMsg(text) {
     const chatBody = document.getElementById('maggieChatBody');
-    chatBody.innerHTML += `<div class="user-msg">${msg}</div>`;
-    input.value = '';
-    chatBody.scrollTop = chatBody.scrollHeight;
-    
-    const loadingId = 'loading-' + Date.now();
-    chatBody.innerHTML += `<div class="ai-msg" id="${loadingId}"><i class="fas fa-ellipsis-h fa-fade"></i> ماجي تفكر...</div>`;
-    chatBody.scrollTop = chatBody.scrollHeight;
-    
-    const CLOUDFLARE_WORKER_URL = "https://ai.adelabdulrahman026.workers.dev"; 
-    
-    try {
-        const response = await fetch(CLOUDFLARE_WORKER_URL, {
-            method: "POST", 
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: msg })
-        });
-        const data = await response.json();
-        document.getElementById(loadingId).remove();
-        chatBody.innerHTML += `<div class="ai-msg">${data.reply}</div>`;
-    } catch (error) {
-        document.getElementById(loadingId).remove();
-        chatBody.innerHTML += `<div class="ai-msg" style="color: #ef4444;">عذراً، فيه مشكلة في الاتصال حالياً. جرب لاحقاً. 🔌</div>`;
-    }
+    chatBody.innerHTML += `<div class="ai-msg">${text}</div>`;
     chatBody.scrollTop = chatBody.scrollHeight;
 }
-document.getElementById('maggieInput')?.addEventListener('keypress', function (e) { if (e.key === 'Enter') sendMaggieMessage(); });
+function appendUserMsg(text) {
+    const chatBody = document.getElementById('maggieChatBody');
+    chatBody.innerHTML += `<div class="user-msg">${text}</div>`;
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+window.resetMaggieChat = function() {
+    document.getElementById('maggieChatBody').innerHTML = `
+        <div class="ai-msg">أهلاً بيك في Primee Academy 👋 أنا ماجي، أقدر أساعدك إزاي النهاردة؟</div>
+        <div class="maggie-options" id="mainMaggieOptions">
+            <button onclick="handleMaggieOption('transfer')"><i class="fas fa-mobile-alt"></i> نقل الحساب لجهاز آخر</button>
+            <button onclick="handleMaggieOption('wallet_fail')"><i class="fas fa-wallet"></i> مشكلة في شحن المحفظة</button>
+            <button onclick="handleMaggieOption('lesson_prob')"><i class="fas fa-video"></i> مشكلة في تشغيل الحصة</button>
+            <button onclick="handleMaggieOption('live_chat')"><i class="fas fa-headset"></i> تواصل مباشر مع الدعم</button>
+        </div>
+    `;
+    document.getElementById('maggieInputArea').style.display = 'none';
+    if(liveChatInterval) clearInterval(liveChatInterval);
+}
+
+async function sendMaggieWhatsApp(phone, msg) {
+    if(!phone) return false;
+    try {
+        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
+        if (!docSnap.exists()) return false;
+        const keys = docSnap.data();
+        let formattedPhone = phone.toString().trim();
+        if (formattedPhone.startsWith('0')) formattedPhone = '2' + formattedPhone;
+        let chatId = formattedPhone + "@c.us";
+        let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
+        
+        await fetch(url, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` },
+            body: JSON.stringify({ chat_id: chatId, text: msg })
+        });
+        return true;
+    } catch (e) { return false; }
+}
+
+window.handleMaggieOption = async function(option) {
+    document.getElementById('mainMaggieOptions').style.display = 'none';
+    const inputArea = document.getElementById('maggieInputArea');
+
+    if (option === 'transfer') {
+        appendUserMsg("نقل الحساب لجهاز آخر");
+        appendAiMsg("⚠️ <b>تنبيه هام:</b> حفاظاً على سرية بياناتك، غير مسموح بفتح الحساب من أكثر من جهاز. <br><br>لك <b>3 محاولات فقط</b> لنقل الحساب لجهاز جديد. وإذا قمت بفتح الحساب من الجهاز القديم مرة أخرى لن تتمكن من فتحه.<br><br>هل أنت متأكد من رغبتك في نقل الحساب؟");
+        
+        inputArea.innerHTML = `
+            <button onclick="startTransferProcess()" style="background:#10b981; width:100%;">موافق، أريد النقل</button>
+            <button onclick="resetMaggieChat()" style="background:#ef4444; width:100%;">إلغاء</button>
+        `;
+        inputArea.style.display = 'flex';
+        inputArea.style.flexDirection = 'column';
+    } 
+    else if (option === 'wallet_fail') {
+        appendUserMsg("مشكلة في شحن المحفظة");
+        appendAiMsg(`
+            علشان تشحن من المحفظة (شخصية، سنترال، أو منفذ بيع)، لازم تتأكد 100% من <b>الرقم اللي اتحول منه المبلغ</b> وتكتبه صح في خانة الشحن، والرصيد هيتضاف فوراً.<br><br>
+            لو متأكد إنك عملت العملية صح ومفيش رصيد نزل، برجاء المحاولة مرة تانية خلال (نصف ساعة إلى ساعتين).<br><br>
+            لو المشكلة استمرت، تقدر تتواصل مع الدعم التقني للمدفوعات من هنا:
+            <div class="support-contact-links">
+                <a href="tel:01093139047" class="btn-call"><i class="fas fa-phone-alt"></i> اتصال</a>
+                <a href="https://wa.me/201093139047" class="btn-wa" target="_blank"><i class="fab fa-whatsapp"></i> واتساب</a>
+            </div>
+        `);
+        inputArea.innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6;">الرجوع للقائمة</button>`;
+        inputArea.style.display = 'flex';
+    }
+    else if (option === 'lesson_prob') {
+        appendUserMsg("مشكلة في تشغيل الحصة");
+        appendAiMsg("علشان نقدر نحل المشكلة بسرعة، اكتب المشكلة اللي بتواجهك بالتفصيل، ولما تدوس إرسال هيفتح معاك الواتساب المباشر للدعم الفني عشان يتابعوا معاك.");
+        
+        inputArea.innerHTML = `
+            <input type="text" id="lessonProblemInput" placeholder="اكتب المشكلة هنا...">
+            <button onclick="sendLessonProblem()"><i class="fas fa-paper-plane"></i></button>
+        `;
+        inputArea.style.display = 'flex';
+        inputArea.style.flexDirection = 'row';
+    }
+    else if (option === 'live_chat') {
+        appendUserMsg("تواصل مباشر مع الدعم");
+        
+        const currentHour = new Date().getHours();
+        if (currentHour >= 12 && currentHour < 21) {
+            appendAiMsg(`
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px;">
+                    ⚠️ <b>تنبيه:</b> جميع الرسائل والصور تختفي بعد إنهاء الجلسة. إذا أرسل لك الموظف رقماً أو صورة يرجى أخذ Screenshot والاحتفاظ بها.
+                </div>
+                جاري توجيهك لخدمة العملاء، في انتظار الرد... ⏳
+            `);
+            
+            inputArea.innerHTML = `
+                <label class="file-upload-btn" style="cursor:pointer; color:#fff; border-radius:10px;">
+                    <i class="fas fa-image"></i>
+                    <input type="file" id="chatImageInput" accept="image/*" style="display:none;" onchange="previewChatImage(event)">
+                </label>
+                <input type="text" id="liveChatInput" placeholder="اكتب رسالتك للموظف...">
+                <button onclick="sendLiveChatMessage()"><i class="fas fa-paper-plane"></i></button>
+            `;
+            inputArea.style.display = 'flex';
+            inputArea.style.flexDirection = 'row';
+
+            liveChatInterval = setInterval(() => {
+                appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جميع ممثلي خدمة العملاء مشغولون الآن في الرد على طلاب آخرين، برجاء الانتظار...");
+            }, 5000);
+
+        } else {
+            appendAiMsg("خدمة العملاء الآن خارج أوقات العمل 😴<br>برجاء المحاولة في وقت آخر ما بين الساعة 12 ظهراً إلى 9 مساءً.");
+            inputArea.innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6;">الرجوع للقائمة</button>`;
+            inputArea.style.display = 'flex';
+        }
+    }
+};
+
+window.startTransferProcess = async function() {
+    if(!loggedInPhone) return appendAiMsg("يرجى تسجيل الدخول أولاً.");
+
+    const inputArea = document.getElementById('maggieInputArea');
+    appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري فحص حسابك...");
+    
+    const q = query(collection(db, "users"), where("studentPhone", "==", loggedInPhone));
+    const snap = await getDocs(q);
+    
+    if(snap.empty) return appendAiMsg("حسابك غير موجود!");
+    const studentDoc = snap.docs[0];
+    const studentData = studentDoc.data();
+    
+    let attemptsLeft = studentData.transferAttempts !== undefined ? studentData.transferAttempts : 3;
+    
+    if(attemptsLeft <= 0) {
+        appendAiMsg("❌ عذراً، لقد استنفذت الـ 3 محاولات المتاحة لك. لا يمكن نقل الحساب لهذا الجهاز نهائياً. تواصل مع الإدارة.");
+        inputArea.innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6;">الرجوع للقائمة</button>`;
+        return;
+    }
+
+    appendAiMsg(`متبقي لك <b>${attemptsLeft} محاولات</b>.<br>لتأكيد النقل، سيتم إرسال كود OTP لرقمك المسجل (${loggedInPhone}).`);
+    
+    currentTransferOTP = Math.floor(1000 + Math.random() * 9000).toString();
+    
+    const waMsg = `تنبيه من Primee Academy ⚠️\n\nيوجد طلب لنقل حسابك إلى جهاز جديد.\nكود التأكيد الخاص بك هو: *${currentTransferOTP}*\n\nإذا لم تكن أنت من طلب ذلك، أرسل "أرفض نقل الحساب" ولا تشارك الكود مع أحد.`;
+    
+    await sendMaggieWhatsApp(loggedInPhone, waMsg);
+
+    appendAiMsg("تم إرسال الكود في رسالة واتساب. يرجى إدخال الكود هنا:");
+    inputArea.innerHTML = `
+        <input type="text" id="otpInput" placeholder="أدخل الكود (4 أرقام)...">
+        <button onclick="verifyTransferOTP('${studentDoc.id}', ${attemptsLeft}, '${studentData.deviceId || ''}')"><i class="fas fa-check"></i> تأكيد</button>
+    `;
+    inputArea.style.flexDirection = 'row';
+};
+
+window.verifyTransferOTP = async function(docId, attemptsLeft, oldDeviceId) {
+    const enteredOTP = document.getElementById('otpInput').value.trim();
+    if(!enteredOTP) return;
+    
+    appendUserMsg(enteredOTP);
+    
+    if(enteredOTP === currentTransferOTP) {
+        const newAttempts = attemptsLeft - 1;
+        
+        // 🚨 إنشاء ID للجهاز الجديد ووضع القديم في قائمة البلوك 🚨
+        let newDeviceId = localStorage.getItem('deviceId');
+        if (!newDeviceId) {
+            newDeviceId = 'DEV-' + Date.now() + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('deviceId', newDeviceId);
+        }
+
+        let updatePayload = {
+            transferAttempts: newAttempts,
+            deviceId: newDeviceId
+        };
+
+        // لو فيه جهاز قديم متسجل في الداتا بيز ومختلف عن الجديد، نحطه في البلوك
+        if (oldDeviceId && oldDeviceId !== newDeviceId) {
+            updatePayload.blockedDevices = arrayUnion(oldDeviceId);
+        }
+        
+        await updateDoc(doc(db, "users", docId), updatePayload);
+        
+        appendAiMsg(`✅ تم نقل الحساب وتأكيد الجهاز الجديد بنجاح!<br>متبقي لك <b>${newAttempts} محاولات</b> مستقبلاً.<br>تذكر: الجهاز القديم أصبح محظوراً من الدخول.`);
+        document.getElementById('maggieInputArea').innerHTML = `<button onclick="resetMaggieChat()" style="width:100%; background:#3b82f6;">إنهاء</button>`;
+    } else {
+        appendAiMsg("❌ الكود غير صحيح. يرجى المحاولة مرة أخرى.");
+    }
+};
+
+window.sendLessonProblem = function() {
+    const prob = document.getElementById('lessonProblemInput').value.trim();
+    if(!prob) return;
+    appendUserMsg(prob);
+    
+    const waLink = `https://wa.me/201042728734?text=${encodeURIComponent("عندي مشكلة في الحصة:\n" + prob)}`;
+    window.open(waLink, '_blank');
+    
+    appendAiMsg("تم توجيهك للواتساب للتواصل مع الدعم الفني، شكراً لك!");
+    document.getElementById('lessonProblemInput').value = '';
+};
+
+window.sendLiveChatMessage = function() {
+    const msg = document.getElementById('liveChatInput').value.trim();
+    if(msg) {
+        appendUserMsg(msg);
+        document.getElementById('liveChatInput').value = '';
+    }
+};
+
+window.previewChatImage = function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const chatBody = document.getElementById('maggieChatBody');
+            chatBody.innerHTML += `<div class="user-msg"><img src="${e.target.result}" class="chat-uploaded-img"></div>`;
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+        reader.readAsDataURL(file);
+    }
+};
 
 // ==========================================
 // 5. الفلاتر (المدرسين والباقات)
@@ -329,7 +534,7 @@ document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => 
 });
 
 // ==========================================
-// 7. الباقات (تم تحويلها لـ Swiper Slider شغال) 🚨
+// 7. الباقات 
 // ==========================================
 let allPackagesData = [];
 let packagesSwiperInstance = null;
@@ -359,7 +564,6 @@ function renderPackages(filterText) {
         if(pkg.features) pkg.features.forEach(f => fHtml += `<li><i class="fas fa-check-circle" style="color:#10b981;"></i> ${f.trim()}</li>`);
         const subLink = loggedInPhone ? 'student-dashboard.html' : 'login.html';
         
-        // 🚨 كل باقة محطوطة في swiper-slide 🚨
         html += `
         <div class="swiper-slide">
             <div class="premium-package-card">
@@ -378,12 +582,11 @@ function renderPackages(filterText) {
     });
     grid.innerHTML = html;
 
-    // 🚨 تفعيل سلايدر الباقات 🚨
     if (packagesSwiperInstance) packagesSwiperInstance.destroy(true, true);
     packagesSwiperInstance = new Swiper('.packages-slider', {
         slidesPerView: 'auto',
         spaceBetween: 20,
-        autoplay: { delay: 3500, disableOnInteraction: false }, // بيشتغل أوتوماتيك
+        autoplay: { delay: 3500, disableOnInteraction: false },
         pagination: { el: '.swiper-pagination', clickable: true }
     });
 }
@@ -391,7 +594,7 @@ fetchPackages();
 setupNestedFilters('packagesMainFilters', 'packagesSubFilters', renderPackages);
 
 // ==========================================
-// 8. الحصص وقراءة المشاهدات بشكل صحيح 🚨
+// 8. الحصص وقراءة المشاهدات
 // ==========================================
 async function fetchCoursesSliders() {
     try {
@@ -399,10 +602,7 @@ async function fetchCoursesSliders() {
         let allC = [];
         snap.forEach(d => allC.push({id: d.id, ...d.data()}));
         
-        // 🚨 أحدث الحصص: ترتيب وتحديد لـ 6 حصص
         let latest = [...allC].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 6);
-        
-        // 🚨 الأكثر مشاهدة: ترتيب بأعلى المشاهدات واختيار أعلى 3 فقط 🚨
         let top = [...allC].sort((a,b) => (parseInt(b.views) || 0) - (parseInt(a.views) || 0)).slice(0, 3);
 
         let studentMyCourses = [];
@@ -413,7 +613,6 @@ async function fetchCoursesSliders() {
         }
 
         const buildCard = (c) => {
-            // قراءة حقل maxViews من الداش بورد
             let viewsVal = c.maxViews; 
             let allowedV = (viewsVal == 0 || viewsVal === "0" || viewsVal === "" || viewsVal === undefined || viewsVal === null) ? "لا محدود" : viewsVal;
             
@@ -441,7 +640,7 @@ async function fetchCoursesSliders() {
             latGrid.innerHTML = latest.map(buildCard).join(''); 
             new Swiper('.latest-courses-slider', { 
                 slidesPerView: 'auto', spaceBetween: 20, 
-                autoplay: { delay: 3500, disableOnInteraction: false }, // سلايدر شغال أوتوماتيك
+                autoplay: { delay: 3500, disableOnInteraction: false },
                 pagination: { el: '.swiper-pagination', clickable: true }
             }); 
         }
@@ -451,7 +650,7 @@ async function fetchCoursesSliders() {
             topGrid.innerHTML = top.map(buildCard).join(''); 
             new Swiper('.top-courses-slider', { 
                 slidesPerView: 'auto', spaceBetween: 20,
-                autoplay: { delay: 4000, disableOnInteraction: false }, // سلايدر شغال أوتوماتيك
+                autoplay: { delay: 4000, disableOnInteraction: false },
                 pagination: { el: '.swiper-pagination', clickable: true }
             }); 
         }
@@ -460,7 +659,7 @@ async function fetchCoursesSliders() {
 fetchCoursesSliders();
 
 // ==========================================
-// 9. الشراء وإضافة الإشعارات الحقيقية
+// 9. الشراء وإضافة الإشعارات
 // ==========================================
 window.currentViewingTeacher = "";
 window.pendingCourseId = null;
