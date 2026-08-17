@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, updateDoc, doc, getDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 🚨 تم إضافة onSnapshot للمراقبة اللحظية 🚨
+import { getFirestore, collection, query, where, getDocs, updateDoc, doc, getDoc, arrayUnion, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -12,6 +13,15 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// ==========================================
+// 🚨 إنشاء ID ثابت للجهاز (عشان نظام البلوك يشتغل صح)
+// ==========================================
+let currentDeviceId = localStorage.getItem('deviceId');
+if (!currentDeviceId) {
+    currentDeviceId = 'DEV-' + Date.now() + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('deviceId', currentDeviceId);
+}
 
 // ==========================================
 // 1. إغلاق القوائم المنسدلة عند الضغط في أي مكان
@@ -57,7 +67,20 @@ async function fetchStudentNavData(phone) {
         const userQ = query(collection(db, "users"), where("studentPhone", "==", phone));
         const userSnap = await getDocs(userQ);
         if (!userSnap.empty) {
-            const data = userSnap.docs[0].data();
+            const studentDoc = userSnap.docs[0];
+            const data = studentDoc.data();
+            
+            // 🚨 المراقبة اللحظية: لو الجهاز ده اتبلك، هيطرده فوراً 🚨
+            onSnapshot(doc(db, "users", studentDoc.id), (docSnap) => {
+                if (docSnap.exists()) {
+                    const latestData = docSnap.data();
+                    if (latestData.isBlocked === true || (latestData.blockedDevices && latestData.blockedDevices.includes(currentDeviceId))) {
+                        localStorage.clear();
+                        window.location.replace("login.html");
+                    }
+                }
+            });
+
             const firstName = (data.fullName || "طالب").split(" ")[0];
             const balance = data.walletBalance || 0;
             const avatarHtml = data.profileImage ? `<img src="${data.profileImage}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : `<i class="fas fa-user-graduate"></i>`;
@@ -754,51 +777,61 @@ function attachMaggieOptions() {
         };
     });
 
-    document.getElementById('btnOptLive')?.addEventListener('click', () => {
+    document.getElementById('btnOptLive')?.addEventListener('click', async () => {
         document.getElementById('mainMaggieOptions').style.display = 'none';
         appendUserMsg("تواصل مباشر مع الدعم");
         
-        const currentHour = new Date().getHours();
         const inputArea = document.getElementById('maggieInputArea');
+        appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري التحقق من حالة خدمة العملاء...");
 
-        if (currentHour >= 12 && currentHour < 21) {
-            appendAiMsg(`
-                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px;">
-                    ⚠️ <b>تنبيه:</b> جميع الرسائل تختفي بعد الجلسة. احتفظ بصورة (Screenshot) لأي معلومات هامة.
-                </div>
-                جاري توجيهك لخدمة العملاء... ⏳
-            `);
-            
-            inputArea.innerHTML = `
-                <label class="file-upload-btn" style="cursor:pointer; color:#fff; border-radius:10px; background:#334155; padding:10px;">
-                    <i class="fas fa-image"></i>
-                    <input type="file" id="chatImageInput" accept="image/*" style="display:none;">
-                </label>
-                <input type="text" id="liveChatInput" placeholder="اكتب رسالتك للموظف..." style="flex:1;">
-                <button id="btnSendLiveChat" style="background:#10b981; color:#fff; border:none; padding:10px 15px; border-radius:10px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
-            `;
-            inputArea.style.display = 'flex';
+        try {
+            const supportSnap = await getDoc(doc(db, "settings", "support"));
+            const isLive = supportSnap.exists() ? supportSnap.data().isLive : false;
 
-            document.getElementById('chatImageInput').onchange = (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) { appendUserMsg(`<img src="${e.target.result}" class="chat-uploaded-img">`); }
-                    reader.readAsDataURL(file);
-                }
-            };
+            if (isLive) {
+                appendAiMsg(`
+                    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px;">
+                        ⚠️ <b>تنبيه:</b> جميع الرسائل تختفي بعد الجلسة. احتفظ بصورة (Screenshot) لأي معلومات هامة.
+                    </div>
+                    جاري توجيهك لخدمة العملاء... ⏳
+                `);
+                
+                inputArea.innerHTML = `
+                    <label class="file-upload-btn" style="cursor:pointer; color:#fff; border-radius:10px; background:#334155; padding:10px;">
+                        <i class="fas fa-image"></i>
+                        <input type="file" id="chatImageInput" accept="image/*" style="display:none;">
+                    </label>
+                    <input type="text" id="liveChatInput" placeholder="اكتب رسالتك للموظف..." style="flex:1;">
+                    <button id="btnSendLiveChat" style="background:#10b981; color:#fff; border:none; padding:10px 15px; border-radius:10px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+                `;
+                inputArea.style.display = 'flex';
 
-            document.getElementById('btnSendLiveChat').onclick = () => {
-                const msg = document.getElementById('liveChatInput').value.trim();
-                if(msg) { appendUserMsg(msg); document.getElementById('liveChatInput').value = ''; }
-            };
+                document.getElementById('chatImageInput').onchange = (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) { appendUserMsg(`<img src="${e.target.result}" class="chat-uploaded-img">`); }
+                        reader.readAsDataURL(file);
+                    }
+                };
 
-            liveChatInterval = setInterval(() => {
-                appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جميع ممثلي خدمة العملاء مشغولون الآن، برجاء الانتظار...");
-            }, 5000);
+                document.getElementById('btnSendLiveChat').onclick = () => {
+                    const msg = document.getElementById('liveChatInput').value.trim();
+                    if(msg) { appendUserMsg(msg); document.getElementById('liveChatInput').value = ''; }
+                };
 
-        } else {
-            appendAiMsg("خدمة العملاء الآن خارج أوقات العمل 😴<br>برجاء المحاولة في وقت آخر ما بين 12 ظهراً إلى 9 مساءً.");
+                liveChatInterval = setInterval(() => {
+                    appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جميع ممثلي خدمة العملاء مشغولون الآن، برجاء الانتظار...");
+                }, 5000);
+
+            } else {
+                appendAiMsg("خدمة العملاء الآن خارج أوقات العمل 😴<br>برجاء المحاولة في وقت آخر ما بين 12 ظهراً إلى 9 مساءً.");
+                inputArea.innerHTML = `<button id="btnBackLive" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
+                inputArea.style.display = 'block';
+                document.getElementById('btnBackLive').onclick = resetMaggieChat;
+            }
+        } catch(e) {
+            appendAiMsg("حدث خطأ في الاتصال، يرجى المحاولة لاحقاً.");
             inputArea.innerHTML = `<button id="btnBackLive" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
             inputArea.style.display = 'block';
             document.getElementById('btnBackLive').onclick = resetMaggieChat;
