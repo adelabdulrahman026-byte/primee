@@ -210,26 +210,26 @@
         </div>
     </div>
 
-   <!-- زرار ماجي العائم -->
-    <div class="floating-ai-btn" onclick="openMaggieChat()">
+  <!-- زرار ماجي العائم (تم إزالة onclick ووضع ID للربط الآمن) -->
+    <div class="floating-ai-btn" id="openMaggieBtn">
         <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Maggie AI"> تواصل مع ماجي
     </div>
 
     <!-- نافذة شات ماجي الذكية -->
     <div class="ai-chat-modal" id="maggieChatModal">
         <div class="ai-chat-header">
-            <h3><img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Maggie"> المساعدة ماجي (AI)</h3>
-            <button class="ai-close-btn" onclick="closeMaggieChat()"><i class="fas fa-times"></i></button>
+            <h3><img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Maggie"> المساعدة ماجي</h3>
+            <button class="ai-close-btn" id="closeMaggieBtn"><i class="fas fa-times"></i></button>
         </div>
         
         <div class="ai-chat-body" id="maggieChatBody">
             <div class="ai-msg">أهلاً بيك في Primee Academy 👋 أنا ماجي، أقدر أساعدك إزاي النهاردة؟ اختار من القائمة:</div>
             
             <div class="maggie-options" id="mainMaggieOptions">
-                <button onclick="handleMaggieOption('transfer')"><i class="fas fa-mobile-alt"></i> نقل الحساب لجهاز آخر</button>
-                <button onclick="handleMaggieOption('wallet_fail')"><i class="fas fa-wallet"></i> مشكلة في شحن المحفظة</button>
-                <button onclick="handleMaggieOption('lesson_prob')"><i class="fas fa-video"></i> مشكلة في تشغيل الحصة</button>
-                <button onclick="handleMaggieOption('live_chat')"><i class="fas fa-headset"></i> تواصل مباشر مع الدعم</button>
+                <button id="optTransfer"><i class="fas fa-mobile-alt"></i> نقل الحساب لجهاز آخر</button>
+                <button id="optWallet"><i class="fas fa-wallet"></i> مشكلة في شحن المحفظة</button>
+                <button id="optLesson"><i class="fas fa-video"></i> مشكلة في تشغيل الحصة</button>
+                <button id="optLive"><i class="fas fa-headset"></i> تواصل مباشر مع الدعم</button>
             </div>
         </div>
 
@@ -237,13 +237,32 @@
         <div class="ai-chat-input" id="maggieInputArea" style="display: none;"></div>
     </div>
 
-    <!-- التنسيقات (ممكن تحطها في style.css) -->
     <style>
-        .floating-ai-btn { position: fixed; bottom: 20px; left: 20px; background: #3b82f6; color: white; padding: 12px 20px; border-radius: 30px; cursor: pointer; display: flex; align-items: center; gap: 10px; z-index: 9999; box-shadow: 0 5px 15px rgba(0,0,0,0.2); font-weight: 800; font-family: 'Cairo'; transition: 0.3s;}
-        .floating-ai-btn:hover { transform: scale(1.05); }
-        .floating-ai-btn img { width: 25px; height: 25px; }
+        /* إصلاح شكل الزرار العائم بشكل جذري */
+        .floating-ai-btn { 
+            position: fixed !important; 
+            bottom: 20px !important; 
+            right: 20px !important; /* أو left لو عايزها عالشمال */
+            width: fit-content !important; /* دي اللي بتمنع الزرار إنه يمط بعرض الشاشة */
+            max-width: 200px !important;
+            background: linear-gradient(45deg, #3b82f6, #2563eb) !important; 
+            color: white !important; 
+            padding: 10px 20px !important; 
+            border-radius: 30px !important; 
+            cursor: pointer !important; 
+            display: flex !important; 
+            align-items: center !important; 
+            gap: 10px !important; 
+            z-index: 99999 !important; 
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4) !important; 
+            font-weight: 800 !important; 
+            font-family: 'Cairo' !important; 
+            transition: 0.3s !important;
+        }
+        .floating-ai-btn:hover { transform: scale(1.05) !important; }
+        .floating-ai-btn img { width: 25px !important; height: 25px !important; }
         
-        .ai-chat-modal { position: fixed; bottom: 80px; left: 20px; width: 360px; max-width: 90vw; background: #1e293b; border-radius: 20px; border: 1px solid #334155; display: flex; flex-direction: column; overflow: hidden; z-index: 10000; opacity: 0; visibility: hidden; transform: translateY(20px); transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .ai-chat-modal { position: fixed; bottom: 80px; right: 20px; width: 360px; max-width: 90vw; background: #1e293b; border-radius: 20px; border: 1px solid #334155; display: flex; flex-direction: column; overflow: hidden; z-index: 100000; opacity: 0; visibility: hidden; transform: translateY(20px); transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .ai-chat-modal.active { opacity: 1; visibility: visible; transform: translateY(0); }
         
         .ai-chat-header { background: #0f172a; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
@@ -265,15 +284,12 @@
         .ai-chat-input { background: #0f172a; padding: 15px; border-top: 1px solid #334155; display: flex; gap: 10px; align-items: center;}
         .ai-chat-input input { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #fff; font-family: 'Cairo'; font-weight: 600; outline: none; }
         .ai-chat-input button { background: #10b981; color: #fff; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 900; font-family: 'Cairo'; transition: 0.3s;}
-        .ai-chat-input button:hover { background: #059669; }
         
-        .file-upload-btn { background: #334155; padding: 12px 15px; border-radius: 10px; cursor: pointer; color: #f8fafc; transition: 0.3s; display: flex; align-items: center; justify-content: center;}
-        .file-upload-btn:hover { background: #475569; }
+        .file-upload-btn { background: #334155; padding: 12px 15px; border-radius: 10px; cursor: pointer; color: #f8fafc; display: flex; align-items: center; justify-content: center;}
         .chat-uploaded-img { max-width: 200px; border-radius: 10px; margin-top: 5px; border: 2px solid #3b82f6; }
         
         .support-contact-links { display: flex; gap: 10px; margin-top: 15px; }
-        .support-contact-links a { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-weight: 800; text-decoration: none; color: #fff; font-size: 14px; transition: 0.3s;}
-        .support-contact-links a:hover { transform: translateY(-3px); }
+        .support-contact-links a { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-weight: 800; text-decoration: none; color: #fff; font-size: 14px;}
         .btn-call { background: #3b82f6; }
         .btn-wa { background: #10b981; }
     </style>
