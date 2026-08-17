@@ -13,7 +13,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🚨 1. منع F12 🚨
+// 🚨 1. منع F12 والرايت كليك 🚨
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('keydown', e => {
     if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) || (e.ctrlKey && e.key === 'U')) {
@@ -21,6 +21,7 @@ document.addEventListener('keydown', e => {
     }
 });
 
+// حماية الصفحة وتطبيق الصلاحيات
 if (localStorage.getItem('adminLoggedIn') !== 'true') window.location.replace('admin-login.html');
 
 document.getElementById('adminLogoutBtn')?.addEventListener('click', () => { 
@@ -72,7 +73,7 @@ window.adminConfirm = function(msg) {
     });
 }
 
-// 🚨 تفعيل زرار الإشعارات 🚨
+// 🚨 تفعيل الإشعارات بالصوت 🚨
 document.getElementById('enableSoundBtn')?.addEventListener('click', () => {
     if (Notification.permission !== "granted") {
         Notification.requestPermission().then(perm => {
@@ -136,7 +137,7 @@ async function uploadToVimeo(file, progressCallback) {
 }
 
 // ==========================================
-// 🚨 شات الدعم الفني (Live Chat) 🚨
+// 🚨 شات الدعم الفني المباشر (بدون واتساب) 🚨
 // ==========================================
 let isLiveChatActive = false;
 let chatUnsubscribe = null;
@@ -213,7 +214,7 @@ window.openStudentChat = function(chatId, sName, sPhone) {
         const data = docSnap.data();
         const msgArea = document.getElementById('liveChatMessagesArea');
         
-        // 🚨 صوت رسالة جديدة في الشات
+        // 🚨 تشغيل الصوت لو رسالة الطالب جديدة
         const prevMessagesCount = msgArea.children.length;
         if(data.messages && data.messages.length > prevMessagesCount) {
             const lastMsg = data.messages[data.messages.length - 1];
@@ -256,7 +257,7 @@ window.endStudentChat = async function(chatId) {
 };
 
 // ==========================================
-// 1. مراقبة الطلاب والأرباح (صوت الطالب الجديد)
+// 1. مراقبة الطلاب والأرباح (صوت الطالب الجديد 🚨)
 // ==========================================
 let allStudentsData = [];
 let allCoursesData = []; 
@@ -300,7 +301,6 @@ try {
         allStudentsData = [];
         snapshot.forEach(doc => allStudentsData.push({id: doc.id, ...doc.data()}));
         
-        // 🚨 صوت الإشعارات لطالب جديد
         if (!initialLoad && allStudentsData.length > previousStudentCount) {
             const audio = document.getElementById('notificationSound');
             if(audio) audio.play().catch(e=>{});
@@ -485,7 +485,8 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
         if(editingId) {
             const existingDoc = await getDoc(doc(db, "courses", editingId));
             let currentVideos = existingDoc.data().videos || [];
-            courseData.videos = [...currentVideos, ...newVideosArray]; // دمج الفيديوهات
+            // دمج الفيديوهات القديمة مع الجديدة لو فيه رفع
+            courseData.videos = newVideosArray.length > 0 ? [...currentVideos, ...newVideosArray] : currentVideos; 
             await updateDoc(doc(db, "courses", editingId), courseData);
             document.getElementById('btnCancelEdit').click();
         } else {
@@ -566,7 +567,6 @@ try {
     });
 } catch(e) {}
 
-// 🚨 تصليح تعديل الامتحان واختفاء البيانات 🚨
 window.editCourse = async function(id) {
     const docSnap = await getDoc(doc(db, "courses", id));
     if(docSnap.exists()) {
@@ -592,7 +592,7 @@ document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
 });
 
 // ==========================================
-// 4. إدارة الامتحانات 🚨
+// 4. إدارة الامتحانات 🚨 (تعديل الـ PDF المخفي لطباعة صحيحة)
 // ==========================================
 const examsRef = collection(db, "exams");
 let questionCount = 0;
@@ -630,7 +630,7 @@ window.deleteExam = async function(id) {
     }
 };
 
-// 🚨 تصدير نتيجة الامتحان PDF (يظهر ويختفي للطباعة النظيفة) 🚨
+// 🚨 تصدير نتيجة الامتحان PDF 🚨
 window.exportExamPDF = async function(examId, examTitle) {
     adminAlert("جاري التحضير", "يتم تجميع النتيجة...", "success");
     try {
@@ -661,13 +661,13 @@ window.exportExamPDF = async function(examId, examTitle) {
 
         const element = document.getElementById('examPdfReportContent');
         
-        // السر هنا عشان الـ PDF يطبع صح: إظهاره ثانية واحدة والطباعة 
-        element.style.top = "0";
+        // 🚨 السر هنا عشان الـ PDF يطبع صح وهو في الكلاس الجديد المخفي بره الشاشة
+        element.style.left = "0"; 
         html2pdf().set({
             margin: 10, filename: `نتيجة_امتحان_${examTitle}.pdf`, image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         }).from(element).save().then(() => {
-            element.style.top = "-9999px"; // إرجاعه مخفي تاني
+            element.style.left = "-9999px"; 
         });
 
     } catch(e) { adminAlert("خطأ", "فشل تحميل التقرير", "error"); }
@@ -701,7 +701,6 @@ function renderExamsTable() {
     });
 }
 
-// 🚨 تصليح ألوان الأسئلة المقالية وتعديل الامتحان 🚨
 document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
     questionCount++;
     const container = document.getElementById('questionsContainer');
@@ -762,7 +761,7 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
             }
         }
         
-        // 🚨 تصليح الحفظ عشان الـ PDF ميتمسحش في التعديل 🚨
+        // لو مفيش ملف جديد ارفع، سيب القديم زي ما هو (تصليح التعديل)
         const data = { title: document.getElementById('examTitle').value, questions: qs };
         if(pdfUrl) data.pdfUrl = pdfUrl; 
 
@@ -808,7 +807,7 @@ window.editExam = async function(id) {
 document.getElementById('btnCancelExamEdit')?.addEventListener('click', () => { document.getElementById('editingExamId').value=""; document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; document.getElementById('btnCancelExamEdit').style.display='none'; });
 
 // ==========================================
-// 5. سجل المشاهدات والتصحيح 🚨 (رقم ولي الأمر وتصحيح المقالي)
+// 6. سجل المشاهدات والتصحيح 🚨 (إضافة رقم الوالد وتصحيح المقالي)
 // ==========================================
 window.deleteSubmission = async function(id) {
     if(await adminConfirm("تأكيد مسح النتيجة ليتمكن الطالب من الإعادة؟")) {
@@ -834,6 +833,7 @@ function renderGradingTable() {
         let stText = sub.status === 'passed' ? '<span style="color:#10b981;">ناجح (شاهد)</span>' : (sub.status === 'failed' ? '<span style="color:#ef4444;">راسب (مغلق)</span>' : '<span style="color:#f59e0b;">مراجعة مقالي</span>');
         let tText = sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('ar-EG') : '-';
         let scoreText = sub.hasEssay && sub.status === 'pending' ? 'مراجعة' : `${sub.score} / ${sub.fullMark || sub.totalQuestions || 10}`;
+        
         let aiBadge = sub.gradedByAi ? '<br><small style="color:#d946ef; font-weight:800;"><i class="fas fa-robot"></i> مصحح بالذكاء الاصطناعي</small>' : '';
 
         table.innerHTML += `<tr>
@@ -921,7 +921,7 @@ window.editStudentScore = async function(id, cur, total) {
 }
 
 // ==========================================
-// 🚨 المحفظة (العمليات المالية - حماية التواريخ المخفية) 🚨
+// 🚨 المحفظة (إصلاح ترتيب الجدول واختفاؤه) 🚨
 // ==========================================
 let allTransactions = [];
 onSnapshot(query(collection(db, "transactions")), (snap) => {
@@ -930,7 +930,6 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
     allTransactions = [];
     snap.forEach(d => allTransactions.push({id: d.id, ...d.data()}));
     
-    // حل مشكلة اختفاء الجدول لو التاريخ NaN
     let filteredTrans = [...allTransactions].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     
     if (ROLE === 'assistant' && AST_TEACHER) {
@@ -1013,13 +1012,13 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     document.getElementById('pdfTeacherCoursesTableBody').innerHTML = cHtml || `<tr><td colspan="4" style="text-align:center;">لا توجد مبيعات</td></tr>`;
 
     const element = document.getElementById('pdfReportContent');
-    // إظهاره عشان يطبع بس
-    element.style.top = "0";
+    // إظهاره عشان يطبع بس وهو مخفي بالـ CSS
+    element.style.left = "0";
     html2pdf().set({
         margin: 10, filename: `تقرير_${teacher}.pdf`, image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(element).save().then(() => {
-        element.style.top = "-9999px";
+        element.style.left = "-9999px";
     });
 });
 
@@ -1153,7 +1152,7 @@ try {
     });
 } catch(e) {}
 
-// 8. إدارة الباقات (مع إضافة اسم المقطع وتنزيل الإكسيل)
+// 8. إدارة الباقات 🚨 (إضافة اسم المقطع وتنزيل الإكسيل)
 const packagesRef = collection(db, "packages");
 
 window.deletePackage = async function(id) {
@@ -1228,7 +1227,8 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
         if (editingId) {
             const existingDoc = await getDoc(doc(db, "packages", editingId));
             let currentVideos = existingDoc.data().videos || [];
-            pkgData.videos = [...currentVideos, ...newVideosArray];
+            // دمج القديم والجديد
+            pkgData.videos = newVideosArray.length > 0 ? [...currentVideos, ...newVideosArray] : currentVideos; 
             await updateDoc(doc(db, "packages", editingId), pkgData);
             document.getElementById('btnCancelPkgEdit').click();
             adminAlert("تم", "تم التحديث بنجاح", "success");
