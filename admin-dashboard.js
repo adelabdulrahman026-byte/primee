@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import * as tus from "https://cdn.skypack.dev/tus-js-client"; // رجعت المكتبة اللي كانت شغالة معاك!
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -12,14 +13,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
-// 🚨 1. منع F12 والرايت كليك 🚨
-document.addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('keydown', e => {
-    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) || (e.ctrlKey && e.key === 'U')) {
-        e.preventDefault();
-    }
-});
 
 // حماية الصفحة وتطبيق الصلاحيات
 if (localStorage.getItem('adminLoggedIn') !== 'true') window.location.replace('admin-login.html');
@@ -35,7 +28,6 @@ const AST_TEACHER = localStorage.getItem('astTeacher');
 function applyPermissions() {
     if (ROLE === 'assistant') {
         const perms = JSON.parse(localStorage.getItem('astPerms') || "[]");
-
         if(!perms.includes('students')) document.getElementById('navStudents').style.display = 'none';
         if(!perms.includes('courses')) document.getElementById('navCourses').style.display = 'none';
         if(!perms.includes('exams')) document.getElementById('navExams').style.display = 'none';
@@ -53,6 +45,7 @@ function applyPermissions() {
 }
 applyPermissions();
 
+// التنبيهات
 function adminAlert(title, msg, type = 'success') {
     const modal = document.getElementById('customAdminAlert');
     if(!modal) return;
@@ -73,7 +66,7 @@ window.adminConfirm = function(msg) {
     });
 }
 
-// 🚨 تفعيل الإشعارات بالصوت 🚨
+// 🚨 تفعيل زرار الإشعارات عشان الصوت 🚨
 document.getElementById('enableSoundBtn')?.addEventListener('click', () => {
     if (Notification.permission !== "granted") {
         Notification.requestPermission().then(perm => {
@@ -84,22 +77,7 @@ document.getElementById('enableSoundBtn')?.addEventListener('click', () => {
     }
 });
 
-async function sendWhatsAppMessage(phone, msg) {
-    if (!phone) return false;
-    try {
-        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
-        if (!docSnap.exists()) return false;
-        const keys = docSnap.data();
-        let formattedPhone = phone.toString().trim();
-        if (formattedPhone.startsWith('0')) formattedPhone = '2' + formattedPhone;
-        let chatId = formattedPhone + "@c.us";
-        let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
-        fetch(url, { method: "POST", headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` }, body: JSON.stringify({ chat_id: chatId, text: msg }) }).catch(e=>console.log(e));
-        return true;
-    } catch (e) { return false; }
-}
-window.sendWhatsAppToParent = sendWhatsAppMessage;
-
+// دالة الرفع السريعة للصور (R2)
 async function uploadImageToR2(file) {
     const formData = new FormData(); formData.append("image", file);
     try {
@@ -122,7 +100,7 @@ async function uploadToVimeo(file, progressCallback) {
     const video = await createResponse.json();
 
     return new Promise((resolve, reject) => {
-        const upload = new window.tus.Upload(file, {
+        const upload = new tus.Upload(file, {
             uploadUrl: video.upload.upload_link, retryDelays: [0,3000,5000,10000], headers: { Authorization: `Bearer ${keys.vimeo_token}` },
             metadata: { filename: file.name, filetype: file.type },
             onError(error){ reject(error); },
@@ -137,7 +115,7 @@ async function uploadToVimeo(file, progressCallback) {
 }
 
 // ==========================================
-// 🚨 شات الدعم الفني المباشر (بدون واتساب) 🚨
+// 🚨 شات الدعم الفني (بدون واتساب) 🚨
 // ==========================================
 let isLiveChatActive = false;
 let chatUnsubscribe = null;
@@ -214,7 +192,6 @@ window.openStudentChat = function(chatId, sName, sPhone) {
         const data = docSnap.data();
         const msgArea = document.getElementById('liveChatMessagesArea');
         
-        // 🚨 تشغيل الصوت لو رسالة الطالب جديدة
         const prevMessagesCount = msgArea.children.length;
         if(data.messages && data.messages.length > prevMessagesCount) {
             const lastMsg = data.messages[data.messages.length - 1];
@@ -242,9 +219,11 @@ window.sendAdminReply = async function(chatId) {
     if(!msg) return;
     inp.value = '';
     try {
-        await updateDoc(doc(db, "live_chats", chatId), {
-            messages: arrayUnion({ sender: 'admin', text: msg, time: new Date().toISOString() })
-        });
+        const docRef = doc(db, "live_chats", chatId);
+        const docSnap = await getDoc(docRef);
+        let currentMessages = docSnap.exists() ? docSnap.data().messages || [] : [];
+        currentMessages.push({ sender: 'admin', text: msg, time: new Date().toISOString() });
+        await updateDoc(docRef, { messages: currentMessages });
     } catch(e) {}
 };
 
@@ -301,6 +280,7 @@ try {
         allStudentsData = [];
         snapshot.forEach(doc => allStudentsData.push({id: doc.id, ...doc.data()}));
         
+        // 🚨 صوت الإشعارات لطالب جديد
         if (!initialLoad && allStudentsData.length > previousStudentCount) {
             const audio = document.getElementById('notificationSound');
             if(audio) audio.play().catch(e=>{});
@@ -422,7 +402,7 @@ document.getElementById('btnToggleBlock')?.addEventListener('click', async () =>
 });
 
 // ==========================================
-// 3. إدارة الكورسات 🚨 (إصلاح الإكسيل والفيديوهات)
+// 3. إدارة الكورسات 🚨 (دالة الرفع زي ما هي + اسم المقطع + إكسيل نظيف)
 // ==========================================
 const coursesRef = collection(db, "courses");
 
@@ -485,7 +465,7 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
         if(editingId) {
             const existingDoc = await getDoc(doc(db, "courses", editingId));
             let currentVideos = existingDoc.data().videos || [];
-            // دمج الفيديوهات القديمة مع الجديدة لو فيه رفع
+            // لو رفعنا فيديو جديد بنضيفه، لو مرفوعناش بنسيب القديم
             courseData.videos = newVideosArray.length > 0 ? [...currentVideos, ...newVideosArray] : currentVideos; 
             await updateDoc(doc(db, "courses", editingId), courseData);
             document.getElementById('btnCancelEdit').click();
@@ -506,7 +486,7 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
     }
 });
 
-// 🚨 تصدير إكسيل الكورسات (بعلامات تنصيص لمنع الخلل) 🚨
+// 🚨 تصدير الإكسيل بعلامات تنصيص عشان ميطلعش قرف 🚨
 window.exportCourseExcel = async function(courseId, courseTitle) {
     adminAlert("جاري التحضير", "يتم تجميع البيانات...", "success");
     try {
@@ -592,7 +572,7 @@ document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
 });
 
 // ==========================================
-// 4. إدارة الامتحانات 🚨 (تعديل الـ PDF المخفي لطباعة صحيحة)
+// 4. إدارة الامتحانات 🚨 (تعديل الـ PDF المخفي لطباعة صحيحة وخلفية بيضاء للمقالي)
 // ==========================================
 const examsRef = collection(db, "exams");
 let questionCount = 0;
@@ -661,8 +641,8 @@ window.exportExamPDF = async function(examId, examTitle) {
 
         const element = document.getElementById('examPdfReportContent');
         
-        // 🚨 السر هنا عشان الـ PDF يطبع صح وهو في الكلاس الجديد المخفي بره الشاشة
-        element.style.left = "0"; 
+        // السر هنا عشان الـ PDF يطبع صح وهو في الكلاس الجديد المخفي
+        element.style.left = "0";
         html2pdf().set({
             margin: 10, filename: `نتيجة_امتحان_${examTitle}.pdf`, image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -701,6 +681,7 @@ function renderExamsTable() {
     });
 }
 
+// ألوان مريحة في الأسئلة بدل الأبيض
 document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
     questionCount++;
     const container = document.getElementById('questionsContainer');
@@ -712,21 +693,21 @@ document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                 <select class="q-type form-group-admin" id="qType_${questionCount}" onchange="toggleQType(${questionCount})"><option value="mcq">اختياري</option><option value="essay">مقالي</option></select>
-                <input type="file" class="q-image" accept="image/*" style="padding: 5px; background: #1e293b; color: #fff;">
+                <input type="file" class="q-image" accept="image/*" style="padding: 5px; background:var(--input-bg);">
             </div>
-            <textarea class="q-text" placeholder="اكتب السؤال..." style="width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 15px; background: #1e293b; color: #ffffff; border: 1px solid #334155;" required></textarea>
+            <textarea class="q-text" placeholder="اكتب السؤال..." style="width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 15px; background:#f8fafc; color:#0f172a; border:1px solid #334155; font-weight:800;" required></textarea>
             
             <div class="q-mcq-container" id="mcqContainer_${questionCount}">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" class="q-opt1" placeholder="اختيار 1" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;"><input type="text" class="q-opt2" placeholder="اختيار 2" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;">
-                    <input type="text" class="q-opt3" placeholder="اختيار 3" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;"><input type="text" class="q-opt4" placeholder="اختيار 4" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;">
+                    <input type="text" class="q-opt1" placeholder="اختيار 1" style="padding:10px; border-radius:8px; background:#f8fafc; color:#0f172a;"><input type="text" class="q-opt2" placeholder="اختيار 2" style="padding:10px; border-radius:8px; background:#f8fafc; color:#0f172a;">
+                    <input type="text" class="q-opt3" placeholder="اختيار 3" style="padding:10px; border-radius:8px; background:#f8fafc; color:#0f172a;"><input type="text" class="q-opt4" placeholder="اختيار 4" style="padding:10px; border-radius:8px; background:#f8fafc; color:#0f172a;">
                 </div>
-                <select class="q-correct" style="width: 100%; padding: 10px; border-radius: 8px; background: #1e293b; color: #fff; border: 1px solid #334155;"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+                <select class="q-correct" style="width: 100%; padding: 10px; border-radius: 8px;"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
             </div>
 
             <div id="essayAiContainer_${questionCount}" style="display:none; padding:10px; background: rgba(16, 185, 129, 0.05); border-radius: 8px;">
                 <label style="color:#10b981; font-weight:800; cursor:pointer;"><input type="checkbox" class="q-ai-grade" id="qAiGrade_${questionCount}" onchange="window.toggleAiModelAnswer(${questionCount})"> تفعيل التصحيح الآلي (AI) لهذا السؤال</label>
-                <textarea class="q-model-answer" id="qModelAnswer_${questionCount}" placeholder="اكتب الإجابة النموذجية..." style="width:100%; padding:10px; border-radius:8px; margin-top:10px; background: #1e293b; color: #ffffff; border: 1px solid #334155; display:none;"></textarea>
+                <textarea class="q-model-answer" id="qModelAnswer_${questionCount}" placeholder="اكتب الإجابة النموذجية..." style="width:100%; padding:10px; border-radius:8px; margin-top:10px; background:#f8fafc; color:#0f172a; border:1px solid #334155; display:none; font-weight:800;"></textarea>
             </div>
         </div>
     `);
@@ -761,7 +742,6 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
             }
         }
         
-        // لو مفيش ملف جديد ارفع، سيب القديم زي ما هو (تصليح التعديل)
         const data = { title: document.getElementById('examTitle').value, questions: qs };
         if(pdfUrl) data.pdfUrl = pdfUrl; 
 
@@ -807,7 +787,7 @@ window.editExam = async function(id) {
 document.getElementById('btnCancelExamEdit')?.addEventListener('click', () => { document.getElementById('editingExamId').value=""; document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; document.getElementById('btnCancelExamEdit').style.display='none'; });
 
 // ==========================================
-// 6. سجل المشاهدات والتصحيح 🚨 (إضافة رقم الوالد وتصحيح المقالي)
+// 5. سجل المشاهدات والتصحيح 🚨 (رقم ولي الأمر وتصحيح المقالي)
 // ==========================================
 window.deleteSubmission = async function(id) {
     if(await adminConfirm("تأكيد مسح النتيجة ليتمكن الطالب من الإعادة؟")) {
@@ -891,7 +871,7 @@ document.getElementById('btnSaveEssayGrade')?.addEventListener('click', async ()
         sendWhatsAppMessage(sub.studentPhone, waMsgStudent);
         if(sub.parentPhone) sendWhatsAppMessage(sub.parentPhone, waMsgParent);
         
-        adminAlert("تم", "تم رصد الدرجة وإرسال الواتساب للطالب وولي الأمر", "success");
+        adminAlert("تم", "تم رصد الدرجة وإرسال الواتس", "success");
     } catch(e) {}
 });
 
@@ -921,7 +901,7 @@ window.editStudentScore = async function(id, cur, total) {
 }
 
 // ==========================================
-// 🚨 المحفظة (إصلاح ترتيب الجدول واختفاؤه) 🚨
+// 🚨 المحفظة (العمليات المالية - حماية التواريخ المخفية) 🚨
 // ==========================================
 let allTransactions = [];
 onSnapshot(query(collection(db, "transactions")), (snap) => {
@@ -930,7 +910,8 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
     allTransactions = [];
     snap.forEach(d => allTransactions.push({id: d.id, ...d.data()}));
     
-    let filteredTrans = [...allTransactions].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    // حل مشكلة NaN بسبب التواريخ الفارغة اللي كانت بتخفي الجدول
+    let filteredTrans = [...allTransactions].sort((a,b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     
     if (ROLE === 'assistant' && AST_TEACHER) {
         filteredTrans = filteredTrans.filter(t => t.instructor === AST_TEACHER || t.instructor === "-");
@@ -1012,7 +993,6 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     document.getElementById('pdfTeacherCoursesTableBody').innerHTML = cHtml || `<tr><td colspan="4" style="text-align:center;">لا توجد مبيعات</td></tr>`;
 
     const element = document.getElementById('pdfReportContent');
-    // إظهاره عشان يطبع بس وهو مخفي بالـ CSS
     element.style.left = "0";
     html2pdf().set({
         margin: 10, filename: `تقرير_${teacher}.pdf`, image: { type: 'jpeg', quality: 0.98 },
@@ -1227,7 +1207,6 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
         if (editingId) {
             const existingDoc = await getDoc(doc(db, "packages", editingId));
             let currentVideos = existingDoc.data().videos || [];
-            // دمج القديم والجديد
             pkgData.videos = newVideosArray.length > 0 ? [...currentVideos, ...newVideosArray] : currentVideos; 
             await updateDoc(doc(db, "packages", editingId), pkgData);
             document.getElementById('btnCancelPkgEdit').click();
