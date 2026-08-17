@@ -1,6 +1,16 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import * as tus from "https://cdn.skypack.dev/tus-js-client";
+
+// ==========================================
+// 🛡️ 1. نظام الحماية الصارم (منع F12 والـ Right Click)
+// ==========================================
+document.addEventListener('contextmenu', event => event.preventDefault());
+document.onkeydown = function(e) {
+    if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0))) || (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0))) {
+        return false;
+    }
+}
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -41,6 +51,7 @@ function applyPermissions() {
         document.getElementById('navPackages').style.display = 'none';
         document.getElementById('navAssistants').style.display = 'none';
         document.getElementById('navPromoCodes').style.display = 'none';
+        document.getElementById('navLiveChat').style.display = 'none';
     }
 }
 applyPermissions();
@@ -66,7 +77,29 @@ window.adminConfirm = function(msg) {
     });
 }
 
-// دالة الرفع السريعة للصور (R2)
+// دالة إرسال واتساب مزدوج (للطالب وولي الأمر)
+async function sendWhatsAppBoth(studentPhone, parentPhone, message) {
+    try {
+        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
+        if (!docSnap.exists()) return;
+        const keys = docSnap.data();
+        let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
+        
+        const sendReq = (phone) => {
+            if(!phone || phone.trim() === "" || phone.trim() === "0") return;
+            let formattedPhone = phone.trim();
+            if (formattedPhone.startsWith('0')) formattedPhone = '2' + formattedPhone;
+            fetch(url, {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` },
+                body: JSON.stringify({ chat_id: formattedPhone + "@c.us", text: message })
+            }).catch(e=>console.log(e));
+        };
+        sendReq(studentPhone);
+        sendReq(parentPhone);
+    } catch(e) {}
+}
+
 async function uploadImageToR2(file) {
     const formData = new FormData();
     formData.append("image", file);
@@ -112,7 +145,31 @@ async function uploadToVimeo(file, progressCallback) {
 }
 
 // ==========================================
-// 🚨 الإدارة الشاملة للمدرسين (الحل لمشكلة الاختفاء) 🚨
+// 🚨 خدمة العملاء (Toggle Online Status) 🚨
+// ==========================================
+const liveChatToggleBtn = document.getElementById('liveChatToggleBtn');
+if(liveChatToggleBtn) {
+    getDoc(doc(db, "settings", "support")).then(snap => {
+        if(snap.exists() && snap.data().isLive === true) {
+            liveChatToggleBtn.checked = true;
+        }
+    });
+
+    liveChatToggleBtn.addEventListener('change', async (e) => {
+        const isLive = e.target.checked;
+        try {
+            await setDoc(doc(db, "settings", "support"), { isLive: isLive }, { merge: true });
+            if(isLive) adminAlert("تم", "خدمة العملاء الآن متاحة للطلاب 🟢", "success");
+            else adminAlert("تنبيه", "خدمة العملاء مغلقة الآن 🔴", "error");
+        } catch(err) {
+            e.target.checked = !isLive; // إرجاع الزر لو فشل
+            adminAlert("خطأ", "فشل تغيير الحالة", "error");
+        }
+    });
+}
+
+// ==========================================
+// الإدارة الشاملة للمدرسين 
 // ==========================================
 const teachersRef = collection(db, "teachers");
 let editingTeacherId = null;
@@ -147,7 +204,6 @@ onSnapshot(query(teachersRef), (snapshot) => {
         if(selectInstructor) selectInstructor.innerHTML += `<option value="${t.name}">${t.name} (${t.subject})</option>`;
         if(selectAstTeacher) selectAstTeacher.innerHTML += `<option value="${t.name}">${t.name}</option>`;
         
-        // فلترة تقرير المدرسين للمساعدين
         if (!(ROLE === 'assistant' && AST_TEACHER && t.name !== AST_TEACHER)) {
             if(reportTeacherSelect) reportTeacherSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`;
         }
@@ -190,16 +246,9 @@ document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) 
         const imageFile = document.getElementById('teacherImage').files[0];
         
         let imageUrl = null;
-        if(imageFile) {
-            imageUrl = await uploadImageToR2(imageFile);
-        }
+        if(imageFile) imageUrl = await uploadImageToR2(imageFile);
 
-        const teacherData = {
-            name: document.getElementById('teacherName').value.trim(),
-            subject: document.getElementById('teacherSubject').value.trim(),
-            stages: selectedStages
-        };
-        
+        const teacherData = { name: document.getElementById('teacherName').value.trim(), subject: document.getElementById('teacherSubject').value.trim(), stages: selectedStages };
         if(imageUrl) teacherData.imageUrl = imageUrl;
 
         if(editingTeacherId) {
@@ -257,7 +306,9 @@ onSnapshot(query(collection(db, "users")), (snapshot) => {
     renderDashboardStats();
 });
 
-// 2. إدارة الطلاب وتعديل الرصيد
+// ==========================================
+// 🚨 2. إدارة الطلاب وحماية الأجهزة 🚨
+// ==========================================
 let currentStudentId = null;
 let currentStudentData = null;
 
@@ -272,12 +323,31 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
             const studentDoc = querySnapshot.docs[0];
             currentStudentId = studentDoc.id;
             currentStudentData = studentDoc.data();
+            
             document.getElementById('resStudentName').textContent = currentStudentData.fullName;
             document.getElementById('resStudentPhone').textContent = currentStudentData.studentPhone;
             document.getElementById('resParentPhone').textContent = currentStudentData.parentPhone || "غير متوفر";
             document.getElementById('resStudentGrade').textContent = currentStudentData.grade || '-';
             document.getElementById('resStudentWallet').textContent = (currentStudentData.walletBalance || 0) + ' ج.م';
             
+            // إدارة الأجهزة والمحاولات
+            document.getElementById('resTransferAttempts').textContent = currentStudentData.transferAttempts !== undefined ? currentStudentData.transferAttempts : 3;
+            
+            const blockedList = document.getElementById('resBlockedDevicesList');
+            blockedList.innerHTML = '';
+            if(currentStudentData.blockedDevices && currentStudentData.blockedDevices.length > 0) {
+                currentStudentData.blockedDevices.forEach(device => {
+                    blockedList.innerHTML += `
+                        <li style="display:flex; justify-content:space-between; align-items:center; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 5px; font-family: monospace; font-size: 12px; color: #f8fafc;">
+                            ${device}
+                            <button onclick="unblockDevice('${device}')" style="background:none; border:none; color:#10b981; cursor:pointer;" title="فك حظر الجهاز"><i class="fas fa-unlock"></i></button>
+                        </li>
+                    `;
+                });
+            } else {
+                blockedList.innerHTML = `<li style="color: #94a3b8; font-size: 12px;">لا توجد أجهزة محظورة.</li>`;
+            }
+
             const statusSpan = document.getElementById('resStudentStatus');
             const btnToggleBlock = document.getElementById('btnToggleBlock');
             if(currentStudentData.isBlocked) {
@@ -293,6 +363,23 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
         }
     } catch(error) {} finally { document.getElementById('btnSearchStudent').innerHTML = '<i class="fas fa-search"></i> بحث'; }
 });
+
+// تصفير المحاولات وفك الحظر
+document.getElementById('btnResetAttempts')?.addEventListener('click', async () => {
+    if(!currentStudentId) return;
+    if(!await adminConfirm("هل أنت متأكد من إعادة محاولات النقل إلى 3؟")) return;
+    await updateDoc(doc(db, "users", currentStudentId), { transferAttempts: 3 });
+    document.getElementById('btnSearchStudent').click(); // تحديث
+});
+
+window.unblockDevice = async function(deviceId) {
+    if(!currentStudentId) return;
+    if(!await adminConfirm("فك الحظر عن هذا الجهاز؟")) return;
+    await updateDoc(doc(db, "users", currentStudentId), {
+        blockedDevices: arrayRemove(deviceId)
+    });
+    document.getElementById('btnSearchStudent').click(); // تحديث
+};
 
 document.getElementById('btnChargeWallet')?.addEventListener('click', async () => {
     const amount = parseInt(document.getElementById('chargeAmount').value);
@@ -346,7 +433,9 @@ document.getElementById('btnToggleBlock')?.addEventListener('click', async () =>
     } catch(e) {}
 });
 
-// 3. إدارة الكورسات 🚨
+// ==========================================
+// 3. إدارة الكورسات (تعديل إضافة الاسم للمقاطع)
+// ==========================================
 const coursesRef = collection(db, "courses");
 
 window.deleteCourse = async function(id) {
@@ -376,17 +465,22 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
         if(hasVideosToUpload) {
             document.getElementById('videoProgressContainer').style.display = 'block';
             for (let i = 0; i < videoRows.length; i++) {
+                const titleInput = videoRows[i].querySelector('.course-video-title');
                 const fileInput = videoRows[i].querySelector('.course-video-file');
                 const examSelect = videoRows[i].querySelector('.course-video-exam');
                 if(fileInput.files.length > 0) {
-                    document.getElementById('videoStatus').textContent = `جاري رفع الفيديو (${i + 1}/${videoRows.length})...`;
+                    document.getElementById('videoStatus').textContent = `جاري رفع المقطع (${i + 1}/${videoRows.length})...`;
                     let vUrl = await uploadToVimeo(fileInput.files[0], (p) => {
                         document.getElementById('videoProgressBar').style.width = p + '%';
                     });
-                    newVideosArray.push({ url: vUrl, requiredExamId: examSelect.value || null });
+                    newVideosArray.push({ 
+                        title: titleInput.value.trim() || `المقطع ${i + 1}`, 
+                        url: vUrl, 
+                        requiredExamId: examSelect.value || null 
+                    });
                 }
             }
-            document.getElementById('videoStatus').textContent = `تم رفع الفيديوهات بنجاح ✔️`;
+            document.getElementById('videoStatus').textContent = `تم رفع المقاطع بنجاح ✔️`;
         }
 
         const courseData = {
@@ -406,7 +500,7 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
             await updateDoc(doc(db, "courses", editingId), courseData);
             document.getElementById('btnCancelEdit').click();
         } else {
-            if(!imageUrl && newVideosArray.length === 0) throw new Error("يجب رفع صورة وفيديو واحد على الأقل");
+            if(!imageUrl && newVideosArray.length === 0) throw new Error("يجب رفع صورة ومقطع واحد على الأقل");
             courseData.videos = newVideosArray;
             courseData.createdAt = new Date().toISOString();
             courseData.views = 0;
@@ -417,11 +511,12 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
         adminAlert("تم", "تم حفظ الحصة بنجاح", "success");
     } catch(err) { adminAlert("خطأ", err.message, "error"); }
     finally { 
-        btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة'; btn.disabled = false; 
+        btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> حفظ ونشر الحصة'; btn.disabled = false; 
         document.getElementById('videoProgressContainer').style.display = 'none'; 
     }
 });
 
+// تصدير اكسيل للكورس
 window.exportCourseExcel = async function(courseId, courseTitle) {
     adminAlert("جاري التحميل", "يتم تجميع تقرير الطلاب...", "success");
     try {
@@ -431,12 +526,12 @@ window.exportCourseExcel = async function(courseId, courseTitle) {
         const exQ = query(collection(db, "exam_submissions"), where("courseId", "==", courseId));
         const exSnap = await getDocs(exQ);
         let submissions = {};
-        exSnap.forEach(d => { submissions[d.data().studentId] = d.data(); });
+        exSnap.forEach(d => { submissions[d.data().studentPhone] = d.data(); });
 
         let csv = "\uFEFFاسم الطالب,رقم الطالب,رقم ولي الأمر,المحافظة,الامتحان,الدرجة\n";
         usersSnap.forEach(docSnap => {
             let u = docSnap.data();
-            let sub = submissions[docSnap.id];
+            let sub = submissions[u.studentPhone];
             let scoreText = sub ? `${sub.score} / ${sub.totalQuestions || 10}` : 'لم يمتحن';
             let statusText = sub ? (sub.status === 'passed' ? 'ناجح' : (sub.status==='failed'?'راسب':'مراجعة')) : '-';
             csv += `${u.fullName || '-'},${u.studentPhone || '-'},${u.parentPhone || '-'},${u.governorate || '-'},${statusText},${scoreText}\n`;
@@ -458,11 +553,14 @@ onSnapshot(query(coursesRef), (snapshot) => {
         if (ROLE === 'assistant' && AST_TEACHER && c.instructor !== AST_TEACHER) return;
         teacherCourseIds.push(docSnap.id);
 
+        // حساب عدد المشتركين فعلياً
+        let enrolledCount = allStudentsData.filter(s => s.myCourses && s.myCourses.includes(docSnap.id)).length;
+
         table.innerHTML += `<tr>
             <td><strong>${c.title}</strong></td>
             <td>${c.instructor}</td>
             <td>${c.grade}</td>
-            <td><span style="color:#f59e0b; font-weight:900;">${c.views || 0} مشاهدة</span></td>
+            <td><span style="color:#10b981; font-weight:900;">${enrolledCount} طالب</span></td>
             <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
                 <button onclick="exportCourseExcel('${docSnap.id}', '${c.title}')" style="background:#10b981; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل الإكسيل"><i class="fas fa-file-excel"></i> إكسيل</button>
                 <button onclick="editCourse('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer;"><i class="fas fa-edit"></i> تعديل</button>
@@ -484,7 +582,7 @@ window.editCourse = async function(id) {
         document.getElementById('coursePrice').value = c.price || 0;
         document.getElementById('coursePdf').value = c.pdfUrl || '';
         document.getElementById('courseMaxViews').value = c.maxViews || 0;
-        document.getElementById('btnSaveCourse').innerHTML = 'حفظ التعديلات وإضافة فيديو';
+        document.getElementById('btnSaveCourse').innerHTML = 'حفظ التعديلات وإضافة مقطع';
         document.getElementById('btnCancelEdit').style.display = 'block';
         window.scrollTo({top: document.getElementById('addCourseForm').offsetTop - 50, behavior: 'smooth'});
     }
@@ -493,11 +591,13 @@ document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
     document.getElementById('editingCourseId').value = "";
     document.getElementById('addCourseForm').reset();
     document.getElementById('courseVideosContainer').innerHTML = '';
-    document.getElementById('btnSaveCourse').innerHTML = '<i class="fas fa-cloud-upload-alt"></i> نشر الحصة';
+    document.getElementById('btnSaveCourse').innerHTML = '<i class="fas fa-cloud-upload-alt"></i> حفظ ونشر الحصة';
     document.getElementById('btnCancelEdit').style.display = 'none';
 });
 
-// 4. إدارة الامتحانات
+// ==========================================
+// 4. إدارة الامتحانات والـ AI 🚨
+// ==========================================
 const examsRef = collection(db, "exams");
 let questionCount = 0;
 window.currentExamsData = [];
@@ -508,7 +608,7 @@ onSnapshot(query(examsRef), (snap) => {
     window.examOptionsHTML = '<option value="">بدون امتحان (مفتوحة)</option>';
     
     const filter = document.getElementById('filterSpecificExam');
-    if(filter) filter.innerHTML = '<option value="all">كل الامتحانات</option>';
+    if(filter) filter.innerHTML = '<option value="all">كل الامتحانات / الحصص</option>';
     
     snap.forEach(docSnap => {
         const ex = {id: docSnap.id, ...docSnap.data()};
@@ -535,6 +635,7 @@ window.deleteExam = async function(id) {
 window.toggleQType = function(id) {
     const type = document.getElementById(`qType_${id}`).value;
     document.getElementById(`mcqContainer_${id}`).style.display = type === 'mcq' ? 'block' : 'none';
+    document.getElementById(`essayContainer_${id}`).style.display = type === 'essay' ? 'block' : 'none';
 }
 
 document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
@@ -547,16 +648,34 @@ document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
                 <button type="button" onclick="document.getElementById('qBox_${questionCount}').remove()" style="color: #ef4444; background:none; border:none; cursor:pointer;"><i class="fas fa-trash"></i></button>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <select class="q-type form-group-admin" id="qType_${questionCount}" onchange="toggleQType(${questionCount})"><option value="mcq">اختياري</option><option value="essay">مقالي</option></select>
+                <select class="q-type form-group-admin" id="qType_${questionCount}" onchange="toggleQType(${questionCount})">
+                    <option value="mcq">اختياري</option>
+                    <option value="essay">مقالي</option>
+                </select>
                 <input type="file" class="q-image" accept="image/*" style="padding: 5px; background:var(--input-bg);">
             </div>
             <textarea class="q-text" placeholder="اكتب السؤال..." style="width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 15px; background:var(--input-bg); color:#fff;" required></textarea>
+            
             <div class="q-mcq-container" id="mcqContainer_${questionCount}">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" class="q-opt1" placeholder="اختيار 1" style="padding:10px; border-radius:8px;"><input type="text" class="q-opt2" placeholder="اختيار 2" style="padding:10px; border-radius:8px;">
-                    <input type="text" class="q-opt3" placeholder="اختيار 3" style="padding:10px; border-radius:8px;"><input type="text" class="q-opt4" placeholder="اختيار 4" style="padding:10px; border-radius:8px;">
+                    <input type="text" class="q-opt1" placeholder="اختيار 1" style="padding:10px; border-radius:8px; background:var(--input-bg); color:#fff; border:1px solid #334155;">
+                    <input type="text" class="q-opt2" placeholder="اختيار 2" style="padding:10px; border-radius:8px; background:var(--input-bg); color:#fff; border:1px solid #334155;">
+                    <input type="text" class="q-opt3" placeholder="اختيار 3" style="padding:10px; border-radius:8px; background:var(--input-bg); color:#fff; border:1px solid #334155;">
+                    <input type="text" class="q-opt4" placeholder="اختيار 4" style="padding:10px; border-radius:8px; background:var(--input-bg); color:#fff; border:1px solid #334155;">
                 </div>
-                <select class="q-correct" style="width: 100%; padding: 10px; border-radius: 8px;"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+                <label style="color:#cbd5e1; font-size:12px;">الإجابة الصحيحة:</label>
+                <select class="q-correct" style="width: 100%; padding: 10px; border-radius: 8px; background:var(--input-bg); color:#fff; border:1px solid #334155;">
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                </select>
+            </div>
+
+            <!-- قسم المقالي والذكاء الاصطناعي 🚨 -->
+            <div class="q-essay-container" id="essayContainer_${questionCount}" style="display:none; background:rgba(59,130,246,0.05); padding:15px; border-radius:8px; border:1px dashed #3b82f6;">
+                <label style="display:flex; align-items:center; gap:10px; color:#3b82f6; font-weight:800; margin-bottom:10px; cursor:pointer;">
+                    <input type="checkbox" class="q-ai-grade" style="width:18px; height:18px;">
+                    تصحيح فوري بالذكاء الاصطناعي (AI)
+                </label>
+                <textarea class="q-model-answer" placeholder="اكتب الإجابة النموذجية (بشكل مفصل) ليقارن بها الذكاء الاصطناعي إجابة الطالب ويعطيه الدرجة تلقائياً..." style="width: 100%; padding: 12px; border-radius: 8px; background:var(--input-bg); color:#fff; border:1px solid #334155; min-height:80px;"></textarea>
             </div>
         </div>
     `);
@@ -577,15 +696,56 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
             const text = box.querySelector('.q-text').value;
             const imageFile = box.querySelector('.q-image').files[0];
             let imageUrl = imageFile ? await uploadImageToR2(imageFile) : null;
-            if (type === 'mcq') qs.push({ type:'mcq', text:text, imageUrl:imageUrl, options:[box.querySelector('.q-opt1').value, box.querySelector('.q-opt2').value, box.querySelector('.q-opt3').value, box.querySelector('.q-opt4').value], correctIndex: parseInt(box.querySelector('.q-correct').value)-1 });
-            else qs.push({ type:'essay', text:text, imageUrl:imageUrl });
+            
+            if (type === 'mcq') {
+                qs.push({ type:'mcq', text:text, imageUrl:imageUrl, options:[box.querySelector('.q-opt1').value, box.querySelector('.q-opt2').value, box.querySelector('.q-opt3').value, box.querySelector('.q-opt4').value], correctIndex: parseInt(box.querySelector('.q-correct').value)-1 });
+            } else {
+                const isAiGraded = box.querySelector('.q-ai-grade').checked;
+                const modelAnswer = box.querySelector('.q-model-answer').value.trim();
+                qs.push({ type:'essay', text:text, imageUrl:imageUrl, isAiGraded: isAiGraded, modelAnswer: modelAnswer });
+            }
         }
         const data = { title: document.getElementById('examTitle').value, questions: qs };
         if(editingId) { await updateDoc(doc(db, "exams", editingId), data); document.getElementById('btnCancelExamEdit').click(); }
         else { data.createdAt = new Date().toISOString(); await addDoc(examsRef, data); document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; }
         adminAlert("تم", "تم الحفظ", "success");
-    } catch(e) {} finally { btn.innerHTML = '<i class="fas fa-save"></i> حفظ'; btn.disabled = false; }
+    } catch(e) {} finally { btn.innerHTML = '<i class="fas fa-save"></i> حفظ الامتحان'; btn.disabled = false; }
 });
+
+// توليد PDF للامتحان 🚨
+window.exportExamPDF = function(examId, examTitle) {
+    adminAlert("تجهيز", "جاري تجميع درجات الطلاب في PDF...", "success");
+    const tbody = document.getElementById('pdfExamStudentsBody');
+    tbody.innerHTML = '';
+    
+    let studentsInExam = allSubmissionsForExams.filter(s => s.examId === examId);
+    if(studentsInExam.length === 0) return adminAlert("تنبيه", "لا يوجد طلاب امتحنوا هذا الامتحان بعد", "error");
+
+    studentsInExam.forEach(s => {
+        let isPass = (s.score / s.totalQuestions) >= 0.5;
+        let stText = isPass ? 'ناجح' : 'راسب';
+        tbody.innerHTML += `
+            <tr>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; color:#000; text-align:center;">${s.studentName}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; color:#000; text-align:center;" dir="ltr">${s.studentPhone}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; color:#000; text-align:center;" dir="ltr">${s.parentPhone || '-'}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; color:#10b981; font-weight:bold; text-align:center;" dir="ltr">${s.score} / ${s.totalQuestions}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; color:${isPass ? '#10b981' : '#ef4444'}; font-weight:bold; text-align:center;">${stText}</td>
+            </tr>
+        `;
+    });
+
+    document.getElementById('pdfExamTitleDisplay').textContent = examTitle;
+    const element = document.getElementById('pdfExamReportContent');
+    element.style.display = 'block';
+    
+    html2pdf().set({
+        margin: 10, filename: `نتيجة_${examTitle}.pdf`, image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(element).save().then(() => {
+        element.style.display = 'none';
+    });
+}
 
 let allSubmissionsForExams = [];
 onSnapshot(query(collection(db, "exam_submissions")), (snap) => {
@@ -605,6 +765,7 @@ function renderExamsTable() {
             <td>${ex.questions ? ex.questions.length : 0}</td>
             <td style="color:#10b981; font-weight:900;">${studentsCount} طالب</td>
             <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="exportExamPDF('${ex.id}', '${ex.title}')" style="background:#f59e0b; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل تقرير PDF"><i class="fas fa-file-pdf"></i></button>
                 <button onclick="editExam('${ex.id}')" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-edit"></i></button>
                 <button onclick="deleteExam('${ex.id}')" style="background:rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-trash"></i></button>
             </td>
@@ -624,19 +785,33 @@ window.editExam = async function(id) {
             const box = document.getElementById(`qBox_${questionCount}`);
             box.querySelector('.q-type').value = q.type; box.querySelector('.q-text').value = q.text;
             window.toggleQType(questionCount);
-            if(q.type === 'mcq') { box.querySelector('.q-opt1').value=q.options[0]; box.querySelector('.q-opt2').value=q.options[1]; box.querySelector('.q-opt3').value=q.options[2]; box.querySelector('.q-opt4').value=q.options[3]; box.querySelector('.q-correct').value=q.correctIndex+1; }
+            if(q.type === 'mcq') { 
+                box.querySelector('.q-opt1').value=q.options[0]; box.querySelector('.q-opt2').value=q.options[1]; 
+                box.querySelector('.q-opt3').value=q.options[2]; box.querySelector('.q-opt4').value=q.options[3]; 
+                box.querySelector('.q-correct').value=q.correctIndex+1; 
+            } else {
+                box.querySelector('.q-ai-grade').checked = q.isAiGraded || false;
+                box.querySelector('.q-model-answer').value = q.modelAnswer || '';
+            }
         });
         document.getElementById('btnCancelExamEdit').style.display = 'inline-block'; window.scrollTo({top:0});
     }
 }
 document.getElementById('btnCancelExamEdit')?.addEventListener('click', () => { document.getElementById('editingExamId').value=""; document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; document.getElementById('btnCancelExamEdit').style.display='none'; });
 
-// 5. سجل المشاهدات والتصحيح
+// ==========================================
+// 5. سجل المشاهدات والتصحيح 🚨
+// ==========================================
 window.deleteSubmission = async function(id) {
     if(await adminConfirm("تأكيد مسح النتيجة ليتمكن الطالب من الإعادة؟")) {
         try { await deleteDoc(doc(db, "exam_submissions", id)); adminAlert("تم", "تم المسح", "success"); } 
         catch(e) {}
     }
+};
+
+window.viewStudentAnswer = function(answerText) {
+    document.getElementById('studentEssayAnswerContent').textContent = answerText || "لم يكتب الطالب إجابة مقالية.";
+    document.getElementById('viewAnswerModal').classList.add('active');
 };
 
 function renderGradingTable() {
@@ -654,23 +829,29 @@ function renderGradingTable() {
         
         count++;
         let stText = sub.status === 'passed' ? '<span style="color:#10b981;">ناجح (شاهد)</span>' : (sub.status === 'failed' ? '<span style="color:#ef4444;">راسب (مغلق)</span>' : '<span style="color:#f59e0b;">مراجعة مقالي</span>');
+        
+        // إظهار لو اتصحح بالـ AI
+        if(sub.gradedByAI) stText += '<br><small style="color:#3b82f6;"><i class="fas fa-robot"></i> مصحح بـ AI</small>';
+        
         let tText = sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('ar-EG') : '-';
         let scoreText = sub.hasEssay && sub.status === 'pending' ? 'مراجعة' : `${sub.score} / ${sub.totalQuestions || 10}`;
         
         table.innerHTML += `<tr>
             <td><strong>${sub.studentName}</strong><br><small style="color:#f59e0b;">ط: ${sub.studentPhone}</small></td>
+            <td style="color:#94a3b8; font-size:13px;" dir="ltr">${sub.parentPhone || 'غير مسجل'}</td>
             <td><strong>${sub.courseTitle}</strong><br><small style="color:#94a3b8;">${sub.examTitle}</small></td>
             <td style="font-weight:900; font-size: 18px;">${scoreText}</td>
             <td>${stText}</td>
             <td dir="ltr" style="font-size:12px; color:#94a3b8;">${tText}</td>
             <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
-                ${sub.status === 'pending' ? `<button onclick="gradeStudentExam('${sub.id}', ${sub.totalQuestions})" style="background:#10b981; color:#fff; border:none; padding:5px 8px; border-radius:5px;" title="نجاح"><i class="fas fa-check"></i></button>` : ''}
-                <button onclick="editStudentScore('${sub.id}', ${sub.score}, ${sub.totalQuestions || 10})" style="background:#3b82f6; color:#fff; border:none; padding:5px 8px; border-radius:5px;" title="تعديل الدرجة"><i class="fas fa-edit"></i></button>
+                ${sub.hasEssay ? `<button onclick="viewStudentAnswer('${sub.essayAnswer || ''}')" style="background:#f59e0b; color:#fff; border:none; padding:5px 8px; border-radius:5px;" title="عرض إجابة المقالي"><i class="fas fa-eye"></i></button>` : ''}
+                ${sub.status === 'pending' ? `<button onclick="gradeStudentExam('${sub.id}', ${sub.totalQuestions})" style="background:#10b981; color:#fff; border:none; padding:5px 8px; border-radius:5px;" title="إعطاء نجاح للكل"><i class="fas fa-check"></i></button>` : ''}
+                <button onclick="editStudentScore('${sub.id}', ${sub.score}, ${sub.totalQuestions || 10}, '${sub.studentPhone}', '${sub.parentPhone}', '${sub.studentName}', '${sub.examTitle}')" style="background:#3b82f6; color:#fff; border:none; padding:5px 8px; border-radius:5px;" title="تعديل الدرجة"><i class="fas fa-edit"></i></button>
                 <button onclick="deleteSubmission('${sub.id}')" style="background:#ef4444; color:#fff; border:none; padding:5px 8px; border-radius:5px;" title="إعادة الامتحان"><i class="fas fa-redo"></i></button>
             </td>
         </tr>`;
     });
-    if(count === 0) table.innerHTML=`<tr><td colspan="6" style="text-align:center;">لا توجد بيانات...</td></tr>`;
+    if(count === 0) table.innerHTML=`<tr><td colspan="7" style="text-align:center;">لا توجد بيانات...</td></tr>`;
 }
 document.getElementById('filterGradingStatus')?.addEventListener('change', renderGradingTable);
 document.getElementById('filterSpecificExam')?.addEventListener('change', renderGradingTable);
@@ -685,40 +866,37 @@ window.gradeStudentExam = async function(id, total) {
             const newScore = total || 10;
             await updateDoc(subRef, {status:'passed', score:newScore}); 
             
-            // 🚨 إرسال إشعار الواتساب الفوري بعد النجاح 🚨
-            let waMsg = `مرحباً ولي أمر الطالب/ة: ${d.studentName}\nتم تصحيح وتحديث امتحان (${d.examTitle}) لحصة (${d.courseTitle}).\nالنتيجة: ناجح ✅\nالدرجة: ${newScore} من ${total || 10}\nتم فتح الحصة للطالب بنجاح.`;
-            await sendWhatsAppToParent(d.parentPhone, waMsg);
+            let waMsg = `مرحباً بك في Primee Academy\nتم تصحيح وتحديث امتحان (${d.examTitle}) لحصة (${d.courseTitle}) للطالب/ة: ${d.studentName}.\nالنتيجة: ناجح ✅\nالدرجة: ${newScore} من ${total || 10}\nتم فتح الحصة للطالب بنجاح.`;
+            await sendWhatsAppBoth(d.studentPhone, d.parentPhone, waMsg);
             
-            adminAlert("تم", "تم تسجيل النجاح وإرسال رسالة لولي الأمر", "success");
+            adminAlert("تم", "تم تسجيل النجاح وإرسال رسالة للطالب وولي الأمر", "success");
         }
     } catch(e){}
 }
 
-window.editStudentScore = async function(id, cur, total) {
-    const n = prompt(`الدرجة (من ${total}):`, cur);
+window.editStudentScore = async function(id, cur, total, sPhone, pPhone, sName, exTitle) {
+    const n = prompt(`أدخل الدرجة الجديدة (من ${total}):`, cur);
     if(!n) return;
     const num = parseInt(n);
     if(num>=0 && num<=total) { 
         try {
             const subRef = doc(db,"exam_submissions",id);
-            const subSnap = await getDoc(subRef);
-            if(subSnap.exists()){
-                const d = subSnap.data();
-                let newStatus = num >= (total/2) ? 'passed' : 'failed';
-                await updateDoc(subRef, {score:num, status: newStatus});
+            let newStatus = num >= (total/2) ? 'passed' : 'failed';
+            await updateDoc(subRef, {score:num, status: newStatus});
 
-                // 🚨 إرسال إشعار الواتساب الفوري بالتعديل 🚨
-                let waMsg = `مرحباً ولي أمر الطالب/ة: ${d.studentName}\nتم تصحيح امتحان (${d.examTitle}) لحصة (${d.courseTitle}).\n`;
-                if(newStatus === 'passed') waMsg += `النتيجة: ناجح ✅\nالدرجة: ${num} من ${total}\nتم فتح الحصة للطالب بنجاح.`;
-                else waMsg += `النتيجة: راسب ❌\nالدرجة: ${num} من ${total}\nالحصة مغلقة الآن.`;
-                
-                await sendWhatsAppToParent(d.parentPhone, waMsg);
-                adminAlert("تم", "تم التعديل وإرسال إشعار لولي الأمر", "success");
-            }
+            let waMsg = `إشعار من Primee Academy\nتم تحديث نتيجة امتحان (${exTitle}) للطالب/ة: ${sName}.\n`;
+            if(newStatus === 'passed') waMsg += `النتيجة: ناجح ✅\nالدرجة: ${num} من ${total}`;
+            else waMsg += `النتيجة: راسب ❌\nالدرجة: ${num} من ${total}\nالحصة مغلقة الآن.`;
+            
+            await sendWhatsAppBoth(sPhone, pPhone, waMsg);
+            adminAlert("تم", "تم التعديل وإرسال إشعار للطالب وولي الأمر", "success");
         } catch(e) {}
     }
 }
+
+// ==========================================
 // 🚨 المحفظة (العمليات المالية) 🚨
+// ==========================================
 let allTransactions = [];
 onSnapshot(query(collection(db, "transactions")), (snap) => {
     const table = document.getElementById('adminWalletTable');
@@ -733,7 +911,7 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
     }
 
     filteredTrans.forEach(t => {
-        let tType = t.type === 'purchase_course' ? '<span style="color:#ef4444;">شراء حصة</span>' : '<span style="color:#10b981;">شحن رصيد</span>';
+        let tType = t.type === 'purchase_course' ? '<span style="color:#ef4444;">شراء حصة/باقة</span>' : '<span style="color:#10b981;">شحن رصيد</span>';
         let tDate = new Date(t.createdAt).toLocaleString('ar-EG');
         table.innerHTML += `<tr>
             <td dir="ltr" style="font-size:12px;">${tDate}</td>
@@ -745,16 +923,17 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
     });
 });
 
-// 🚨 تقرير المدرس (PDF) 🚨
-document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
+// ==========================================
+// 🚨 تقرير المدرس التفصيلي (PDF) 🚨
+// ==========================================
+document.getElementById('btnGenerateReport')?.addEventListener('click', async () => {
     const teacher = document.getElementById('reportTeacherSelect').value;
     const period = document.getElementById('reportPeriodSelect').value;
     if(!teacher) return adminAlert("خطأ", "اختر المدرس أولاً", "error");
 
-    adminAlert("جاري التحضير", "يتم تجميع البيانات...", "success");
+    adminAlert("جاري التحضير", "يتم تجميع التفاصيل المالية...", "success");
 
     let filtered = allTransactions.filter(t => t.instructor === teacher && t.type === 'purchase_course');
-    
     let now = new Date();
     if(period === 'current_month') {
         filtered = filtered.filter(t => new Date(t.createdAt).getMonth() === now.getMonth() && new Date(t.createdAt).getFullYear() === now.getFullYear());
@@ -765,21 +944,43 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
         filtered = filtered.filter(t => new Date(t.createdAt).getMonth() === lastMonth && new Date(t.createdAt).getFullYear() === y);
     }
 
+    // تجميع المبيعات لكل كورس/باقة
+    let salesDetails = {};
     let totalRev = 0;
     let studentsSet = new Set();
+    
     filtered.forEach(t => {
-        totalRev += Math.abs(t.amount);
+        let amt = Math.abs(t.amount);
+        totalRev += amt;
         studentsSet.add(t.studentPhone);
+        
+        if(!salesDetails[t.courseTitle]) {
+            salesDetails[t.courseTitle] = { count: 0, revenue: 0, price: amt };
+        }
+        salesDetails[t.courseTitle].count += 1;
+        salesDetails[t.courseTitle].revenue += amt;
     });
+
+    let detailsHtml = '';
+    for(let title in salesDetails) {
+        detailsHtml += `<tr>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">حصة/باقة</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; color:#000; font-weight:bold;">${title}</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; color:#000; text-align:center;">${salesDetails[title].count}</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; color:#000; text-align:center;">${salesDetails[title].price} ج.م</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; color:#10b981; font-weight:bold; text-align:center;">${salesDetails[title].revenue} ج.م</td>
+        </tr>`;
+    }
+    if(Object.keys(salesDetails).length === 0) detailsHtml = `<tr><td colspan="5" style="text-align:center;">لا توجد مبيعات في هذه الفترة</td></tr>`;
+    
+    document.getElementById('pdfDetailedSalesBody').innerHTML = detailsHtml;
 
     document.getElementById('pdfTeacherName').textContent = teacher;
     document.getElementById('pdfPeriod').textContent = document.getElementById('reportPeriodSelect').options[document.getElementById('reportPeriodSelect').selectedIndex].text;
-    document.getElementById('pdfTotalStudents').textContent = studentsSet.size;
-    document.getElementById('pdfCodeSales').textContent = "مدمج"; 
-    document.getElementById('pdfGatewaySales').textContent = "مدمج"; 
     document.getElementById('pdfTotalRevenue').textContent = totalRev + " ج.م";
     document.getElementById('pdfGenerateDate').textContent = new Date().toLocaleString('ar-EG');
     
+    // المحافظات
     let govCounts = {};
     studentsSet.forEach(phone => {
         let s = allStudentsData.find(st => st.studentPhone === phone);
@@ -799,17 +1000,14 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     element.style.display = 'block';
     
     html2pdf().set({
-        margin: 10,
-        filename: `تقرير_${teacher}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        margin: 10, filename: `تقرير_مفصل_${teacher}.pdf`, image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(element).save().then(() => {
         element.style.display = 'none';
     });
 });
 
-// 7. مصنع الأكواد (حروف وأرقام فقط)
+// 7. مصنع الأكواد
 const codesRef = collection(db, "charge_codes");
 let allCodesData = [];
 
@@ -935,7 +1133,7 @@ onSnapshot(query(promoCodesRef), (snap) => {
     });
 });
 
-// 8. إدارة الباقات
+// 8. إدارة الباقات (تعديل إضافة مقاطع الباقة)
 const packagesRef = collection(db, "packages");
 
 window.deletePackage = async function(id) {
@@ -965,6 +1163,7 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
         if(hasVideosToUpload) {
             document.getElementById('pkgVideoProgressContainer').style.display = 'block';
             for (let i = 0; i < videoRows.length; i++) {
+                const titleInput = videoRows[i].querySelector('.pkg-video-title');
                 const fileInput = videoRows[i].querySelector('.pkg-video-file');
                 const examSelect = videoRows[i].querySelector('.pkg-video-exam');
                 if(fileInput.files.length > 0) {
@@ -972,7 +1171,11 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
                     let vUrl = await uploadToVimeo(fileInput.files[0], (p) => {
                         document.getElementById('pkgVideoProgressBar').style.width = p + '%';
                     });
-                    newVideosArray.push({ url: vUrl, requiredExamId: examSelect.value || null });
+                    newVideosArray.push({ 
+                        title: titleInput.value.trim() || `مقطع ${i + 1}`,
+                        url: vUrl, 
+                        requiredExamId: examSelect.value || null 
+                    });
                 }
             }
             document.getElementById('pkgVideoStatus').textContent = `تم الرفع بنجاح ✔️`;
@@ -1014,12 +1217,15 @@ onSnapshot(query(packagesRef), (snapshot) => {
     if(!table) return; table.innerHTML = '';
     snapshot.forEach(docSnap => {
         const pkg = docSnap.data();
+        let enrolledCount = allStudentsData.filter(s => s.myCourses && s.myCourses.includes(docSnap.id)).length;
+        
         table.innerHTML += `<tr>
             <td><img src="${pkg.imageUrl}" style="width:40px; border-radius:8px; vertical-align:middle;"> <strong>${pkg.name}</strong></td>
             <td>${pkg.grade}</td>
-            <td><span style="color:#f59e0b; font-weight:900;">${pkg.views || 0} مشاهدة</span></td>
             <td><span style="text-decoration:line-through; color:#ef4444; font-size:12px;">${pkg.oldPrice}</span> <strong style="color:#10b981;">${pkg.newPrice} ج.م</strong></td>
+            <td><span style="color:#f59e0b; font-weight:900;">${enrolledCount} مشترك</span></td>
             <td style="display:flex; gap:5px; justify-content:center;">
+                <button onclick="exportCourseExcel('${docSnap.id}', '${pkg.name}')" style="background:#10b981; color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;"><i class="fas fa-file-excel"></i></button>
                 <button onclick="editPackage('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="تعديل"><i class="fas fa-edit"></i></button>
                 <button onclick="deletePackage('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button>
             </td>
@@ -1038,7 +1244,7 @@ window.editPackage = async function(id) {
         document.getElementById('pkgNewPrice').value = p.newPrice || '';
         document.getElementById('pkgFeatures').value = p.features ? p.features.join(',') : '';
         document.getElementById('pkgMaxViews').value = p.maxViews || 0;
-        document.getElementById('btnSavePackage').innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات وإضافة المحتوى';
+        document.getElementById('btnSavePackage').innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات وإضافة المقاطع';
         document.getElementById('btnCancelPkgEdit').style.display = 'block';
         window.scrollTo({top: document.getElementById('addPackageForm').offsetTop - 50, behavior: 'smooth'});
     }
@@ -1092,7 +1298,7 @@ document.getElementById('addAssistantForm')?.addEventListener('submit', async (e
         adminAlert("تم", "تم حفظ بيانات المساعد بنجاح", "success");
         document.getElementById('addAssistantForm').reset();
     } catch(err) { adminAlert("خطأ", "فشل الحفظ", "error"); }
-    finally { btn.innerHTML = "<i class='fas fa-check'></i> إنشاء حساب المساعد"; btn.disabled = false; }
+    finally { btn.innerHTML = "<i class='fas fa-check'></i> حفظ بيانات المساعد"; btn.disabled = false; }
 });
 
 onSnapshot(query(assistantsRef), (snapshot) => {
