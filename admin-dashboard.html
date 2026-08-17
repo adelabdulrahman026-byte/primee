@@ -13,8 +13,10 @@
     <link rel="stylesheet" href="style.css">
         
     <style>
-        /* التنسيقات الأساسية */
         body { margin: 0; font-family: 'Cairo', sans-serif; background: #0f172a; color: #f8fafc; display: flex; min-height: 100vh; overflow-x: hidden; }
+        /* منع التحديد والنسخ لزيادة الأمان */
+        body { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+        
         .admin-sidebar { width: 260px; background: #1e293b; border-left: 1px solid #334155; display: flex; flex-direction: column; position: fixed; right: 0; top: 0; height: 100vh; z-index: 100; transition: 0.3s; }
         .admin-brand { padding: 25px; text-align: center; font-size: 26px; font-weight: 900; color: #f59e0b; border-bottom: 1px solid #334155; }
         .admin-brand span { color: #f8fafc; }
@@ -28,7 +30,7 @@
         .btn-logout:hover { background: #ef4444; color: #fff; }
 
         .admin-main { flex: 1; margin-right: 260px; padding: 30px; display: flex; flex-direction: column; gap: 30px; transition: 0.3s margin-right; }
-        .admin-header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 20px 30px; border-radius: 20px; border: 1px solid #334155; flex-wrap: wrap; gap: 15px;}
+        .admin-header { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 20px 30px; border-radius: 20px; border: 1px solid #334155; }
         .admin-header h2 { margin: 0; font-size: 22px; font-weight: 800; color: #f8fafc; }
         
         .admin-sidebar.closed { right: -260px; }
@@ -41,7 +43,7 @@
         .stat-info p { margin: 0; color: #94a3b8; font-weight: 600; font-size: 15px; }
 
         .admin-table-container { background: #1e293b; border-radius: 20px; border: 1px solid #334155; padding: 25px; overflow-x: auto; }
-        .admin-table-container h3 { margin: 0 0 20px 0; font-size: 20px; color: #f8fafc; font-weight: 800; border-bottom: 1px solid #334155; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;}
+        .admin-table-container h3 { margin: 0 0 20px 0; font-size: 20px; color: #f8fafc; font-weight: 800; border-bottom: 1px solid #334155; padding-bottom: 15px;}
         table { width: 100%; border-collapse: collapse; text-align: right; }
         th, td { padding: 15px; border-bottom: 1px solid #334155; }
         th { color: #94a3b8; font-weight: 800; font-size: 15px; }
@@ -64,18 +66,20 @@
         
         .admin-section { display: none; }
         .admin-section.active-section { display: flex; flex-direction: column; gap: 30px; }
+        
         .question-box { background: #0f172a; border: 1px dashed #475569; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
         
         /* تقارير الـ PDF المخفية */
-        .pdf-export-content { display: none; background: #ffffff; color: #000000; padding: 40px; direction: rtl; font-family: 'Cairo'; }
-
-        /* مفتاح الـ Toggle */
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ef4444; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #10b981; }
-        input:checked + .slider:before { transform: translateX(24px); }
+        #pdfReportContent, #examPdfReportContent { display: none; background: #ffffff; color: #000000; padding: 40px; direction: rtl; font-family: 'Cairo'; }
+        
+        /* شات الدعم الفني */
+        .chat-container { display: flex; height: 600px; background: #0f172a; border-radius: 15px; border: 1px solid #334155; overflow: hidden; }
+        .chat-sidebar { width: 300px; background: #1e293b; border-left: 1px solid #334155; display: flex; flex-direction: column; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: #0f172a; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg-bubble { max-width: 70%; padding: 12px; border-radius: 12px; font-size: 14px; line-height: 1.5; }
+        .msg-student { background: #334155; color: #fff; align-self: flex-start; border-top-right-radius: 0; }
+        .msg-admin { background: #3b82f6; color: #fff; align-self: flex-end; border-top-left-radius: 0; }
     </style>
 </head>
 <body>
@@ -85,16 +89,16 @@
         <ul class="admin-nav">
             <li><a id="navDashboard" class="active" onclick="switchTab('dashboardSection', this)"><i class="fas fa-chart-pie"></i> لوحة القيادة</a></li>
             <li><a id="navStudents" onclick="switchTab('studentsSection', this)"><i class="fas fa-users"></i> إدارة الطلاب والحماية</a></li>
+            <li><a id="navLiveChat" onclick="switchTab('liveChatSection', this)"><i class="fas fa-headset"></i> الدعم الفني (Live)</a></li>
             <li><a id="navCourses" onclick="switchTab('coursesSection', this)"><i class="fas fa-video"></i> إدارة الكورسات</a></li>
-            <li><a id="navPackages" onclick="switchTab('packagesSection', this)"><i class="fas fa-boxes"></i> إدارة الباقات</a></li>
             <li><a id="navExams" onclick="switchTab('examsSection', this)"><i class="fas fa-file-alt"></i> إدارة الامتحانات</a></li>
             <li><a id="navGrading" onclick="switchTab('gradingSection', this)"><i class="fas fa-eye"></i> سجل المشاهدات والتصحيح</a></li>
-            <li><a id="navLiveChat" onclick="switchTab('liveChatSection', this)"><i class="fas fa-headset"></i> خدمة العملاء (Live)</a></li>
             <li><a id="navTeachers" onclick="switchTab('teachersSection', this)"><i class="fas fa-chalkboard-teacher"></i> إدارة المدرسين</a></li>
-            <li><a id="navWallet" onclick="switchTab('walletSection', this)"><i class="fas fa-wallet"></i> الخزنة (العمليات)</a></li>
+            <li><a id="navWallet" onclick="switchTab('walletSection', this)"><i class="fas fa-wallet"></i> المحفظة (العمليات)</a></li>
             <li><a id="navTeacherReport" onclick="switchTab('teacherReportSection', this)"><i class="fas fa-file-invoice-dollar"></i> تقارير المدرسين</a></li>
             <li><a id="navCodes" onclick="switchTab('codesSection', this)"><i class="fas fa-qrcode"></i> مصنع الأكواد</a></li>
             <li><a id="navPromoCodes" onclick="switchTab('promoCodesSection', this)"><i class="fas fa-tags"></i> برومو كود</a></li>
+            <li><a id="navPackages" onclick="switchTab('packagesSection', this)"><i class="fas fa-boxes"></i> إدارة الباقات</a></li>
             <li><a id="navAssistants" onclick="switchTab('assistantsSection', this)"><i class="fas fa-user-shield"></i> إدارة المساعدين</a></li>
         </ul>
         <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
@@ -106,16 +110,11 @@
                 <button id="toggleSidebarBtn" style="background: none; border: none; color: #f8fafc; font-size: 24px; cursor: pointer;"><i class="fas fa-bars"></i></button>
                 <h2>مرحباً بك يا مدير النظام 👋</h2>
             </div>
-            
-            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                <!-- زرار تفعيل خدمة العملاء -->
-                <div style="display: flex; align-items: center; gap: 10px; background: rgba(59, 130, 246, 0.1); padding: 10px 15px; border-radius: 12px; border: 1px solid #3b82f6;">
-                    <span style="font-weight: 800; color: #3b82f6;">خدمة العملاء (Live):</span>
-                    <label class="switch">
-                        <input type="checkbox" id="liveChatToggleBtn">
-                        <span class="slider round"></span>
-                    </label>
-                </div>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <!-- زرار تفعيل اللايف شات -->
+                <button id="toggleLiveModeBtn" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 8px 15px; border-radius: 10px; font-weight: 800; cursor: pointer; font-family: 'Cairo'; transition: 0.3s;">
+                    <i class="fas fa-power-off"></i> الدعم الفني: أوفلاين
+                </button>
                 <div style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 10px 20px; border-radius: 12px; font-weight: 800; display: flex; align-items: center; gap: 10px; cursor: pointer;" id="enableSoundBtn">
                     <i class="fas fa-volume-up"></i> تفعيل الإشعارات
                 </div>
@@ -143,15 +142,14 @@
             </div>
         </div>
 
-        <!-- 2. إدارة الطلاب والحماية -->
+        <!-- 2. إدارة الطلاب والحماية 🚨 (تحديث أمني) -->
         <div id="studentsSection" class="admin-section">
             <div class="admin-table-container">
-                <h3><i class="fas fa-shield-alt" style="color: #3b82f6;"></i> الإدارة والحماية السريعة للطلاب</h3>
+                <h3><i class="fas fa-user-shield" style="color: #3b82f6;"></i> إدارة الطلاب وحماية الأجهزة</h3>
                 <div style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;">
                     <input type="tel" id="searchPhoneInput" placeholder="أدخل رقم هاتف الطالب..." style="flex: 1; min-width: 250px; padding: 15px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-size: 16px;">
                     <button id="btnSearchStudent" style="background: #3b82f6; color: #fff; border: none; padding: 15px 30px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer;"><i class="fas fa-search"></i> بحث</button>
                 </div>
-                
                 <div id="studentResultCard" style="display: none; background: #0f172a; padding: 25px; border-radius: 15px; border: 1px solid #334155;">
                     <div style="display: flex; justify-content: space-between; align-items: stretch; flex-wrap: wrap; gap: 20px;">
                         
@@ -160,38 +158,59 @@
                             <h4 id="resStudentName" style="margin: 0 0 15px 0; font-size: 24px; color: #f8fafc; font-weight: 900;">-</h4>
                             <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-phone" style="width: 20px;"></i> الهاتف: <span id="resStudentPhone" style="color: #cbd5e1;">-</span></p>
                             <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-user-friends" style="width: 20px;"></i> ولي الأمر: <span id="resParentPhone" style="color: #cbd5e1;">-</span></p>
+                            <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-graduation-cap" style="width: 20px;"></i> المرحلة: <span id="resStudentGrade" style="color: #cbd5e1;">-</span></p>
                             <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-wallet" style="width: 20px;"></i> الرصيد الحالي: <span id="resStudentWallet" style="color: #10b981; font-weight: 900; font-size: 18px;">0 ج.م</span></p>
-                            <p style="margin: 0 0 8px 0; color: #94a3b8; font-weight: 600;"><i class="fas fa-shield-alt" style="width: 20px;"></i> حالة الحساب: <span id="resStudentStatus" style="font-weight: 900;">نشط</span></p>
                             
-                            <!-- إدارة الأجهزة -->
-                            <div style="background: #1e293b; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px dashed #475569;">
-                                <p style="margin: 0 0 10px 0; color: #f59e0b; font-weight: 800;"><i class="fas fa-mobile-alt"></i> إدارة الأجهزة (نقل الحساب)</p>
-                                <p style="margin: 0 0 10px 0; color: #cbd5e1; font-size: 13px;">المحاولات المتبقية: <strong id="resTransferAttempts" style="color: #10b981;">3</strong></p>
-                                <button id="btnResetAttempts" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px solid #3b82f6; padding: 8px 15px; border-radius: 8px; font-weight: 800; cursor: pointer; font-family: 'Cairo'; margin-bottom: 15px; width: 100%;">تصفير المحاولات (إرجاع لـ 3)</button>
-                                
-                                <p style="margin: 0 0 5px 0; color: #ef4444; font-size: 13px; font-weight: 800;">الأجهزة المحظورة ⛔:</p>
-                                <ul id="resBlockedDevicesList" style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px;">
-                                    <li style="color: #94a3b8; font-size: 12px;">لا توجد أجهزة محظورة.</li>
-                                </ul>
+                            <!-- 🚨 نظام الحماية ونقل الأجهزة 🚨 -->
+                            <div style="margin-top: 15px; padding: 15px; background: rgba(245,158,11,0.05); border: 1px dashed #f59e0b; border-radius: 10px;">
+                                <h5 style="margin: 0 0 10px 0; color: #f59e0b;"><i class="fas fa-mobile-alt"></i> حماية الأجهزة</h5>
+                                <p style="margin: 0 0 5px 0; color: #cbd5e1; font-size: 13px;">محاولات النقل المتبقية: <strong id="resTransferAttempts" style="color: #10b981; font-size:16px;">3</strong> 
+                                    <button id="btnResetAttempts" style="background: none; border: none; color: #3b82f6; cursor: pointer; text-decoration: underline; font-family: 'Cairo';">تصفير (جعلها 3)</button>
+                                </p>
+                                <div id="resBlockedDevicesContainer" style="margin-top: 10px; font-size: 13px; color: #ef4444;">
+                                    <strong>الأجهزة المحظورة:</strong> <span id="resBlockedCount">0</span> جهاز
+                                    <button id="btnUnblockDevices" style="background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid #10b981; padding: 3px 8px; border-radius: 5px; cursor: pointer; font-family: 'Cairo'; font-size: 12px; margin-right: 10px;">فك حظر جميع الأجهزة</button>
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- تعديل الرصيد -->
+
+                        <!-- تعديل الرصيد والحظر -->
                         <div style="flex: 1; min-width: 250px; background: #1e293b; padding: 20px; border-radius: 12px; border: 1px dashed #475569;">
                             <h5 style="margin: 0 0 15px 0; color: #cbd5e1; font-size: 16px; font-weight: 800;">تعديل الرصيد (إيداع / خصم)</h5>
                             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                                 <input type="number" id="chargeAmount" placeholder="المبلغ" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo'; font-weight: 800;">
-                                <button id="btnChargeWallet" style="background: #10b981; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;" title="إيداع"><i class="fas fa-plus"></i></button>
-                                <button id="btnDeductWallet" style="background: #ef4444; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;" title="خصم"><i class="fas fa-minus"></i></button>
+                                <button id="btnChargeWallet" style="background: #10b981; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i></button>
+                                <button id="btnDeductWallet" style="background: #ef4444; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-minus"></i></button>
                             </div>
-                            <button id="btnToggleBlock" style="width: 100%; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 12px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-ban"></i> حظر الطالب</button>
+                            <p style="margin: 0 0 10px 0; color: #94a3b8; font-weight: 600;">حالة الحساب: <span id="resStudentStatus" style="font-weight: 900;">نشط</span></p>
+                            <button id="btnToggleBlock" style="width: 100%; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 12px; border-radius: 8px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-ban"></i> حظر الطالب بالكامل</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 3. إدارة الكورسات -->
+        <!-- 3. الدعم الفني (Live Chat) 🚨 -->
+        <div id="liveChatSection" class="admin-section">
+            <div class="admin-table-container" style="padding: 0; background: transparent; border: none;">
+                <h3 style="color: #3b82f6; margin-bottom: 15px;"><i class="fas fa-comments"></i> شات الدعم الفني المباشر</h3>
+                <div class="chat-container">
+                    <div class="chat-sidebar" id="activeChatsList">
+                        <div style="padding: 15px; border-bottom: 1px solid #334155; color: #f8fafc; font-weight: 800; text-align: center;">الطلاب المنتظرين</div>
+                        <div id="chatUsersContainer" style="flex: 1; overflow-y: auto;">
+                            <!-- الطلاب هيظهروا هنا -->
+                        </div>
+                    </div>
+                    <div class="chat-main" id="chatMainArea">
+                        <div style="flex: 1; display: flex; justify-content: center; align-items: center; color: #94a3b8;">
+                            <p>اختر طالباً من القائمة للبدء في الرد...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. إدارة الكورسات 🚨 (تم إضافة اسم المقطع) -->
         <div id="coursesSection" class="admin-section">
             <div class="admin-table-container">
                 <h3 id="courseFormTitle"><i class="fas fa-plus-circle" style="color: #f59e0b;"></i> إضافة حصة أو كورس جديد</h3>
@@ -204,9 +223,7 @@
                         </div>
                         <div class="form-group-admin">
                             <label>اسم المدرس</label>
-                            <select id="courseInstructor" required>
-                                <option value="" disabled selected>جاري تحميل المدرسين...</option>
-                            </select>
+                            <select id="courseInstructor" required><option value="" disabled selected>جاري تحميل المدرسين...</option></select>
                         </div>
                         <div class="form-group-admin">
                             <label>المرحلة الدراسية</label>
@@ -240,11 +257,13 @@
                         </div>
                         
                         <div class="form-group-admin" style="grid-column: 1 / -1; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px dashed #3b82f6;">
-                            <label style="font-size: 18px; color: #f59e0b; margin-bottom: 10px;">إضافة مقاطع الفيديو للحصة 🎥</label>
+                            <label style="font-size: 18px; color: #f59e0b; margin-bottom: 10px;">إضافة فيديوهات الحصة 🎥</label>
                             <div id="courseVideosContainer"></div>
+                            
                             <button type="button" onclick="addCourseVideoRow()" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px dashed #3b82f6; padding: 12px; border-radius: 8px; width: 100%; font-family: 'Cairo'; font-weight: 800; cursor: pointer; margin-top: 15px;">
-                                <i class="fas fa-plus"></i> إضافة مقطع جديد للحصة
+                                <i class="fas fa-plus"></i> إضافة مقطع فيديو جديد
                             </button>
+
                             <div class="progress-bar-container" id="videoProgressContainer" style="display:none; width: 100%; background: #334155; border-radius: 8px; height: 15px; margin-top: 15px; overflow: hidden;">
                                 <div id="videoProgressBar" style="width: 0%; height: 100%; background: #10b981; transition: 0.2s;"></div>
                             </div>
@@ -257,89 +276,58 @@
                     </div>
                 </form>
             </div>
-            
             <div class="admin-table-container" style="margin-top: 20px;">
                 <h3>الحصص والكورسات المتاحة على المنصة 📚</h3>
                 <table>
-                    <thead><tr><th>العنوان</th><th>المدرس</th><th>المرحلة</th><th>المشتركين</th><th>إجراءات / إكسيل</th></tr></thead>
+                    <thead><tr><th>العنوان</th><th>المدرس</th><th>المرحلة</th><th>الطلاب</th><th>إجراءات / إكسيل</th></tr></thead>
                     <tbody id="adminCoursesTable"><tr><td colspan="5" style="text-align: center; color: #94a3b8;">جاري جلب الكورسات... ⏳</td></tr></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- 8. إدارة الباقات -->
-        <div id="packagesSection" class="admin-section">
+        <!-- 5. إدارة المدرسين -->
+        <div id="teachersSection" class="admin-section">
             <div class="admin-table-container">
-                <h3><i class="fas fa-boxes" style="color: #3b82f6;"></i> إضافة / تعديل باقة</h3>
-                <form id="addPackageForm">
-                    <input type="hidden" id="editingPkgId" value="">
+                <h3><i class="fas fa-chalkboard-teacher" style="color: #3b82f6;"></i> إضافة مدرس جديد للسلايدر والمنصة</h3>
+                <form id="addTeacherForm">
                     <div class="form-grid">
-                        <div class="form-group-admin">
-                            <label>اسم الباقة</label>
-                            <input type="text" id="pkgName" placeholder="مثال: باقة التميز" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>المرحلة الدراسية</label>
-                            <input type="text" id="pkgGrade" placeholder="مثال: المرحلة الثانوية" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>السعر القديم (قبل الخصم)</label>
-                            <input type="number" id="pkgOldPrice" placeholder="مثال: 500" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>السعر الجديد (بعد الخصم)</label>
-                            <input type="number" id="pkgNewPrice" placeholder="مثال: 400" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>تفاصيل الباقة (مفصول بفاصلة)</label>
-                            <input type="text" id="pkgFeatures" placeholder="مثال: 3 مدرسين, مراجعات مجانية" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>الحد الأقصى للمشاهدات للطالب</label>
-                            <input type="number" id="pkgMaxViews" placeholder="مثال: 3 (اتركه 0 لمشاهدة لا نهائية)" min="0" value="0" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>صورة الباقة (غلاف)</label>
-                            <input type="file" id="pkgImage" accept="image/*">
-                        </div>
-                        
-                        <div class="form-group-admin" style="grid-column: 1 / -1; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px dashed #3b82f6;">
-                            <label style="font-size: 18px; color: #3b82f6; margin-bottom: 10px;">إضافة مقاطع الباقة 🎥</label>
-                            <div id="packageVideosContainer"></div>
-                            <button type="button" onclick="addPackageVideoRow()" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px dashed #3b82f6; padding: 12px; border-radius: 8px; width: 100%; font-family: 'Cairo'; font-weight: 800; cursor: pointer; margin-top: 15px;">
-                                <i class="fas fa-plus"></i> إضافة مقطع جديد للباقة
-                            </button>
-                            <div class="progress-bar-container" id="pkgVideoProgressContainer" style="display:none; width: 100%; background: #334155; border-radius: 8px; height: 15px; margin-top: 15px; overflow: hidden;">
-                                <div id="pkgVideoProgressBar" style="width: 0%; height: 100%; background: #10b981; transition: 0.2s;"></div>
-                            </div>
-                            <small id="pkgVideoStatus" style="color: #10b981; font-weight: 800; display: block; margin-top: 5px;"></small>
-                        </div>
+                        <div class="form-group-admin"><label>اسم المدرس</label><input type="text" id="teacherName" required></div>
+                        <div class="form-group-admin"><label>المادة</label><input type="text" id="teacherSubject" required></div>
+                        <div class="form-group-admin"><label>المراحل الدراسية</label><select id="teacherStages" multiple style="height: 120px;" required>
+                            <option value="الأول الابتدائي">الأول الابتدائي</option><option value="الثاني الابتدائي">الثاني الابتدائي</option><option value="الثالث الابتدائي">الثالث الابتدائي</option><option value="الأول الإعدادي">الأول الإعدادي</option><option value="الثاني الإعدادي">الثاني الإعدادي</option><option value="الثالث الإعدادي">الثالث الإعدادي</option><option value="الأول الثانوي">الأول الثانوي</option><option value="الثاني الثانوي">الثاني الثانوي</option><option value="الثالث الثانوي">الثالث الثانوي</option><option value="الأول بكالوريا">الأول بكالوريا</option><option value="الثاني بكالوريا">الثاني بكالوريا</option><option value="الثالث بكالوريا">الثالث بكالوريا</option>
+                        </select></div>
+                        <div class="form-group-admin"><label>صورة المدرس</label><input type="file" id="teacherImage" accept="image/*"></div>
                     </div>
-                    <div style="display: flex; gap: 15px;">
-                        <button type="submit" id="btnSavePackage" style="flex: 1; background: #f59e0b; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i> حفظ ونشر الباقة</button>
-                        <button type="button" id="btnCancelPkgEdit" style="display: none; background: #334155; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">إلغاء التعديل</button>
-                    </div>
+                    <button type="submit" id="btnSaveTeacher" style="background: #f59e0b; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i> إضافة المدرس</button>
                 </form>
             </div>
             <div class="admin-table-container" style="margin-top: 20px;">
-                <h3>الباقات المتاحة للطلاب</h3>
+                <h3>المدرسين المسجلين</h3>
                 <table>
-                    <thead><tr><th>الباقة</th><th>المرحلة</th><th>السعر</th><th>المشتركين</th><th>إجراءات / إكسيل</th></tr></thead>
-                    <tbody id="adminPackagesTable"><tr><td colspan="5" style="text-align: center; color: #94a3b8;">جاري جلب الباقات...</td></tr></tbody>
+                    <thead><tr><th>المدرس</th><th>المادة</th><th>المراحل</th><th>إجراءات</th></tr></thead>
+                    <tbody id="adminTeachersTable"><tr><td colspan="4" style="text-align: center;">جاري الجلب...</td></tr></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- 4. قسم إدارة الامتحانات -->
+        <!-- 6. إدارة الامتحانات 🚨 (تحديث الذكاء الاصطناعي و PDF) -->
         <div id="examsSection" class="admin-section">
             <div class="admin-table-container">
                 <h3 id="examFormTitle"><i class="fas fa-file-signature" style="color: #3b82f6;"></i> إنشاء/تعديل امتحان</h3>
                 <form id="addExamForm">
                     <input type="hidden" id="editingExamId" value="">
-                    <div class="form-group-admin" style="margin-bottom: 20px;">
-                        <label>اسم الامتحان (مثال: امتحان الباب الأول)</label>
-                        <input type="text" id="examTitle" required>
+                    
+                    <div class="form-grid">
+                        <div class="form-group-admin">
+                            <label>اسم الامتحان</label>
+                            <input type="text" id="examTitle" placeholder="مثال: امتحان الباب الأول" required>
+                        </div>
+                        <div class="form-group-admin">
+                            <label>رفع ملف الامتحان (PDF) - اختياري</label>
+                            <input type="file" id="examPdfFile" accept="application/pdf">
+                        </div>
                     </div>
+
                     <div id="questionsContainer"></div>
                     <button type="button" id="btnAddQuestion" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px dashed #3b82f6; padding: 12px; border-radius: 8px; width: 100%; font-family: 'Cairo'; font-weight: 800; cursor: pointer; margin-bottom: 20px;">
                         <i class="fas fa-plus"></i> إضافة سؤال جديد
@@ -351,9 +339,7 @@
                 </form>
             </div>
             <div class="admin-table-container" style="margin-top: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 15px;">
-                    <h3 style="margin: 0; border: none; padding: 0;">الامتحانات المتوفرة والنتائج 📝</h3>
-                </div>
+                <h3>الامتحانات المتوفرة والنتائج 📝</h3>
                 <table>
                     <thead><tr><th>اسم الامتحان</th><th>الأسئلة</th><th>الطلاب المُمتحنين</th><th>إجراءات / نتائج</th></tr></thead>
                     <tbody id="adminExamsTable">
@@ -363,7 +349,7 @@
             </div>
         </div>
 
-        <!-- 5. سجل المشاهدات والتصحيح -->
+        <!-- 7. سجل المشاهدات والتصحيح 🚨 (تحديث رقم الوالد والتصحيح المقالي) -->
         <div id="gradingSection" class="admin-section">
             <div class="admin-table-container">
                 <h3><i class="fas fa-eye" style="color: #3b82f6;"></i> سجل المشاهدات والتصحيح</h3>
@@ -385,45 +371,34 @@
                     </div>
                 </div>
                 <table>
-                    <thead><tr><th>الطالب</th><th>ولي الأمر</th><th>الحصة / الامتحان</th><th>الدرجة</th><th>الحالة</th><th>وقت الحل</th><th>إجراءات</th></tr></thead>
-                    <tbody id="adminGradingTable"><tr><td colspan="7" style="text-align: center; color: #94a3b8;">جاري جلب البيانات... ⏳</td></tr></tbody>
+                    <thead><tr><th>الطالب وولي الأمر</th><th>الحصة / الامتحان</th><th>الدرجة</th><th>الحالة</th><th>وقت الحل</th><th>إجراءات / تصحيح</th></tr></thead>
+                    <tbody id="adminGradingTable"><tr><td colspan="6" style="text-align: center; color: #94a3b8;">جاري جلب البيانات... ⏳</td></tr></tbody>
                 </table>
             </div>
         </div>
         
-        <!-- 🚨 قسم خدمة العملاء لايف 🚨 -->
-        <div id="liveChatSection" class="admin-section">
-            <div class="admin-table-container">
-                <h3 style="color: #3b82f6;"><i class="fas fa-headset"></i> محادثات الدعم الفني المباشرة</h3>
-                <div style="display: flex; gap: 20px; height: 600px;">
-                    <!-- قائمة المحادثات -->
-                    <div style="flex: 1; background: #0f172a; border-radius: 12px; border: 1px solid #334155; overflow-y: auto;" id="chatListContainer">
-                        <div style="padding: 20px; text-align: center; color: #94a3b8;">جاري تحميل المحادثات...</div>
-                    </div>
-                    
-                    <!-- نافذة الشات -->
-                    <div style="flex: 2; background: #0f172a; border-radius: 12px; border: 1px solid #334155; display: flex; flex-direction: column;">
-                        <div id="activeChatHeader" style="padding: 15px; border-bottom: 1px solid #334155; background: #1e293b; border-radius: 12px 12px 0 0;">
-                            <h4 style="margin: 0; color: #f8fafc;">اختر محادثة للبدء</h4>
-                        </div>
-                        <div id="activeChatBody" style="flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
-                            <!-- رسائل الشات تظهر هنا -->
-                        </div>
-                        <div id="activeChatInputArea" style="padding: 15px; border-top: 1px solid #334155; background: #1e293b; border-radius: 0 0 12px 12px; display: none; gap: 10px;">
-                            <input type="text" id="adminChatInput" placeholder="اكتب ردك للطالب..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';">
-                            <button id="btnAdminSendChat" style="background: #10b981; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: 'Cairo';"><i class="fas fa-paper-plane"></i> إرسال</button>
-                        </div>
-                    </div>
+        <!-- نافذة تصحيح المقالي (مخفية) -->
+        <div class="modal-overlay" id="essayGradingModal">
+            <div class="modal-content" style="max-width: 600px; text-align: right;">
+                <h3 style="color: #3b82f6; margin-bottom: 15px;"><i class="fas fa-marker"></i> تصحيح إجابة مقالية</h3>
+                <div id="essayGradingContent" style="color: #f8fafc; font-size: 15px; margin-bottom: 20px; background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155;"></div>
+                <div class="form-group-admin">
+                    <label style="color: #10b981;">الدرجة المستحقة للسؤال (من إجمالي درجة السؤال)</label>
+                    <input type="number" id="essayScoreInput" placeholder="أدخل الدرجة..." required>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button id="btnSaveEssayGrade" class="admin-modal-btn" style="background: #10b981; color: #fff; flex: 1;">حفظ الدرجة وإرسال الواتس</button>
+                    <button onclick="document.getElementById('essayGradingModal').classList.remove('active')" class="admin-modal-btn" style="background: #ef4444; color: #fff; flex: 1;">إلغاء</button>
                 </div>
             </div>
         </div>
 
-        <!-- الخزنة (العمليات المالية) -->
+        <!-- 8. المحفظة (العمليات) -->
         <div id="walletSection" class="admin-section">
             <div class="admin-table-container">
-                <h3 style="color: #10b981;"><i class="fas fa-wallet"></i> الخزنة (جميع العمليات والشحن)</h3>
+                <h3 style="color: #10b981;"><i class="fas fa-wallet"></i> سجل الشحن وعمليات الدفع</h3>
                 <table>
-                    <thead><tr><th>التاريخ</th><th>الطالب</th><th>نوع العملية</th><th>القيمة</th><th>التفاصيل (كورس / كود)</th></tr></thead>
+                    <thead><tr><th>التاريخ</th><th>الطالب</th><th>نوع العملية</th><th>القيمة</th><th>التفاصيل (اسم الكورس / الكود)</th></tr></thead>
                     <tbody id="adminWalletTable">
                         <tr><td colspan="5" style="text-align: center; color: #94a3b8;">جاري جلب العمليات...</td></tr>
                     </tbody>
@@ -431,7 +406,7 @@
             </div>
         </div>
         
-        <!-- تقارير المدرسين (المعدل) -->
+        <!-- 9. تقارير المدرسين (PDF التفصيلي) 🚨 -->
         <div id="teacherReportSection" class="admin-section">
             <div class="admin-table-container">
                 <h3 style="color: #f59e0b;"><i class="fas fa-file-invoice-dollar"></i> التقرير المالي والإحصائي للمدرس</h3>
@@ -451,193 +426,49 @@
                         </select>
                     </div>
                 </div>
-                <button id="btnGenerateReport" style="background: #3b82f6; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-print"></i> استخراج تقرير مفصل (PDF)</button>
+                <button id="btnGenerateReport" style="background: #3b82f6; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-print"></i> استخراج التقرير التفصيلي (PDF)</button>
             </div>
         </div>
 
-        <!-- 6. قسم المدرسين -->
-        <div id="teachersSection" class="admin-section">
-            <div class="admin-table-container">
-                <h3><i class="fas fa-chalkboard-teacher" style="color: #3b82f6;"></i> إضافة مدرس للسلايدر</h3>
-                <form id="addTeacherForm">
-                    <div class="form-grid">
-                        <div class="form-group-admin">
-                            <label>اسم المدرس</label>
-                            <input type="text" id="teacherName" placeholder="مثال: أ. عبدالرحمن عادل" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>المادة التي يدرسها</label>
-                            <input type="text" id="teacherSubject" placeholder="مثال: فيزياء، لغات..." required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>المراحل الدراسية (للفلترة)</label>
-                            <select id="teacherStages" multiple style="height: 120px;" required>
-                                <option value="الأول الابتدائي">الأول الابتدائي</option>
-                                <option value="الثاني الابتدائي">الثاني الابتدائي</option>
-                                <option value="الثالث الابتدائي">الثالث الابتدائي</option>
-                                <option value="الأول الإعدادي">الأول الإعدادي</option>
-                                <option value="الثاني الإعدادي">الثاني الإعدادي</option>
-                                <option value="الثالث الإعدادي">الثالث الإعدادي</option>
-                                <option value="الأول الثانوي">الأول الثانوي</option>
-                                <option value="الثاني الثانوي">الثاني الثانوي</option>
-                                <option value="الثالث الثانوي">الثالث الثانوي</option>
-                                <option value="الأول بكالوريا">الأول بكالوريا</option>
-                                <option value="الثاني بكالوريا">الثاني بكالوريا</option>
-                                <option value="الثالث بكالوريا">الثالث بكالوريا</option>
-                            </select>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>صورة المدرس (خلفية شفافة PNG أفضل)</label>
-                            <input type="file" id="teacherImage" accept="image/*">
-                        </div>
-                    </div>
-                    <button type="submit" id="btnSaveTeacher" style="background: #f59e0b; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i> إضافة المدرس</button>
-                </form>
-            </div>
-            <div class="admin-table-container" style="margin-top: 20px;">
-                <h3>المدرسين المسجلين بالمنصة</h3>
-                <table>
-                    <thead><tr><th>المدرس</th><th>المادة</th><th>المراحل</th><th>إجراءات</th></tr></thead>
-                    <tbody id="adminTeachersTable">
-                        <tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب المدرسين...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 7. مصنع الأكواد -->
-        <div id="codesSection" class="admin-section">
-            <div class="admin-table-container">
-                <h3><i class="fas fa-qrcode" style="color: #10b981;"></i> توليد أكواد الشحن</h3>
-                <form id="generateCodesForm">
-                    <div class="form-grid">
-                        <div class="form-group-admin">
-                            <label>عدد الأكواد المطلوبة</label>
-                            <input type="number" id="codesCount" placeholder="مثال: 50" min="1" max="500" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>سعر / قيمة الكود (ج.م)</label>
-                            <input type="number" id="codePrice" placeholder="مثال: 100" min="1" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>اسم المندوب / السنتر</label>
-                            <input type="text" id="codeDelegate" placeholder="مثال: مكتبة الأمل" required>
-                        </div>
-                    </div>
-                    <button type="submit" id="btnGenerateCodes" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-cogs"></i> توليد وتحميل إكسيل للأكواد</button>
-                </form>
-            </div>
-
-            <div class="admin-table-container" style="margin-top: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 15px;">
-                    <h3 style="margin: 0; border: none; padding: 0;">سجل الأكواد</h3>
-                    <button id="btnExportAllCodes" style="background: #3b82f6; color: #fff; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 800; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-file-excel"></i> تحميل كـ Excel</button>
-                </div>
-                <div style="margin-bottom: 15px; display: flex; gap: 10px;">
-                    <input type="text" id="searchCodeInput" placeholder="ابحث بكود أو مندوب..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';">
-                    <select id="filterCodeStatus" style="padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';">
-                        <option value="all">كل الأكواد</option>
-                        <option value="unused">لم تُستخدم بعد</option>
-                        <option value="used">تم الشحن (مُستخدمة)</option>
-                    </select>
-                </div>
-                <table>
-                    <thead><tr><th>الكود</th><th>القيمة</th><th>المندوب</th><th>الحالة / الطالب</th><th>تاريخ التوليد</th><th>إجراءات</th></tr></thead>
-                    <tbody id="adminCodesTable">
-                        <tr><td colspan="6" style="text-align: center; color: #94a3b8;">جاري جلب الأكواد...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <!-- 10. مصنع الأكواد والبرومو كود وإدارة المساعدين (محتوى قياسي كما هو) -->
+        <div id="codesSection" class="admin-section"><div class="admin-table-container"><h3><i class="fas fa-qrcode" style="color: #10b981;"></i> مصنع الأكواد</h3><form id="generateCodesForm"><div class="form-grid"><div class="form-group-admin"><label>عدد الأكواد</label><input type="number" id="codesCount" min="1" max="500" required></div><div class="form-group-admin"><label>قيمة الكود (ج.م)</label><input type="number" id="codePrice" min="1" required></div><div class="form-group-admin"><label>المندوب</label><input type="text" id="codeDelegate" required></div></div><button type="submit" id="btnGenerateCodes" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-cogs"></i> توليد وتحميل إكسيل</button></form></div><div class="admin-table-container" style="margin-top: 20px;"><table><thead><tr><th>الكود</th><th>القيمة</th><th>المندوب</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead><tbody id="adminCodesTable"></tbody></table></div></div>
         
-        <!-- قسم البرومو كود -->
-        <div id="promoCodesSection" class="admin-section">
+        <div id="promoCodesSection" class="admin-section"><div class="admin-table-container"><h3><i class="fas fa-tags" style="color: #d946ef;"></i> برومو كود</h3><form id="addPromoCodeForm"><div class="form-grid"><div class="form-group-admin"><label>الكلمة</label><input type="text" id="promoCodeString" style="text-transform: uppercase;" required></div><div class="form-group-admin"><label>نسبة الخصم (%)</label><input type="number" id="promoCodeDiscount" min="1" max="100" required></div><div class="form-group-admin"><label>تاريخ الانتهاء</label><input type="date" id="promoCodeExpiry" required></div></div><button type="submit" id="btnSavePromoCode" style="background: #d946ef; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">إنشاء</button></form></div></div>
+        
+        <div id="packagesSection" class="admin-section">
             <div class="admin-table-container">
-                <h3 style="color: #d946ef;"><i class="fas fa-tags"></i> توليد برومو كود للخصومات</h3>
-                <form id="addPromoCodeForm">
+                <h3><i class="fas fa-boxes" style="color: #3b82f6;"></i> إدارة الباقات</h3>
+                <form id="addPackageForm">
+                    <input type="hidden" id="editingPkgId" value="">
                     <div class="form-grid">
-                        <div class="form-group-admin">
-                            <label>كلمة البرومو كود (مثال: KHALED20)</label>
-                            <input type="text" id="promoCodeString" style="text-transform: uppercase;" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>نسبة الخصم (%)</label>
-                            <input type="number" id="promoCodeDiscount" placeholder="مثال: 20" min="1" max="100" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>تاريخ الانتهاء</label>
-                            <input type="date" id="promoCodeExpiry" required>
+                        <div class="form-group-admin"><label>اسم الباقة</label><input type="text" id="pkgName" required></div>
+                        <div class="form-group-admin"><label>المرحلة</label><input type="text" id="pkgGrade" required></div>
+                        <div class="form-group-admin"><label>السعر القديم</label><input type="number" id="pkgOldPrice" required></div>
+                        <div class="form-group-admin"><label>السعر الجديد</label><input type="number" id="pkgNewPrice" required></div>
+                        <div class="form-group-admin"><label>التفاصيل (مفصولة بفاصلة)</label><input type="text" id="pkgFeatures" required></div>
+                        <div class="form-group-admin"><label>صورة الغلاف</label><input type="file" id="pkgImage" accept="image/*"></div>
+                        <div class="form-group-admin" style="grid-column: 1 / -1; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px dashed #3b82f6;">
+                            <label style="font-size: 18px; color: #3b82f6; margin-bottom: 10px;">إضافة محتوى الباقة 🎥</label>
+                            <div id="packageVideosContainer"></div>
+                            <button type="button" onclick="addPackageVideoRow()" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px dashed #3b82f6; padding: 12px; border-radius: 8px; width: 100%; font-family: 'Cairo'; font-weight: 800; cursor: pointer; margin-top: 15px;"><i class="fas fa-plus"></i> إضافة مقطع جديد</button>
                         </div>
                     </div>
-                    <button type="submit" id="btnSavePromoCode" style="background: #d946ef; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-plus"></i> إنشاء البرومو كود</button>
+                    <div style="display: flex; gap: 15px;">
+                        <button type="submit" id="btnSavePackage" style="flex: 1; background: #f59e0b; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">حفظ ونشر</button>
+                        <button type="button" id="btnCancelPkgEdit" style="display: none; background: #334155; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; cursor: pointer;">إلغاء</button>
+                    </div>
                 </form>
             </div>
             <div class="admin-table-container" style="margin-top: 20px;">
-                <h3>البروموكودات المتاحة</h3>
-                <table>
-                    <thead><tr><th>البرومو كود</th><th>نسبة الخصم</th><th>تاريخ الانتهاء</th><th>إجراءات</th></tr></thead>
-                    <tbody id="adminPromoCodesTable"><tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب البيانات...</td></tr></tbody>
-                </table>
+                <table><thead><tr><th>الباقة</th><th>المرحلة</th><th>الطلاب</th><th>السعر</th><th>إجراءات</th></tr></thead><tbody id="adminPackagesTable"></tbody></table>
             </div>
         </div>
 
-        <!-- 9. إدارة المساعدين -->
-        <div id="assistantsSection" class="admin-section">
-            <div class="admin-table-container">
-                <h3><i class="fas fa-user-shield" style="color: #10b981;"></i> إضافة/تعديل حساب مساعد (سكرتير مدرس)</h3>
-                <form id="addAssistantForm">
-                    <input type="hidden" id="editingAssistantId" value="">
-                    <div class="form-grid">
-                        <div class="form-group-admin">
-                            <label>اسم المساعد</label>
-                            <input type="text" id="astName" placeholder="مثال: محمد السكرتير" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>اسم المستخدم (للدخول)</label>
-                            <input type="text" id="astUsername" placeholder="مثال: user123" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>كلمة المرور</label>
-                            <input type="text" id="astPassword" required>
-                        </div>
-                        <div class="form-group-admin">
-                            <label>صلاحية المدرس (يتابع شغل مين؟)</label>
-                            <select id="astTeacher" required>
-                                <option value="" disabled selected>جاري تحميل المدرسين...</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group-admin" style="grid-column: 1 / -1;">
-                            <label>صلاحيات المساعد (علم على اللي يقدر يشوفه ويديره)</label>
-                            <div style="display: flex; gap: 15px; flex-wrap: wrap; background: #0f172a; padding: 15px; border-radius: 12px; border: 1px solid #334155;">
-                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="students"> إدارة الطلاب</label>
-                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="courses"> إدارة الكورسات</label>
-                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="exams"> إدارة الامتحانات</label>
-                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="grading"> المشاهدات والتصحيح</label>
-                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="codes"> مصنع الأكواد</label>
-                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="wallet"> المحفظة والعمليات</label>
-                                <label style="color:#cbd5e1; cursor:pointer; display:flex; align-items:center; gap:8px;"><input type="checkbox" class="ast-perm" value="teacherReport"> تقرير المدرس</label>
-                            </div>
-                        </div>
-
-                    </div>
-                    <button type="submit" id="btnSaveAssistant" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%;"><i class="fas fa-check"></i> حفظ بيانات المساعد</button>
-                </form>
-            </div>
-            <div class="admin-table-container" style="margin-top: 20px;">
-                <h3>المساعدين المسجلين</h3>
-                <table>
-                    <thead><tr><th>المساعد</th><th>اسم الدخول</th><th>مساعد للأستاذ</th><th>إجراءات</th></tr></thead>
-                    <tbody id="adminAssistantsTable"><tr><td colspan="4" style="text-align: center; color: #94a3b8;">جاري جلب البيانات...</td></tr></tbody>
-                </table>
-            </div>
-        </div>
+        <div id="assistantsSection" class="admin-section"><div class="admin-table-container"><h3><i class="fas fa-user-shield" style="color: #10b981;"></i> إدارة المساعدين</h3><form id="addAssistantForm"><input type="hidden" id="editingAssistantId" value=""><div class="form-grid"><div class="form-group-admin"><label>اسم المساعد</label><input type="text" id="astName" required></div><div class="form-group-admin"><label>اسم المستخدم</label><input type="text" id="astUsername" required></div><div class="form-group-admin"><label>كلمة المرور</label><input type="text" id="astPassword" required></div><div class="form-group-admin"><label>يتابع مدرس</label><select id="astTeacher" required><option value="" disabled selected>جاري التحميل...</option></select></div><div class="form-group-admin" style="grid-column: 1 / -1;"><label>الصلاحيات</label><div style="display: flex; gap: 15px; flex-wrap: wrap; background: #0f172a; padding: 15px; border-radius: 12px;"><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="students"> الطلاب</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="courses"> الكورسات</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="exams"> الامتحانات</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="grading"> المشاهدات</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="codes"> الأكواد</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="wallet"> المحفظة</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="teacherReport"> التقارير</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="liveChat"> الدعم الفني</label></div></div></div><button type="submit" id="btnSaveAssistant" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; width: 100%; cursor: pointer;">حفظ</button></form></div><div class="admin-table-container" style="margin-top: 20px;"><table><thead><tr><th>المساعد</th><th>المستخدم</th><th>للمدرس</th><th>إجراءات</th></tr></thead><tbody id="adminAssistantsTable"></tbody></table></div></div>
 
     </main>
 
-    <!-- النوافذ المنبثقة -->
-    <div id="liveToast" class="toast-notification"><i class="fas fa-bell"></i><div><div style="font-size: 14px; opacity: 0.9;">إشعار</div><div id="toastMessage" style="font-size: 16px;">رسالة</div></div></div>
-    
+    <!-- النوافذ المنبثقة للتنبيهات -->
     <div class="modal-overlay" id="customAdminAlert">
         <div class="modal-content">
             <div class="modal-icon" id="adminAlertIcon" style="font-size: 60px; margin-bottom: 15px;"></div>
@@ -659,83 +490,85 @@
         </div>
     </div>
 
-    <!-- نافذة عرض إجابة الطالب المقالية -->
-    <div class="modal-overlay" id="viewAnswerModal">
-        <div class="modal-content" style="max-width: 600px; text-align: right;">
-            <h3 style="color: #f59e0b; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 10px;">إجابة الطالب المقالية</h3>
-            <div id="studentEssayAnswerContent" style="background: #0f172a; padding: 15px; border-radius: 8px; color: #fff; min-height: 100px; max-height: 300px; overflow-y: auto; margin-bottom: 20px; font-size: 16px; border: 1px solid #334155;"></div>
-            <button onclick="document.getElementById('viewAnswerModal').classList.remove('active')" style="width: 100%; background: #3b82f6; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer;">إغلاق</button>
-        </div>
-    </div>
-
-    <!-- ديف مخفي لتوليد تقارير PDF -->
-    <div class="pdf-export-content" id="pdfReportContent">
+    <!-- تقرير الـ PDF المخفي للمدرسين 🚨 -->
+    <div id="pdfReportContent">
         <div style="text-align: center; margin-bottom: 30px;">
             <img src="https://www.primeeacademy.com/logo%20prime.png" style="width: 120px;">
-            <h1 style="color: #1e293b; margin: 10px 0;">Primee Academy</h1>
-            <h2 style="border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; color: #3b82f6;">التقرير المالي والإحصائي للأستاذ: <span id="pdfTeacherName" style="color: #f59e0b;"></span></h2>
+            <h1 style="color: #5b21b6; margin: 10px 0;">Primee Academy</h1>
+            <h2 style="border-bottom: 2px solid #cbd5e1; padding-bottom: 10px;">التقرير المالي والإحصائي للأستاذ: <span id="pdfTeacherName" style="color: #f59e0b;"></span></h2>
             <p>الفترة الزمنية: <span id="pdfPeriod"></span></p>
         </div>
         
-        <!-- تفاصيل الكورسات والباقات -->
-        <h3 style="color: #1e293b; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px;">تفاصيل المبيعات (الحصص والباقات)</h3>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;" border="1">
             <thead>
-                <tr style="background: #f8fafc; color: #000;">
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">النوع</th>
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">العنوان</th>
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">عدد المشتركين</th>
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">السعر</th>
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">إجمالي الأرباح</th>
+                <tr style="background: #f8fafc;">
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">إجمالي الطلاب (مكرر)</th>
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">عدد الكورسات المباعة</th>
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000; font-size: 20px;">إجمالي الأرباح</th>
                 </tr>
             </thead>
-            <tbody id="pdfDetailedSalesBody"></tbody>
+            <tbody>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; color:#000;" id="pdfTotalStudents">0</td>
+                    <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; color:#000;" id="pdfTotalSalesCount">0</td>
+                    <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; color:#10b981; font-weight: bold; font-size: 20px;" id="pdfTotalRevenue">0 ج.م</td>
+                </tr>
+            </tbody>
         </table>
 
-        <div style="background: #f1f5f9; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #10b981; margin-bottom: 30px;">
-            <h3 style="margin: 0; color: #1e293b;">إجمالي أرباح الفترة: <span id="pdfTotalRevenue" style="color: #10b981; font-size: 26px;">0 ج.م</span></h3>
-        </div>
-
-        <h3 style="color: #1e293b;">توزيع الطلاب حسب المحافظات</h3>
-        <table style="width: 100%; border-collapse: collapse;" border="1">
+        <h3 style="color: #5b21b6;">تفاصيل مبيعات الحصص والباقات</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;" border="1">
             <thead>
-                <tr style="background: #f8fafc; color:#000;">
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">المحافظة</th>
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">عدد الطلاب</th>
+                <tr style="background: #f8fafc;">
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">اسم الحصة / الباقة</th>
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">سعر الوحدة</th>
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">عدد الطلاب</th>
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">الإجمالي</th>
                 </tr>
             </thead>
-            <tbody id="pdfGovTableBody"></tbody>
+            <tbody id="pdfTeacherCoursesTableBody"></tbody>
         </table>
-        
-        <div style="margin-top: 50px; text-align: left; color: #64748b;">
+
+        <div style="margin-top: 50px; text-align: left;">
             <p>تاريخ استخراج التقرير: <span id="pdfGenerateDate"></span></p>
-            <p style="font-weight: 800; color: #1e293b;">إدارة منصة Primee</p>
+            <p style="font-weight: 800;">إدارة منصة Primee</p>
         </div>
     </div>
-    
-    <!-- ديف مخفي لتوليد تقرير الامتحان PDF -->
-    <div class="pdf-export-content" id="pdfExamReportContent">
+
+    <!-- تقرير الـ PDF المخفي لنتائج الامتحانات 🚨 -->
+    <div id="examPdfReportContent">
         <div style="text-align: center; margin-bottom: 30px;">
             <img src="https://www.primeeacademy.com/logo%20prime.png" style="width: 120px;">
-            <h1 style="color: #1e293b; margin: 10px 0;">Primee Academy</h1>
-            <h2 style="border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; color: #3b82f6;">تقرير نتائج امتحان: <span id="pdfExamTitleDisplay" style="color: #f59e0b;"></span></h2>
+            <h1 style="color: #5b21b6; margin: 10px 0;">Primee Academy</h1>
+            <h2 style="border-bottom: 2px solid #cbd5e1; padding-bottom: 10px;">نتيجة امتحان: <span id="pdfExamName" style="color: #ef4444;"></span></h2>
         </div>
-        <table style="width: 100%; border-collapse: collapse;" border="1">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;" border="1">
             <thead>
-                <tr style="background: #f8fafc; color: #000;">
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">اسم الطالب</th>
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">رقم الطالب</th>
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">رقم ولي الأمر</th>
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">الدرجة</th>
-                    <th style="padding: 10px; border: 1px solid #cbd5e1;">الحالة</th>
+                <tr style="background: #f8fafc;">
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">م</th>
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">اسم الطالب</th>
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">رقم الطالب</th>
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">رقم ولي الأمر</th>
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">الدرجة</th>
+                    <th style="padding: 10px; border: 1px solid #cbd5e1; color:#000;">الحالة</th>
                 </tr>
             </thead>
-            <tbody id="pdfExamStudentsBody"></tbody>
+            <tbody id="pdfExamTableBody"></tbody>
         </table>
+        <div style="margin-top: 50px; text-align: left;">
+            <p style="font-weight: 800;">إدارة منصة Primee</p>
+        </div>
     </div>
 
     <script>
-        // إظهار وإخفاء القائمة الجانبية
+        // 🚨 حماية F12 والرايت كليك 🚨
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) || (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+            }
+        });
+
         document.getElementById('toggleSidebarBtn')?.addEventListener('click', () => {
             document.querySelector('.admin-sidebar').classList.toggle('closed');
             document.querySelector('.admin-main').classList.toggle('expanded');
@@ -748,7 +581,7 @@
             element.classList.add('active');
         }
 
-        // دوال إضافة بلوكات الفيديوهات للكورسات والباقات (تحديث بإضافة اسم المقطع)
+        // 🚨 تعديل دوال إضافة البلوكات (إضافة حقل اسم المقطع) 🚨
         window.addCourseVideoRow = function() {
             const container = document.getElementById('courseVideosContainer');
             const row = document.createElement('div');
@@ -756,11 +589,11 @@
             row.style.cssText = 'background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 10px; position: relative;';
             row.innerHTML = `
                 <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 10px; left: 10px; background: rgba(239,68,68,0.1); color: #ef4444; border: none; border-radius: 8px; cursor: pointer; padding: 5px 10px;"><i class="fas fa-trash"></i></button>
-                <label>اسم المقطع (يظهر للطالب) ✏️</label>
-                <input type="text" class="course-video-title" placeholder="مثال: شرح الجزء الأول" style="margin-bottom: 10px; width:100%; background: #0f172a;" required>
+                <label>اسم المقطع (مثال: الجزء الأول)</label>
+                <input type="text" class="course-video-title" placeholder="اسم المقطع..." style="width:100%; background: #0f172a; margin-bottom:10px;" required>
                 <label>فيديو الحصة 🎥</label>
                 <input type="file" class="course-video-file" accept="video/mp4,video/x-m4v,video/*" style="margin-bottom: 10px; width:100%; background: #0f172a;">
-                <label>الامتحان المرتبط بهذا الفيديو</label>
+                <label>الامتحان المربوط بهذا الفيديو (لفتح الفيديو التالي)</label>
                 <select class="course-video-exam exam-select-sync" style="width:100%; background: #0f172a;">
                     ${window.examOptionsHTML || '<option value="">بدون امتحان (مفتوحة)</option>'}
                 </select>
@@ -775,16 +608,28 @@
             row.style.cssText = 'background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 10px; position: relative;';
             row.innerHTML = `
                 <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 10px; left: 10px; background: rgba(239,68,68,0.1); color: #ef4444; border: none; border-radius: 8px; cursor: pointer; padding: 5px 10px;"><i class="fas fa-trash"></i></button>
-                <label>اسم المقطع (يظهر للطالب) ✏️</label>
-                <input type="text" class="pkg-video-title" placeholder="مثال: مراجعة نهائية" style="margin-bottom: 10px; width:100%; background: #0f172a;" required>
+                <label>اسم المقطع</label>
+                <input type="text" class="pkg-video-title" placeholder="اسم المقطع..." style="width:100%; background: #0f172a; margin-bottom:10px;" required>
                 <label>فيديو الباقة 🎥</label>
                 <input type="file" class="pkg-video-file" accept="video/mp4,video/x-m4v,video/*" style="margin-bottom: 10px; width:100%; background: #0f172a;">
-                <label>الامتحان المرتبط بهذا الفيديو</label>
+                <label>الامتحان المربوط</label>
                 <select class="pkg-video-exam exam-select-sync" style="width:100%; background: #0f172a;">
                     ${window.examOptionsHTML || '<option value="">بدون امتحان (مفتوحة)</option>'}
                 </select>
             `;
             container.appendChild(row);
+        }
+
+        // 🚨 دالة تغيير شكل أسئلة المقالي لتدعم AI 🚨
+        window.toggleQType = function(id) {
+            const type = document.getElementById(`qType_${id}`).value;
+            document.getElementById(`mcqContainer_${id}`).style.display = type === 'mcq' ? 'block' : 'none';
+            document.getElementById(`essayAiContainer_${id}`).style.display = type === 'essay' ? 'block' : 'none';
+        }
+
+        window.toggleAiModelAnswer = function(id) {
+            const isChecked = document.getElementById(`qAiGrade_${id}`).checked;
+            document.getElementById(`qModelAnswer_${id}`).style.display = isChecked ? 'block' : 'none';
         }
     </script>
     <script type="module" src="admin-dashboard.js?v=999"></script>
