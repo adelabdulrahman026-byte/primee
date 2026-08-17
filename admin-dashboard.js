@@ -21,7 +21,6 @@ document.addEventListener('keydown', e => {
     }
 });
 
-// حماية الصفحة وتطبيق الصلاحيات
 if (localStorage.getItem('adminLoggedIn') !== 'true') window.location.replace('admin-login.html');
 
 document.getElementById('adminLogoutBtn')?.addEventListener('click', () => { 
@@ -53,7 +52,6 @@ function applyPermissions() {
 }
 applyPermissions();
 
-// التنبيهات
 function adminAlert(title, msg, type = 'success') {
     const modal = document.getElementById('customAdminAlert');
     if(!modal) return;
@@ -74,7 +72,6 @@ window.adminConfirm = function(msg) {
     });
 }
 
-// 🚨 تفعيل زرار الإشعارات 🚨
 document.getElementById('enableSoundBtn')?.addEventListener('click', () => {
     if (Notification.permission !== "granted") {
         Notification.requestPermission().then(perm => {
@@ -85,7 +82,6 @@ document.getElementById('enableSoundBtn')?.addEventListener('click', () => {
     }
 });
 
-// 🚨 دالة إرسال الواتساب السريعة 🚨
 async function sendWhatsAppMessage(phone, msg) {
     if (!phone) return false;
     try {
@@ -96,22 +92,18 @@ async function sendWhatsAppMessage(phone, msg) {
         if (formattedPhone.startsWith('0')) formattedPhone = '2' + formattedPhone;
         let chatId = formattedPhone + "@c.us";
         let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
-        
         fetch(url, { method: "POST", headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` }, body: JSON.stringify({ chat_id: chatId, text: msg }) }).catch(e=>console.log(e));
         return true;
     } catch (e) { return false; }
 }
 window.sendWhatsAppToParent = sendWhatsAppMessage;
 
-// دالة الرفع السريعة للصور (R2)
 async function uploadImageToR2(file) {
-    const formData = new FormData();
-    formData.append("image", file);
+    const formData = new FormData(); formData.append("image", file);
     try {
         const response = await fetch("https://primee-api.adelabdulrahman026.workers.dev/upload-image", { method: "POST", body: formData });
         const data = await response.json();
-        if (data.success) return data.url;
-        throw new Error(data.error);
+        if (data.success) return data.url; throw new Error(data.error);
     } catch (error) { throw new Error("فشل الرفع"); }
 }
 
@@ -121,8 +113,7 @@ async function uploadToVimeo(file, progressCallback) {
     if (!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo غير موجود");
 
     const createResponse = await fetch("https://api.vimeo.com/me/videos", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${keys.vimeo_token}`, "Content-Type": "application/json", Accept: "application/vnd.vimeo.*+json;version=3.4" },
+        method: "POST", headers: { Authorization: `Bearer ${keys.vimeo_token}`, "Content-Type": "application/json", Accept: "application/vnd.vimeo.*+json;version=3.4" },
         body: JSON.stringify({ upload: { approach: "tus", size: file.size.toString() } })
     });
     if (!createResponse.ok) throw new Error(await createResponse.text());
@@ -130,17 +121,12 @@ async function uploadToVimeo(file, progressCallback) {
 
     return new Promise((resolve, reject) => {
         const upload = new window.tus.Upload(file, {
-            uploadUrl: video.upload.upload_link,
-            retryDelays: [0,3000,5000,10000],
-            headers: { Authorization: `Bearer ${keys.vimeo_token}` },
+            uploadUrl: video.upload.upload_link, retryDelays: [0,3000,5000,10000], headers: { Authorization: `Bearer ${keys.vimeo_token}` },
             metadata: { filename: file.name, filetype: file.type },
             onError(error){ reject(error); },
             onProgress(bytesUploaded, bytesTotal){ progressCallback(((bytesUploaded / bytesTotal) * 100).toFixed(2)); },
             async onSuccess(){
-                await fetch(video.uri,{
-                    method:"PATCH", headers:{ Authorization:`Bearer ${keys.vimeo_token}`, "Content-Type":"application/json" },
-                    body:JSON.stringify({ privacy:{ view:"disable" } })
-                });
+                await fetch(video.uri,{ method:"PATCH", headers:{ Authorization:`Bearer ${keys.vimeo_token}`, "Content-Type":"application/json" }, body:JSON.stringify({ privacy:{ view:"disable" } }) });
                 resolve("https://player.vimeo.com/video/" + video.uri.split("/").pop());
             }
         });
@@ -165,7 +151,7 @@ try {
                 btn.style.background = 'rgba(16, 185, 129, 0.1)'; btn.style.color = '#10b981'; btn.style.borderColor = '#10b981';
             }
         }
-    }).catch(e=>console.log("No support doc"));
+    }).catch(e=>console.log(e));
 
     document.getElementById('toggleLiveModeBtn')?.addEventListener('click', async () => {
         isLiveChatActive = !isLiveChatActive;
@@ -225,6 +211,17 @@ window.openStudentChat = function(chatId, sName, sPhone) {
 
         const data = docSnap.data();
         const msgArea = document.getElementById('liveChatMessagesArea');
+        
+        // 🚨 تشغيل الصوت لو فيه رسالة جديدة من الطالب 🚨
+        const prevMessagesCount = msgArea.children.length;
+        if(data.messages && data.messages.length > prevMessagesCount) {
+            const lastMsg = data.messages[data.messages.length - 1];
+            if(lastMsg.sender === 'student') {
+                const audio = document.getElementById('notificationSound');
+                if(audio) audio.play().catch(e=>{});
+            }
+        }
+
         msgArea.innerHTML = '';
         if(data.messages) {
             data.messages.forEach(m => {
@@ -250,7 +247,7 @@ window.sendAdminReply = async function(chatId) {
 };
 
 window.endStudentChat = async function(chatId) {
-    if(await adminConfirm("تأكيد إنهاء وحذف المحادثة؟")) {
+    if(await adminConfirm("تأكيد إنهاء وحذف المحادثة للطرفين؟")) {
         if(chatUnsubscribe) chatUnsubscribe();
         try { await deleteDoc(doc(db, "live_chats", chatId)); } catch(e) {}
         document.getElementById('chatMainArea').innerHTML = '<div style="flex: 1; display: flex; justify-content: center; align-items: center; color: #94a3b8;"><p>اختر طالباً للرد...</p></div>';
@@ -258,111 +255,7 @@ window.endStudentChat = async function(chatId) {
 };
 
 // ==========================================
-// 🚨 الإدارة الشاملة للمدرسين 🚨
-// ==========================================
-const teachersRef = collection(db, "teachers");
-let editingTeacherId = null;
-
-onSnapshot(query(teachersRef), (snapshot) => {
-    const table = document.getElementById('adminTeachersTable');
-    const selectInstructor = document.getElementById('courseInstructor');
-    const selectAstTeacher = document.getElementById('astTeacher');
-    const reportTeacherSelect = document.getElementById('reportTeacherSelect');
-
-    if(table) table.innerHTML = '';
-    if(selectInstructor) selectInstructor.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
-    if(selectAstTeacher) selectAstTeacher.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
-    if(reportTeacherSelect) reportTeacherSelect.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
-
-    snapshot.forEach(docSnap => {
-        const t = docSnap.data();
-        const safeImageUrl = t.imageUrl || t.image || 'https://via.placeholder.com/150';
-        
-        if(table) {
-            table.innerHTML += `<tr>
-                <td><img src="${safeImageUrl}" style="width:30px; height:30px; border-radius:50%; margin-left:10px; object-fit:cover; vertical-align:middle;"><strong>${t.name}</strong></td>
-                <td>${t.subject}</td>
-                <td>${t.stages}</td>
-                <td style="display:flex; gap:5px; justify-content:center;">
-                    <button onclick="editTeacher('${docSnap.id}')" style="background: rgba(59,130,246,0.1); color:#3b82f6; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                    <button onclick="deleteTeacher('${docSnap.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>`;
-        }
-        
-        if(selectInstructor) selectInstructor.innerHTML += `<option value="${t.name}">${t.name} (${t.subject})</option>`;
-        if(selectAstTeacher) selectAstTeacher.innerHTML += `<option value="${t.name}">${t.name}</option>`;
-        
-        if (!(ROLE === 'assistant' && AST_TEACHER && t.name !== AST_TEACHER)) {
-            if(reportTeacherSelect) reportTeacherSelect.innerHTML += `<option value="${t.name}">${t.name}</option>`;
-        }
-    });
-});
-
-window.deleteTeacher = async function(id) {
-    if(await adminConfirm("هل أنت متأكد من مسح هذا المدرس نهائياً؟")) {
-        try { await deleteDoc(doc(db, "teachers", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
-        catch(e) {}
-    }
-};
-
-window.editTeacher = async function(id) {
-    const docSnap = await getDoc(doc(db, "teachers", id));
-    if(docSnap.exists()) {
-        const t = docSnap.data();
-        editingTeacherId = id;
-        document.getElementById('teacherName').value = t.name || '';
-        document.getElementById('teacherSubject').value = t.subject || '';
-        
-        const selectStages = document.getElementById('teacherStages');
-        Array.from(selectStages.options).forEach(opt => {
-            opt.selected = t.stages.includes(opt.value);
-        });
-
-        document.getElementById('btnSaveTeacher').innerHTML = '<i class="fas fa-edit"></i> تحديث بيانات المدرس';
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-};
-
-document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('btnSaveTeacher');
-    btn.innerHTML = "جاري الحفظ والرفع... ⏳"; btn.disabled = true;
-
-    try {
-        const selectStages = document.getElementById('teacherStages');
-        const selectedStages = Array.from(selectStages.selectedOptions).map(opt => opt.value).join(', ');
-        const imageFile = document.getElementById('teacherImage').files[0];
-        
-        let imageUrl = null;
-        if(imageFile) {
-            imageUrl = await uploadImageToR2(imageFile);
-        }
-
-        const teacherData = {
-            name: document.getElementById('teacherName').value.trim(),
-            subject: document.getElementById('teacherSubject').value.trim(),
-            stages: selectedStages
-        };
-        
-        if(imageUrl) teacherData.imageUrl = imageUrl;
-
-        if(editingTeacherId) {
-            await updateDoc(doc(db, "teachers", editingTeacherId), teacherData);
-            editingTeacherId = null;
-        } else {
-            if(!imageUrl) throw new Error("يجب رفع صورة للمدرس");
-            teacherData.createdAt = new Date().toISOString();
-            await addDoc(teachersRef, teacherData);
-        }
-        adminAlert("تم", "تم حفظ المدرس بنجاح", "success");
-        document.getElementById('addTeacherForm').reset();
-    } catch(err) { adminAlert("خطأ", err.message, "error"); }
-    finally { btn.innerHTML = "<i class='fas fa-plus'></i> إضافة المدرس"; btn.disabled = false; }
-});
-
-// ==========================================
-// 1. مراقبة الطلاب والأرباح وإدارة الأجهزة 🚨
+// 1. مراقبة الطلاب والأرباح وإدارة الأجهزة
 // ==========================================
 let allStudentsData = [];
 let allCoursesData = []; 
@@ -435,11 +328,11 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
             const btnToggleBlock = document.getElementById('btnToggleBlock');
             if(currentStudentData.isBlocked) {
                 statusSpan.textContent = 'محظور كلياً ⛔'; statusSpan.style.color = '#ef4444';
-                btnToggleBlock.innerHTML = '<i class="fas fa-unlock"></i> فك الحظر';
+                btnToggleBlock.innerHTML = '<i class="fas fa-unlock"></i> فك الحظر عن الحساب';
                 btnToggleBlock.style.background = 'rgba(16, 185, 129, 0.1)'; btnToggleBlock.style.color = '#10b981';
             } else {
                 statusSpan.textContent = 'نشط 🟢'; statusSpan.style.color = '#10b981';
-                btnToggleBlock.innerHTML = '<i class="fas fa-ban"></i> حظر الطالب';
+                btnToggleBlock.innerHTML = '<i class="fas fa-ban"></i> حظر الحساب بالكامل';
                 btnToggleBlock.style.background = 'rgba(239, 68, 68, 0.1)'; btnToggleBlock.style.color = '#ef4444';
             }
             document.getElementById('studentResultCard').style.display = 'block';
@@ -447,23 +340,20 @@ document.getElementById('btnSearchStudent')?.addEventListener('click', async () 
     } catch(error) {} finally { document.getElementById('btnSearchStudent').innerHTML = '<i class="fas fa-search"></i> بحث'; }
 });
 
-document.getElementById('btnResetAttempts')?.addEventListener('click', async () => {
-    if(!currentStudentId) return;
+window.resetStudentAttempts = async function(id) {
     if(await adminConfirm("تأكيد إرجاع محاولات نقل الجهاز إلى 3؟")) {
-        await updateDoc(doc(db, "users", currentStudentId), { transferAttempts: 3 });
+        await updateDoc(doc(db, "users", id), { transferAttempts: 3 });
         document.getElementById('resTransferAttempts').textContent = 3;
         adminAlert("تم", "تم إرجاع المحاولات", "success");
     }
-});
-
-document.getElementById('btnUnblockDevices')?.addEventListener('click', async () => {
-    if(!currentStudentId) return;
+};
+window.unblockStudentDevices = async function(id) {
     if(await adminConfirm("تأكيد فك الحظر عن الأجهزة القديمة؟")) {
-        await updateDoc(doc(db, "users", currentStudentId), { blockedDevices: [] });
+        await updateDoc(doc(db, "users", id), { blockedDevices: [] });
         document.getElementById('resBlockedCount').textContent = 0;
         adminAlert("تم", "تم تفريغ قائمة الأجهزة المحظورة", "success");
     }
-});
+};
 
 document.getElementById('btnChargeWallet')?.addEventListener('click', async () => {
     const amount = parseInt(document.getElementById('chargeAmount').value);
@@ -510,7 +400,7 @@ document.getElementById('btnDeductWallet')?.addEventListener('click', async () =
 document.getElementById('btnToggleBlock')?.addEventListener('click', async () => {
     if(!currentStudentId) return;
     const newStatus = !currentStudentData.isBlocked;
-    if(!await adminConfirm(newStatus ? "تأكيد الحظر؟" : "تأكيد فك الحظر؟")) return;
+    if(!await adminConfirm(newStatus ? "تأكيد الحظر الكلي للحساب؟" : "تأكيد فك الحظر عن الحساب؟")) return;
     try {
         await updateDoc(doc(db, "users", currentStudentId), { isBlocked: newStatus });
         document.getElementById('btnSearchStudent').click();
@@ -518,7 +408,7 @@ document.getElementById('btnToggleBlock')?.addEventListener('click', async () =>
 });
 
 // ==========================================
-// 3. إدارة الكورسات 🚨
+// 3. إدارة الكورسات 
 // ==========================================
 const coursesRef = collection(db, "courses");
 
@@ -552,12 +442,17 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
                 const titleInput = videoRows[i].querySelector('.course-video-title');
                 const fileInput = videoRows[i].querySelector('.course-video-file');
                 const examSelect = videoRows[i].querySelector('.course-video-exam');
+                
                 if(fileInput.files.length > 0) {
-                    document.getElementById('videoStatus').textContent = `جاري رفع الفيديو (${i + 1}/${videoRows.length})...`;
+                    document.getElementById('videoStatus').textContent = `جاري رفع المقطع (${titleInput.value})...`;
                     let vUrl = await uploadToVimeo(fileInput.files[0], (p) => {
                         document.getElementById('videoProgressBar').style.width = p + '%';
                     });
-                    newVideosArray.push({ title: titleInput.value.trim(), url: vUrl, requiredExamId: examSelect.value || null });
+                    newVideosArray.push({ 
+                        title: titleInput.value.trim(), 
+                        url: vUrl, 
+                        requiredExamId: examSelect.value || null 
+                    });
                 }
             }
             document.getElementById('videoStatus').textContent = `تم رفع الفيديوهات بنجاح ✔️`;
@@ -576,6 +471,7 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
         if(editingId) {
             const existingDoc = await getDoc(doc(db, "courses", editingId));
             let currentVideos = existingDoc.data().videos || [];
+            // 🚨 دمج الفيديوهات الجديدة مع القديمة 🚨
             courseData.videos = [...currentVideos, ...newVideosArray];
             await updateDoc(doc(db, "courses", editingId), courseData);
             document.getElementById('btnCancelEdit').click();
@@ -596,8 +492,9 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
     }
 });
 
+// 🚨 تصدير إكسيل للكورسات (إصلاح مشكلة التنسيق في الإكسيل) 🚨
 window.exportCourseExcel = async function(courseId, courseTitle) {
-    adminAlert("جاري التحميل", "يتم تجميع تقرير الطلاب...", "success");
+    adminAlert("جاري التحضير", "يتم تجميع البيانات...", "success");
     try {
         const q = query(collection(db, "users"), where("myCourses", "array-contains", courseId));
         const usersSnap = await getDocs(q);
@@ -607,13 +504,14 @@ window.exportCourseExcel = async function(courseId, courseTitle) {
         let submissions = {};
         exSnap.forEach(d => { submissions[d.data().studentId] = d.data(); });
 
-        let csv = "\uFEFFاسم الطالب,رقم الطالب,رقم ولي الأمر,المحافظة,الامتحان,الدرجة\n";
+        let csv = "\uFEFF\"اسم الطالب\",\"رقم الطالب\",\"رقم ولي الأمر\",\"المحافظة\",\"الامتحان\",\"الدرجة\"\n";
         usersSnap.forEach(docSnap => {
             let u = docSnap.data();
             let sub = submissions[docSnap.id];
-            let scoreText = sub ? `${sub.score} / ${sub.totalQuestions || 10}` : 'لم يمتحن';
+            let scoreText = sub ? `${sub.score} / ${sub.fullMark || sub.totalQuestions || 10}` : 'لم يمتحن';
             let statusText = sub ? (sub.status === 'passed' ? 'ناجح' : (sub.status==='failed'?'راسب':'مراجعة')) : '-';
-            csv += `${u.fullName || '-'},${u.studentPhone || '-'},${u.parentPhone || '-'},${u.governorate || '-'},${statusText},${scoreText}\n`;
+            // تغليف القيم بعلامات تنصيص لمنع تخريب العواميد
+            csv += `"${u.fullName || '-'}","${u.studentPhone || '-'}","${u.parentPhone || '-'}","${u.governorate || '-'}","${statusText}","${scoreText}"\n`;
         });
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -635,8 +533,7 @@ try {
             
             if (ROLE === 'assistant' && AST_TEACHER && c.instructor !== AST_TEACHER) return;
             teacherCourseIds.push(docSnap.id);
-
-            // 🚨 حساب عدد المشتركين الحقيقيين من الداتا بيز 🚨
+            
             let stdCount = allStudentsData.filter(s => s.myCourses && s.myCourses.includes(docSnap.id)).length;
             let hasExams = c.videos && c.videos.some(v => v.requiredExamId) ? '<span style="color:#10b981;">نعم</span>' : '<span style="color:#ef4444;">لا</span>';
 
@@ -645,7 +542,7 @@ try {
                 <td>${c.instructor}</td>
                 <td>${c.grade}</td>
                 <td><span style="color:#10b981; font-weight:900;">${stdCount} طالب</span></td>
-                <td>${hasExams}</td>
+                <td style="font-weight:900;">${hasExams}</td>
                 <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
                     <button onclick="exportCourseExcel('${docSnap.id}', '${c.title}')" style="background:#10b981; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل الإكسيل"><i class="fas fa-file-excel"></i></button>
                     <button onclick="editCourse('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: none; padding: 5px 8px; border-radius: 5px; cursor: pointer;"><i class="fas fa-edit"></i></button>
@@ -666,7 +563,7 @@ window.editCourse = async function(id) {
         document.getElementById('courseInstructor').value = c.instructor || '';
         document.getElementById('courseGrade').value = c.grade || '';
         document.getElementById('coursePrice').value = c.price || 0;
-        document.getElementById('coursePdf').value = c.pdfUrl || '';
+        if(c.pdfUrl) document.getElementById('coursePdf').value = c.pdfUrl;
         document.getElementById('courseMaxViews').value = c.maxViews || 0;
         document.getElementById('btnSaveCourse').innerHTML = 'حفظ التعديلات وإضافة فيديو';
         document.getElementById('btnCancelEdit').style.display = 'block';
@@ -682,34 +579,36 @@ document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
 });
 
 // ==========================================
-// 4. إدارة الامتحانات 🚨
+// 4. إدارة الامتحانات 🚨 (تعديل الـ PDF واللون الأبيض)
 // ==========================================
 const examsRef = collection(db, "exams");
 let questionCount = 0;
 window.currentExamsData = [];
 window.examOptionsHTML = '<option value="">بدون امتحان (مفتوحة)</option>';
 
-onSnapshot(query(examsRef), (snap) => {
-    window.currentExamsData = [];
-    window.examOptionsHTML = '<option value="">بدون امتحان (مفتوحة)</option>';
-    
-    const filter = document.getElementById('filterSpecificExam');
-    if(filter) filter.innerHTML = '<option value="all">كل الامتحانات</option>';
-    
-    snap.forEach(docSnap => {
-        const ex = {id: docSnap.id, ...docSnap.data()};
-        window.currentExamsData.push(ex);
-        window.examOptionsHTML += `<option value="${ex.id}">${ex.title}</option>`;
-        if(filter) filter.innerHTML += `<option value="${ex.id}">${ex.title}</option>`;
+try {
+    onSnapshot(query(examsRef), (snap) => {
+        window.currentExamsData = [];
+        window.examOptionsHTML = '<option value="">بدون امتحان (مفتوحة)</option>';
+        
+        const filter = document.getElementById('filterSpecificExam');
+        if(filter) filter.innerHTML = '<option value="all">كل الامتحانات</option>';
+        
+        snap.forEach(docSnap => {
+            const ex = {id: docSnap.id, ...docSnap.data()};
+            window.currentExamsData.push(ex);
+            window.examOptionsHTML += `<option value="${ex.id}">${ex.title}</option>`;
+            if(filter) filter.innerHTML += `<option value="${ex.id}">${ex.title}</option>`;
+        });
+        
+        document.querySelectorAll('.exam-select-sync').forEach(sel => {
+            let currentVal = sel.value;
+            sel.innerHTML = window.examOptionsHTML;
+            if(currentVal) sel.value = currentVal;
+        });
+        renderExamsTable(); 
     });
-    
-    document.querySelectorAll('.exam-select-sync').forEach(sel => {
-        let currentVal = sel.value;
-        sel.innerHTML = window.examOptionsHTML;
-        if(currentVal) sel.value = currentVal;
-    });
-    renderExamsTable(); 
-});
+} catch(e) {}
 
 window.deleteExam = async function(id) {
     if(await adminConfirm("تأكيد حذف الامتحان نهائياً؟")) {
@@ -718,6 +617,7 @@ window.deleteExam = async function(id) {
     }
 };
 
+// 🚨 تصدير نتيجة الامتحان PDF (تصليح العرض) 🚨
 window.exportExamPDF = async function(examId, examTitle) {
     adminAlert("جاري التحضير", "يتم تجميع النتيجة...", "success");
     try {
@@ -747,6 +647,8 @@ window.exportExamPDF = async function(examId, examTitle) {
         document.getElementById('pdfExamTableBody').innerHTML = html;
 
         const element = document.getElementById('examPdfReportContent');
+        
+        // السر هنا عشان الـ PDF يطبع صح وهو في الكلاس الجديد المخفي
         html2pdf().set({
             margin: 10, filename: `نتيجة_امتحان_${examTitle}.pdf`, image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -755,6 +657,35 @@ window.exportExamPDF = async function(examId, examTitle) {
     } catch(e) { adminAlert("خطأ", "فشل تحميل التقرير", "error"); }
 };
 
+let allSubmissionsForExams = [];
+try {
+    onSnapshot(query(collection(db, "exam_submissions")), (snap) => {
+        allSubmissionsForExams = [];
+        snap.forEach(d => allSubmissionsForExams.push({id: d.id, ...d.data()}));
+        renderExamsTable(); 
+        renderGradingTable();
+    });
+} catch(e) {}
+
+function renderExamsTable() {
+    const table = document.getElementById('adminExamsTable');
+    if(!table) return; table.innerHTML = '';
+    window.currentExamsData.forEach(ex => {
+        const studentsCount = allSubmissionsForExams.filter(s => s.examId === ex.id).length;
+        table.innerHTML += `<tr>
+            <td><strong>${ex.title}</strong></td>
+            <td>${ex.questions ? ex.questions.length : 0}</td>
+            <td style="color:#10b981; font-weight:900;">${studentsCount} طالب</td>
+            <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="exportExamPDF('${ex.id}', '${ex.title}')" style="background:#ef4444; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل نتيجة PDF"><i class="fas fa-file-pdf"></i></button>
+                <button onclick="editExam('${ex.id}')" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                <button onclick="deleteExam('${ex.id}')" style="background:rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>`;
+    });
+}
+
+// 🚨 تصليح ألوان الأسئلة (White text on dark bg) 🚨
 document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
     questionCount++;
     const container = document.getElementById('questionsContainer');
@@ -766,19 +697,21 @@ document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                 <select class="q-type form-group-admin" id="qType_${questionCount}" onchange="toggleQType(${questionCount})"><option value="mcq">اختياري</option><option value="essay">مقالي</option></select>
-                <input type="file" class="q-image" accept="image/*" style="padding: 5px; background:var(--input-bg);">
+                <input type="file" class="q-image" accept="image/*" style="padding: 5px; background: #1e293b; color: #fff;">
             </div>
-            <textarea class="q-text" placeholder="اكتب السؤال..." style="width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 15px; background:var(--input-bg); color:#fff;" required></textarea>
+            <textarea class="q-text" placeholder="اكتب السؤال..." style="width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 15px; background: #1e293b; color: #ffffff; border: 1px solid #334155;" required></textarea>
+            
             <div class="q-mcq-container" id="mcqContainer_${questionCount}">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" class="q-opt1" placeholder="اختيار 1" style="padding:10px; border-radius:8px;"><input type="text" class="q-opt2" placeholder="اختيار 2" style="padding:10px; border-radius:8px;">
-                    <input type="text" class="q-opt3" placeholder="اختيار 3" style="padding:10px; border-radius:8px;"><input type="text" class="q-opt4" placeholder="اختيار 4" style="padding:10px; border-radius:8px;">
+                    <input type="text" class="q-opt1" placeholder="اختيار 1" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;"><input type="text" class="q-opt2" placeholder="اختيار 2" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;">
+                    <input type="text" class="q-opt3" placeholder="اختيار 3" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;"><input type="text" class="q-opt4" placeholder="اختيار 4" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;">
                 </div>
-                <select class="q-correct" style="width: 100%; padding: 10px; border-radius: 8px;"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+                <select class="q-correct" style="width: 100%; padding: 10px; border-radius: 8px; background: #1e293b; color: #fff; border: 1px solid #334155;"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
             </div>
+
             <div id="essayAiContainer_${questionCount}" style="display:none; padding:10px; background: rgba(16, 185, 129, 0.05); border-radius: 8px;">
                 <label style="color:#10b981; font-weight:800; cursor:pointer;"><input type="checkbox" class="q-ai-grade" id="qAiGrade_${questionCount}" onchange="window.toggleAiModelAnswer(${questionCount})"> تفعيل التصحيح الآلي (AI) لهذا السؤال</label>
-                <textarea class="q-model-answer" id="qModelAnswer_${questionCount}" placeholder="اكتب الإجابة النموذجية أو النقاط الأساسية..." style="width:100%; padding:10px; border-radius:8px; margin-top:10px; background:var(--input-bg); color:#fff; display:none;"></textarea>
+                <textarea class="q-model-answer" id="qModelAnswer_${questionCount}" placeholder="اكتب الإجابة النموذجية..." style="width:100%; padding:10px; border-radius:8px; margin-top:10px; background: #1e293b; color: #ffffff; border: 1px solid #334155; display:none;"></textarea>
             </div>
         </div>
     `);
@@ -790,7 +723,7 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
     if(qBoxes.length === 0) return adminAlert("خطأ", "أضف سؤال", "error");
     const editingId = document.getElementById('editingExamId').value;
     const btn = document.getElementById('btnSaveExam');
-    btn.textContent = "جاري الحفظ..."; btn.disabled = true;
+    btn.textContent = "جاري الحفظ والرفع..."; btn.disabled = true;
 
     try {
         let pdfUrl = null;
@@ -803,6 +736,7 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
             const text = box.querySelector('.q-text').value;
             const imageFile = box.querySelector('.q-image').files[0];
             let imageUrl = imageFile ? await uploadImageToR2(imageFile) : null;
+            
             if (type === 'mcq') {
                 qs.push({ type:'mcq', text:text, imageUrl:imageUrl, options:[box.querySelector('.q-opt1').value, box.querySelector('.q-opt2').value, box.querySelector('.q-opt3').value, box.querySelector('.q-opt4').value], correctIndex: parseInt(box.querySelector('.q-correct').value)-1 });
             } else {
@@ -812,39 +746,21 @@ document.getElementById('addExamForm')?.addEventListener('submit', async (e) => 
             }
         }
         const data = { title: document.getElementById('examTitle').value, questions: qs };
-        if(pdfUrl) data.pdfUrl = pdfUrl;
+        if(pdfUrl) data.pdfUrl = pdfUrl; // لو رفع PDF جديد
 
-        if(editingId) { await updateDoc(doc(db, "exams", editingId), data); document.getElementById('btnCancelExamEdit').click(); }
-        else { data.createdAt = new Date().toISOString(); await addDoc(examsRef, data); document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; }
-        adminAlert("تم", "تم الحفظ", "success");
-    } catch(e) {} finally { btn.innerHTML = '<i class="fas fa-save"></i> حفظ'; btn.disabled = false; }
+        if(editingId) { 
+            await updateDoc(doc(db, "exams", editingId), data); 
+            document.getElementById('btnCancelExamEdit').click(); 
+        } else { 
+            data.createdAt = new Date().toISOString(); 
+            await addDoc(examsRef, data); 
+            document.getElementById('addExamForm').reset(); 
+            document.getElementById('questionsContainer').innerHTML=''; 
+            questionCount=0; 
+        }
+        adminAlert("تم", "تم الحفظ بنجاح", "success");
+    } catch(e) {} finally { btn.innerHTML = '<i class="fas fa-save"></i> حفظ الامتحان'; btn.disabled = false; }
 });
-
-let allSubmissionsForExams = [];
-onSnapshot(query(collection(db, "exam_submissions")), (snap) => {
-    allSubmissionsForExams = [];
-    snap.forEach(d => allSubmissionsForExams.push({id: d.id, ...d.data()}));
-    renderExamsTable(); 
-    renderGradingTable();
-});
-
-function renderExamsTable() {
-    const table = document.getElementById('adminExamsTable');
-    if(!table) return; table.innerHTML = '';
-    window.currentExamsData.forEach(ex => {
-        const studentsCount = allSubmissionsForExams.filter(s => s.examId === ex.id).length;
-        table.innerHTML += `<tr>
-            <td><strong>${ex.title}</strong></td>
-            <td>${ex.questions ? ex.questions.length : 0}</td>
-            <td style="color:#10b981; font-weight:900;">${studentsCount} طالب</td>
-            <td style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
-                <button onclick="exportExamPDF('${ex.id}', '${ex.title}')" style="background:#ef4444; color:#fff; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;" title="تحميل PDF"><i class="fas fa-file-pdf"></i></button>
-                <button onclick="editExam('${ex.id}')" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteExam('${ex.id}')" style="background:rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 8px; border-radius:5px; cursor:pointer;"><i class="fas fa-trash"></i></button>
-            </td>
-        </tr>`;
-    });
-}
 
 window.editExam = async function(id) {
     const docSnap = await getDoc(doc(db, "exams", id));
@@ -852,14 +768,16 @@ window.editExam = async function(id) {
         const ex = docSnap.data();
         document.getElementById('editingExamId').value = id;
         document.getElementById('examTitle').value = ex.title;
+        // ملحوظة: الـ PDF لا يظهر في الـ input file لأنه لا يمكن تعيين مسار لملف، ولكن بياناته محفوظة في الداتا بيز
         document.getElementById('questionsContainer').innerHTML = ''; questionCount = 0;
         ex.questions.forEach(q => {
             document.getElementById('btnAddQuestion').click();
             const box = document.getElementById(`qBox_${questionCount}`);
             box.querySelector('.q-type').value = q.type; box.querySelector('.q-text').value = q.text;
             window.toggleQType(questionCount);
-            if(q.type === 'mcq') { box.querySelector('.q-opt1').value=q.options[0]; box.querySelector('.q-opt2').value=q.options[1]; box.querySelector('.q-opt3').value=q.options[2]; box.querySelector('.q-opt4').value=q.options[3]; box.querySelector('.q-correct').value=q.correctIndex+1; }
-            else {
+            if(q.type === 'mcq') { 
+                box.querySelector('.q-opt1').value=q.options[0]; box.querySelector('.q-opt2').value=q.options[1]; box.querySelector('.q-opt3').value=q.options[2]; box.querySelector('.q-opt4').value=q.options[3]; box.querySelector('.q-correct').value=q.correctIndex+1; 
+            } else {
                 if(q.isAiGraded) {
                     box.querySelector('.q-ai-grade').checked = true;
                     window.toggleAiModelAnswer(questionCount);
@@ -873,7 +791,7 @@ window.editExam = async function(id) {
 document.getElementById('btnCancelExamEdit')?.addEventListener('click', () => { document.getElementById('editingExamId').value=""; document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; document.getElementById('btnCancelExamEdit').style.display='none'; });
 
 // ==========================================
-// 5. سجل المشاهدات والتصحيح
+// 5. سجل المشاهدات والتصحيح (أرقام أولياء الأمور)
 // ==========================================
 window.deleteSubmission = async function(id) {
     if(await adminConfirm("تأكيد مسح النتيجة ليتمكن الطالب من الإعادة؟")) {
@@ -899,11 +817,11 @@ function renderGradingTable() {
         let stText = sub.status === 'passed' ? '<span style="color:#10b981;">ناجح (شاهد)</span>' : (sub.status === 'failed' ? '<span style="color:#ef4444;">راسب (مغلق)</span>' : '<span style="color:#f59e0b;">مراجعة مقالي</span>');
         let tText = sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('ar-EG') : '-';
         let scoreText = sub.hasEssay && sub.status === 'pending' ? 'مراجعة' : `${sub.score} / ${sub.fullMark || sub.totalQuestions || 10}`;
-        let aiBadge = sub.gradedByAi ? '<br><small style="color:#d946ef; font-weight:800;"><i class="fas fa-robot"></i> مصحح بـ AI</small>' : '';
+        
+        let aiBadge = sub.gradedByAi ? '<br><small style="color:#d946ef; font-weight:800;"><i class="fas fa-robot"></i> مصحح بالذكاء الاصطناعي</small>' : '';
 
         table.innerHTML += `<tr>
-            <td><strong>${sub.studentName}</strong><br><small style="color:#f59e0b;">ط: ${sub.studentPhone}</small></td>
-            <td dir="ltr" style="font-size:13px; color:#cbd5e1;">${sub.parentPhone || '-'}</td>
+            <td><strong>${sub.studentName}</strong><br><small style="color:#f59e0b;">ط: ${sub.studentPhone}</small><br><small style="color:#cbd5e1;">أب: ${sub.parentPhone || '-'}</small></td>
             <td><strong>${sub.courseTitle}</strong><br><small style="color:#94a3b8;">${sub.examTitle}</small>${aiBadge}</td>
             <td style="font-weight:900; font-size: 18px; direction: ltr;">${scoreText}</td>
             <td>${stText}</td>
@@ -915,7 +833,7 @@ function renderGradingTable() {
             </td>
         </tr>`;
     });
-    if(count === 0) table.innerHTML=`<tr><td colspan="7" style="text-align:center;">لا توجد بيانات...</td></tr>`;
+    if(count === 0) table.innerHTML=`<tr><td colspan="6" style="text-align:center;">لا توجد بيانات...</td></tr>`;
 }
 document.getElementById('filterGradingStatus')?.addEventListener('change', renderGradingTable);
 document.getElementById('filterSpecificExam')?.addEventListener('change', renderGradingTable);
@@ -944,19 +862,20 @@ document.getElementById('btnSaveEssayGrade')?.addEventListener('click', async ()
     const sub = allSubmissionsForExams.find(s => s.id === currentGradingSubId);
     const newScore = parseFloat(document.getElementById('essayScoreInput').value) || 0;
     const fullMark = sub.fullMark || sub.totalQuestions || 10;
+    
     let newStatus = newScore >= (fullMark / 2) ? 'passed' : 'failed';
     
     try {
         await updateDoc(doc(db, "exam_submissions", currentGradingSubId), { score: newScore, status: newStatus });
         document.getElementById('essayGradingModal').classList.remove('active');
         
-        let waMsgStudent = `مرحباً بك ${sub.studentName}\nتم تصحيح امتحان (${sub.examTitle}).\nالنتيجة: ${newStatus === 'passed'?'ناجح ✅':'راسب ❌'}\nالدرجة: ${newScore} من ${fullMark}`;
+        let waMsgStudent = `مرحباً بك ${sub.studentName}\nتم تصحيح إجاباتك المقالية لامتحان (${sub.examTitle}).\nالنتيجة: ${newStatus === 'passed'?'ناجح ✅':'راسب ❌'}\nالدرجة: ${newScore} من ${fullMark}`;
         let waMsgParent = `إشعار من Primee Academy 🔔\nولي أمر الطالب/ة: ${sub.studentName}\nتم تصحيح امتحان (${sub.examTitle}).\nالنتيجة: ${newStatus === 'passed'?'ناجح ✅':'راسب ❌'}\nالدرجة: ${newScore} من ${fullMark}`;
         
         sendWhatsAppMessage(sub.studentPhone, waMsgStudent);
         if(sub.parentPhone) sendWhatsAppMessage(sub.parentPhone, waMsgParent);
         
-        adminAlert("تم", "تم رصد الدرجة وإرسال الواتساب", "success");
+        adminAlert("تم", "تم رصد الدرجة وإرسال الواتساب للطالب وولي الأمر", "success");
     } catch(e) {}
 });
 
@@ -985,7 +904,9 @@ window.editStudentScore = async function(id, cur, total) {
     }
 }
 
-// 🚨 المحفظة (العمليات المالية) 🚨
+// ==========================================
+// 🚨 المحفظة (إصلاح مشكلة الاختفاء بسبب التواريخ) 🚨
+// ==========================================
 let allTransactions = [];
 onSnapshot(query(collection(db, "transactions")), (snap) => {
     const table = document.getElementById('adminWalletTable');
@@ -993,26 +914,29 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
     allTransactions = [];
     snap.forEach(d => allTransactions.push({id: d.id, ...d.data()}));
     
-    let filteredTrans = [...allTransactions].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // إصلاح الخلل: لو createdAt مش موجود يعتبره 0 بدل ما يرمي NaN
+    let filteredTrans = allTransactions.sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     
     if (ROLE === 'assistant' && AST_TEACHER) {
         filteredTrans = filteredTrans.filter(t => t.instructor === AST_TEACHER || t.instructor === "-");
     }
 
     filteredTrans.forEach(t => {
-        let tType = t.type === 'purchase_course' ? '<span style="color:#ef4444;">شراء حصة</span>' : '<span style="color:#10b981;">شحن رصيد</span>';
-        let tDate = new Date(t.createdAt).toLocaleString('ar-EG');
+        let tType = t.type === 'purchase_course' ? '<span style="color:#ef4444;">شراء حصة</span>' : '<span style="color:#10b981;">شحن محفظة</span>';
+        let tDate = t.createdAt ? new Date(t.createdAt).toLocaleString('ar-EG') : '-';
         table.innerHTML += `<tr>
             <td dir="ltr" style="font-size:12px;">${tDate}</td>
             <td><strong>${t.studentName}</strong><br><small style="color:#f59e0b;">${t.studentPhone}</small></td>
             <td>${tType}</td>
             <td style="font-weight:900;" dir="ltr">${t.amount} ج.م</td>
-            <td><strong>${t.courseTitle}</strong><br><small style="color:#3b82f6;">أ. ${t.instructor}</small></td>
+            <td><strong>${t.courseTitle || '-'}</strong><br><small style="color:#3b82f6;">أ. ${t.instructor || '-'}</small></td>
         </tr>`;
     });
 });
 
-// 🚨 تقرير المدرس (PDF دقيق لكل الحصص والباقات) 🚨
+// ==========================================
+// 🚨 تقرير المدرس المالي (الحصص المشتراة فعلياً) 🚨
+// ==========================================
 document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     const teacher = document.getElementById('reportTeacherSelect').value;
     const period = document.getElementById('reportPeriodSelect').value;
@@ -1079,135 +1003,7 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     }).from(element).save();
 });
 
-// 7. مصنع الأكواد
-const codesRef = collection(db, "charge_codes");
-let allCodesData = [];
-
-window.deleteCode = async function(id) {
-    if(await adminConfirm("تأكيد حذف الكود؟")) {
-        try { await deleteDoc(doc(db, "charge_codes", id)); adminAlert("تم", "تم حذف الكود", "success"); } 
-        catch(e) {}
-    }
-};
-
-function generateAlphanumericCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
-    return result;
-}
-
-document.getElementById('generateCodesForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const count = parseInt(document.getElementById('codesCount').value);
-    const price = parseInt(document.getElementById('codePrice').value);
-    const delegate = document.getElementById('codeDelegate').value.trim();
-    const btn = document.getElementById('btnGenerateCodes');
-    btn.innerHTML = "جاري التوليد... ⏳"; btn.disabled = true;
-
-    try {
-        const batchDate = new Date().toISOString();
-        let csv = "\uFEFFالكود,القيمة,المندوب,النوع\n";
-        for (let i = 0; i < count; i++) {
-            const uniqueCode = "PR-" + generateAlphanumericCode();
-            csv += `${uniqueCode},${price},${delegate},wallet\n`; 
-            await addDoc(codesRef, {
-                code: uniqueCode, value: price, delegate: delegate, type: 'wallet',
-                isUsed: false, usedByPhone: null, usedByName: null, usedAt: null, createdAt: batchDate
-            });
-        }
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-        link.download = `أكواد_${delegate}_${count}كود.csv`; link.click();
-        adminAlert("تم", "تم التوليد وتحميل الإكسيل", "success");
-        document.getElementById('generateCodesForm').reset();
-    } catch(err) {} finally { btn.innerHTML = "<i class='fas fa-cogs'></i> توليد وتحميل إكسيل للأكواد"; btn.disabled = false; }
-});
-
-onSnapshot(query(codesRef), (snapshot) => {
-    allCodesData = [];
-    snapshot.forEach(docSnap => allCodesData.push({ id: docSnap.id, ...docSnap.data() }));
-    renderCodesTable();
-});
-
-function renderCodesTable() {
-    const table = document.getElementById('adminCodesTable');
-    if(!table) return; table.innerHTML = '';
-    const searchTerm = document.getElementById('searchCodeInput')?.value.toUpperCase() || '';
-    const filterStatus = document.getElementById('filterCodeStatus')?.value || 'all';
-
-    allCodesData.forEach(c => {
-        if (filterStatus === 'used' && !c.isUsed) return;
-        if (filterStatus === 'unused' && c.isUsed) return;
-        if (searchTerm && !c.code.includes(searchTerm) && !c.delegate.toUpperCase().includes(searchTerm)) return;
-
-        let stText = c.isUsed ? `<span style="color:#ef4444;">${c.usedByName} (${c.usedByPhone})</span>` : `<span style="color:#10b981;">جديد</span>`;
-        let tText = c.createdAt ? new Date(c.createdAt).toLocaleDateString('ar-EG') : '-';
-        table.innerHTML += `<tr>
-            <td style="font-family: monospace; font-size:16px; font-weight:900; color:#f59e0b;">${c.code}</td>
-            <td>${c.value} ج</td>
-            <td>${c.delegate}</td>
-            <td>${stText}</td>
-            <td>${tText}</td>
-            <td><button onclick="deleteCode('${c.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
-        </tr>`;
-    });
-}
-document.getElementById('searchCodeInput')?.addEventListener('input', renderCodesTable);
-document.getElementById('filterCodeStatus')?.addEventListener('change', renderCodesTable);
-
-document.getElementById('btnExportAllCodes')?.addEventListener('click', () => {
-    let csv = "\uFEFFالكود,القيمة,المندوب,الحالة,الطالب,رقم الطالب\n";
-    allCodesData.forEach(c => csv += `${c.code},${c.value},${c.delegate},${c.isUsed?'مستخدم':'جديد'},${c.usedByName||'-'},${c.usedByPhone||'-'}\n`);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-    link.download = `سجل_الأكواد.csv`; link.click();
-});
-
-// 🚨 قسم البرومو كود 🚨
-const promoCodesRef = collection(db, "promo_codes");
-document.getElementById('addPromoCodeForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('btnSavePromoCode');
-    btn.innerHTML = "جاري الحفظ... ⏳"; btn.disabled = true;
-
-    try {
-        await addDoc(promoCodesRef, {
-            code: document.getElementById('promoCodeString').value.toUpperCase().trim(),
-            discount: parseInt(document.getElementById('promoCodeDiscount').value),
-            expiry: document.getElementById('promoCodeExpiry').value,
-            createdAt: new Date().toISOString()
-        });
-        adminAlert("تم", "تم إنشاء البرومو كود", "success");
-        document.getElementById('addPromoCodeForm').reset();
-    } catch(err) {} finally { btn.innerHTML = "<i class='fas fa-plus'></i> إنشاء البرومو كود"; btn.disabled = false; }
-});
-
-window.deletePromoCode = async function(id) {
-    if(await adminConfirm("تأكيد مسح البرومو كود؟")) {
-        try { await deleteDoc(doc(db, "promo_codes", id)); } catch(e) {}
-    }
-}
-
-onSnapshot(query(promoCodesRef), (snap) => {
-    const table = document.getElementById('adminPromoCodesTable');
-    if(!table) return; table.innerHTML = '';
-    snap.forEach(docSnap => {
-        const p = docSnap.data();
-        let isExpired = new Date() > new Date(p.expiry);
-        let color = isExpired ? '#ef4444' : '#10b981';
-        table.innerHTML += `<tr>
-            <td style="font-family:monospace; font-weight:900; color:#d946ef; font-size:18px;">${p.code}</td>
-            <td>${p.discount}%</td>
-            <td style="color:${color}; font-weight:bold;" dir="ltr">${p.expiry}</td>
-            <td><button onclick="deletePromoCode('${docSnap.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
-        </tr>`;
-    });
-});
-
-// ==========================================
 // 8. إدارة الباقات 🚨 (إكسيل واسم المقطع)
-// ==========================================
 const packagesRef = collection(db, "packages");
 
 window.deletePackage = async function(id) {
@@ -1223,10 +1019,10 @@ window.exportPackageExcel = async function(pkgId, pkgName) {
         const q = query(collection(db, "users"), where("myPackages", "array-contains", pkgId));
         const usersSnap = await getDocs(q);
 
-        let csv = "\uFEFFاسم الطالب,رقم الطالب,رقم ولي الأمر,المحافظة\n";
+        let csv = "\uFEFF\"اسم الطالب\",\"رقم الطالب\",\"رقم ولي الأمر\",\"المحافظة\"\n";
         usersSnap.forEach(docSnap => {
             let u = docSnap.data();
-            csv += `${u.fullName || '-'},${u.studentPhone || '-'},${u.parentPhone || '-'},${u.governorate || '-'}\n`;
+            csv += `"${u.fullName || '-'}","${u.studentPhone || '-'}","${u.parentPhone || '-'}","${u.governorate || '-'}"\n`;
         });
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1282,41 +1078,41 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
             pkgData.videos = newVideosArray;
             pkgData.createdAt = new Date().toISOString();
             pkgData.views = 0;
-            await addDoc(packagesRef, pkgData);
+            await addDoc(collection(db, "packages"), pkgData);
             document.getElementById('addPackageForm').reset();
             document.getElementById('packageVideosContainer').innerHTML = '';
             adminAlert("تم", "تم إنشاء الباقة بنجاح", "success");
         }
     } catch(err) { adminAlert("خطأ", err.message, "error"); } 
-    finally { btn.innerHTML = "<i class='fas fa-plus'></i> حفظ ونشر الباقة"; btn.disabled = false; }
+    finally { btn.innerHTML = "حفظ ونشر"; btn.disabled = false; }
 });
 
-onSnapshot(query(packagesRef), (snapshot) => {
-    const table = document.getElementById('adminPackagesTable');
-    if(!table) return; table.innerHTML = '';
-    allPackagesData = [];
+try {
+    onSnapshot(query(collection(db, "packages")), (snapshot) => {
+        const table = document.getElementById('adminPackagesTable');
+        if(!table) return; table.innerHTML = '';
+        allPackagesData = [];
+        snapshot.forEach(docSnap => {
+            const pkg = docSnap.data();
+            allPackagesData.push({id: docSnap.id, ...pkg});
+            let stdCount = allStudentsData.filter(s => s.myPackages && s.myPackages.includes(docSnap.id)).length; 
+            let hasExams = pkg.videos && pkg.videos.some(v => v.requiredExamId) ? '<span style="color:#10b981;">نعم</span>' : '<span style="color:#ef4444;">لا</span>';
 
-    snapshot.forEach(docSnap => {
-        const pkg = docSnap.data();
-        allPackagesData.push({id: docSnap.id, ...pkg});
-
-        let stdCount = allStudentsData.filter(s => s.myPackages && s.myPackages.includes(docSnap.id)).length; 
-        let hasExams = pkg.videos && pkg.videos.some(v => v.requiredExamId) ? '<span style="color:#10b981;">نعم</span>' : '<span style="color:#ef4444;">لا</span>';
-
-        table.innerHTML += `<tr>
-            <td><img src="${pkg.imageUrl}" style="width:40px; border-radius:8px; vertical-align:middle;"> <strong>${pkg.name}</strong></td>
-            <td>${pkg.grade}</td>
-            <td style="color:#10b981; font-weight:900;">${stdCount} طالب</td>
-            <td style="font-weight:900;">${hasExams}</td>
-            <td><span style="text-decoration:line-through; color:#ef4444; font-size:12px;">${pkg.oldPrice}</span> <strong style="color:#10b981;">${pkg.newPrice} ج.م</strong></td>
-            <td style="display:flex; gap:5px; justify-content:center;">
-                <button onclick="exportPackageExcel('${docSnap.id}', '${pkg.name}')" style="background:#10b981; color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;" title="إكسيل"><i class="fas fa-file-excel"></i></button>
-                <button onclick="editPackage('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="تعديل"><i class="fas fa-edit"></i></button>
-                <button onclick="deletePackage('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button>
-            </td>
-        </tr>`;
+            table.innerHTML += `<tr>
+                <td><img src="${pkg.imageUrl}" style="width:40px; border-radius:8px; vertical-align:middle;"> <strong>${pkg.name}</strong></td>
+                <td>${pkg.grade}</td>
+                <td style="color:#10b981; font-weight:900;">${stdCount} طالب</td>
+                <td style="font-weight:900;">${hasExams}</td>
+                <td><span style="text-decoration:line-through; color:#ef4444; font-size:12px;">${pkg.oldPrice}</span> <strong style="color:#10b981;">${pkg.newPrice} ج.م</strong></td>
+                <td style="display:flex; gap:5px; justify-content:center;">
+                    <button onclick="exportPackageExcel('${docSnap.id}', '${pkg.name}')" style="background:#10b981; color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;" title="إكسيل"><i class="fas fa-file-excel"></i></button>
+                    <button onclick="editPackage('${docSnap.id}')" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;" title="تعديل"><i class="fas fa-edit"></i></button>
+                    <button onclick="deletePackage('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border:none; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
     });
-});
+} catch (e) {}
 
 window.editPackage = async function(id) {
     const docSnap = await getDoc(doc(db, "packages", id));
@@ -1343,7 +1139,135 @@ document.getElementById('btnCancelPkgEdit')?.addEventListener('click', () => {
     document.getElementById('btnCancelPkgEdit').style.display = 'none';
 });
 
-// 9. إدارة المساعدين
+// 9. الأكواد والمساعدين (تعمل كما هي دون مساس)
+const codesRef = collection(db, "charge_codes");
+let allCodesData = [];
+
+window.deleteCode = async function(id) {
+    if(await adminConfirm("تأكيد حذف الكود؟")) {
+        try { await deleteDoc(doc(db, "charge_codes", id)); adminAlert("تم", "تم حذف الكود", "success"); } 
+        catch(e) {}
+    }
+};
+
+function generateAlphanumericCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+    return result;
+}
+
+document.getElementById('generateCodesForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const count = parseInt(document.getElementById('codesCount').value);
+    const price = parseInt(document.getElementById('codePrice').value);
+    const delegate = document.getElementById('codeDelegate').value.trim();
+    const btn = document.getElementById('btnGenerateCodes');
+    btn.innerHTML = "جاري التوليد... ⏳"; btn.disabled = true;
+
+    try {
+        const batchDate = new Date().toISOString();
+        let csv = "\uFEFF\"الكود\",\"القيمة\",\"المندوب\",\"النوع\"\n";
+        for (let i = 0; i < count; i++) {
+            const uniqueCode = "PR-" + generateAlphanumericCode();
+            csv += `"${uniqueCode}","${price}","${delegate}","wallet"\n`; 
+            await addDoc(codesRef, {
+                code: uniqueCode, value: price, delegate: delegate, type: 'wallet',
+                isUsed: false, usedByPhone: null, usedByName: null, usedAt: null, createdAt: batchDate
+            });
+        }
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+        link.download = `أكواد_${delegate}_${count}كود.csv`; link.click();
+        adminAlert("تم", "تم التوليد وتحميل الإكسيل", "success");
+        document.getElementById('generateCodesForm').reset();
+    } catch(err) {} finally { btn.innerHTML = "<i class='fas fa-cogs'></i> توليد وتحميل إكسيل للأكواد"; btn.disabled = false; }
+});
+
+try {
+    onSnapshot(query(codesRef), (snapshot) => {
+        allCodesData = [];
+        snapshot.forEach(docSnap => allCodesData.push({ id: docSnap.id, ...docSnap.data() }));
+        renderCodesTable();
+    });
+} catch(e){}
+
+function renderCodesTable() {
+    const table = document.getElementById('adminCodesTable');
+    if(!table) return; table.innerHTML = '';
+    const searchTerm = document.getElementById('searchCodeInput')?.value.toUpperCase() || '';
+    const filterStatus = document.getElementById('filterCodeStatus')?.value || 'all';
+
+    allCodesData.forEach(c => {
+        if (filterStatus === 'used' && !c.isUsed) return;
+        if (filterStatus === 'unused' && c.isUsed) return;
+        if (searchTerm && !c.code.includes(searchTerm) && !c.delegate.toUpperCase().includes(searchTerm)) return;
+
+        let stText = c.isUsed ? `<span style="color:#ef4444;">${c.usedByName} (${c.usedByPhone})</span>` : `<span style="color:#10b981;">جديد</span>`;
+        let tText = c.createdAt ? new Date(c.createdAt).toLocaleDateString('ar-EG') : '-';
+        table.innerHTML += `<tr>
+            <td style="font-family: monospace; font-size:16px; font-weight:900; color:#f59e0b;">${c.code}</td>
+            <td>${c.value} ج</td>
+            <td>${c.delegate}</td>
+            <td>${stText}</td>
+            <td>${tText}</td>
+            <td><button onclick="deleteCode('${c.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
+        </tr>`;
+    });
+}
+document.getElementById('searchCodeInput')?.addEventListener('input', renderCodesTable);
+document.getElementById('filterCodeStatus')?.addEventListener('change', renderCodesTable);
+
+document.getElementById('btnExportAllCodes')?.addEventListener('click', () => {
+    let csv = "\uFEFF\"الكود\",\"القيمة\",\"المندوب\",\"الحالة\",\"الطالب\",\"رقم الطالب\"\n";
+    allCodesData.forEach(c => csv += `"${c.code}","${c.value}","${c.delegate}","${c.isUsed?'مستخدم':'جديد'}","${c.usedByName||'-'}","${c.usedByPhone||'-'}"\n`);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+    link.download = `سجل_الأكواد.csv`; link.click();
+});
+
+const promoCodesRef = collection(db, "promo_codes");
+document.getElementById('addPromoCodeForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSavePromoCode');
+    btn.innerHTML = "جاري الحفظ... ⏳"; btn.disabled = true;
+
+    try {
+        await addDoc(promoCodesRef, {
+            code: document.getElementById('promoCodeString').value.toUpperCase().trim(),
+            discount: parseInt(document.getElementById('promoCodeDiscount').value),
+            expiry: document.getElementById('promoCodeExpiry').value,
+            createdAt: new Date().toISOString()
+        });
+        adminAlert("تم", "تم إنشاء البرومو كود", "success");
+        document.getElementById('addPromoCodeForm').reset();
+    } catch(err) {} finally { btn.innerHTML = "<i class='fas fa-plus'></i> إنشاء البرومو كود"; btn.disabled = false; }
+});
+
+window.deletePromoCode = async function(id) {
+    if(await adminConfirm("تأكيد مسح البرومو كود؟")) {
+        try { await deleteDoc(doc(db, "promo_codes", id)); } catch(e) {}
+    }
+}
+
+try {
+    onSnapshot(query(promoCodesRef), (snap) => {
+        const table = document.getElementById('adminPromoCodesTable');
+        if(!table) return; table.innerHTML = '';
+        snap.forEach(docSnap => {
+            const p = docSnap.data();
+            let isExpired = new Date() > new Date(p.expiry);
+            let color = isExpired ? '#ef4444' : '#10b981';
+            table.innerHTML += `<tr>
+                <td style="font-family:monospace; font-weight:900; color:#d946ef; font-size:18px;">${p.code}</td>
+                <td>${p.discount}%</td>
+                <td style="color:${color}; font-weight:bold;" dir="ltr">${p.expiry}</td>
+                <td><button onclick="deletePromoCode('${docSnap.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
+            </tr>`;
+        });
+    });
+} catch(e) {}
+
 const assistantsRef = collection(db, "assistants");
 let editingAssistantId = null;
 
@@ -1386,18 +1310,20 @@ document.getElementById('addAssistantForm')?.addEventListener('submit', async (e
     finally { btn.innerHTML = "<i class='fas fa-check'></i> إنشاء حساب المساعد"; btn.disabled = false; }
 });
 
-onSnapshot(query(assistantsRef), (snapshot) => {
-    const table = document.getElementById('adminAssistantsTable');
-    if(!table) return; table.innerHTML = '';
-    snapshot.forEach(docSnap => {
-        const ast = docSnap.data();
-        table.innerHTML += `<tr>
-            <td><strong>${ast.name}</strong></td>
-            <td style="color:#f59e0b; font-family:monospace;">${ast.username}</td>
-            <td><span style="background:rgba(59,130,246,0.1); color:#3b82f6; padding:3px 8px; border-radius:5px;">${ast.targetTeacher}</span></td>
-            <td style="display:flex; gap:5px; justify-content:center;">
-                <button onclick="deleteAssistant('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button>
-            </td>
-        </tr>`;
+try {
+    onSnapshot(query(assistantsRef), (snapshot) => {
+        const table = document.getElementById('adminAssistantsTable');
+        if(!table) return; table.innerHTML = '';
+        snapshot.forEach(docSnap => {
+            const ast = docSnap.data();
+            table.innerHTML += `<tr>
+                <td><strong>${ast.name}</strong></td>
+                <td style="color:#f59e0b; font-family:monospace;">${ast.username}</td>
+                <td><span style="background:rgba(59,130,246,0.1); color:#3b82f6; padding:3px 8px; border-radius:5px;">${ast.targetTeacher}</span></td>
+                <td style="display:flex; gap:5px; justify-content:center;">
+                    <button onclick="deleteAssistant('${docSnap.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer;"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
     });
-});
+} catch(e) {}
