@@ -481,6 +481,96 @@ document.getElementById('btnToggleBlock')?.addEventListener('click', async () =>
     } catch(e) {}
 });
 
+const teachersRef = collection(db, "teachers");
+let editingTeacherId = null;
+
+window.deleteTeacher = async function(id) {
+    if(await adminConfirm("هل أنت متأكد من مسح هذا المدرس نهائياً؟")) {
+        try { await deleteDoc(doc(db, "teachers", id)); adminAlert("تم", "تم المسح بنجاح", "success"); } 
+        catch(e) { adminAlert("خطأ", "فشل المسح", "error"); }
+    }
+};
+
+window.editTeacher = async function(id) {
+    const docSnap = await getDoc(doc(db, "teachers", id));
+    if(docSnap.exists()) {
+        const t = docSnap.data();
+        editingTeacherId = id;
+        document.getElementById('teacherName').value = t.name || '';
+        document.getElementById('teacherSubject').value = t.subject || '';
+        
+        const selectStages = document.getElementById('teacherStages');
+        Array.from(selectStages.options).forEach(opt => {
+            opt.selected = t.stages.includes(opt.value);
+        });
+
+        document.getElementById('btnSaveTeacher').innerHTML = '<i class="fas fa-edit"></i> تحديث بيانات المدرس';
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+};
+
+document.getElementById('addTeacherForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveTeacher');
+    btn.innerHTML = "جاري الحفظ والرفع... ⏳"; btn.disabled = true;
+
+    try {
+        const selectStages = document.getElementById('teacherStages');
+        const selectedStages = Array.from(selectStages.selectedOptions).map(opt => opt.value).join(', ');
+        const imageFile = document.getElementById('teacherImage').files[0];
+        
+        let imageUrl = null;
+        if(imageFile) {
+            imageUrl = await uploadImageToR2(imageFile); // بنرفع الصورة ونجيب اللينك
+        }
+
+        const teacherData = {
+            name: document.getElementById('teacherName').value.trim(),
+            subject: document.getElementById('teacherSubject').value.trim(),
+            stages: selectedStages
+        };
+        
+        if(imageUrl) teacherData.imageUrl = imageUrl;
+
+        if(editingTeacherId) {
+            await updateDoc(doc(db, "teachers", editingTeacherId), teacherData);
+            editingTeacherId = null;
+        } else {
+            if(!imageUrl) throw new Error("يجب رفع صورة للمدرس");
+            teacherData.createdAt = new Date().toISOString();
+            await addDoc(teachersRef, teacherData);
+        }
+        adminAlert("تم", "تم إضافة المدرس للسلايدر بنجاح", "success");
+        document.getElementById('addTeacherForm').reset();
+    } catch(err) { adminAlert("خطأ", err.message, "error"); }
+    finally { btn.innerHTML = "<i class='fas fa-plus'></i> إضافة المدرس"; btn.disabled = false; }
+});
+
+onSnapshot(query(teachersRef), (snapshot) => {
+    const table = document.getElementById('adminTeachersTable');
+    const selectInstructor = document.getElementById('courseInstructor');
+    if(table) table.innerHTML = '';
+    if(selectInstructor) selectInstructor.innerHTML = '<option value="" disabled selected>اختر المدرس</option>';
+
+    snapshot.forEach(docSnap => {
+        const t = docSnap.data();
+        // بنستخدم imageUrl عشان نتأكد إن الصورة تظهر
+        const safeImageUrl = t.imageUrl || t.image || 'https://via.placeholder.com/150';
+        
+        if(table) {
+            table.innerHTML += `<tr>
+                <td><img src="${safeImageUrl}" style="width:30px; height:30px; border-radius:50%; margin-left:10px; object-fit:cover; vertical-align:middle;"><strong>${t.name}</strong></td>
+                <td>${t.subject}</td>
+                <td>${t.stages}</td>
+                <td style="display:flex; gap:5px; justify-content:center;">
+                    <button onclick="editTeacher('${docSnap.id}')" style="background: rgba(59,130,246,0.1); color:#3b82f6; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteTeacher('${docSnap.id}')" style="background: rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        }
+        if(selectInstructor) selectInstructor.innerHTML += `<option value="${t.name}">${t.name} (${t.subject})</option>`;
+    });
+});
 // ==========================================
 // 3. إدارة الكورسات 🚨 (إصلاح الإكسيل والفيديوهات)
 // ==========================================
