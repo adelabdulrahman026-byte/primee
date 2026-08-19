@@ -8,17 +8,126 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <link rel="stylesheet" href="style.css?v=130">
+    <style>
+        /* ========================================================
+           🚨 إضافات الـ CSS الجديدة (عداد الطلاب، الألوان، البوابة) 🚨
+           ======================================================== */
+        
+        /* زرار المتابعة بتاع المدرس */
+        .btn-follow-teacher {
+            background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff;
+            padding: 5px 15px; border-radius: 8px; font-family: 'Cairo'; font-weight: 800; cursor: pointer;
+            margin-top: 10px; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%;
+        }
+        .btn-follow-teacher:hover { background: #ef4444; border-color: #ef4444; }
+
+        /* كارت عداد الطلاب العائم */
+        .live-counter-floating {
+            position: fixed; bottom: 20px; left: 20px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 99998; color: #fff; transition: 0.3s;
+        }
+        .live-counter-floating:hover { transform: translateY(-5px); border-color: #3b82f6; }
+        .live-counter-info { display: flex; flex-direction: column; line-height: 1.2; }
+        .live-counter-info span { font-size: 12px; color: #94a3b8; font-weight: 700; }
+        .live-counter-info strong { font-size: 22px; font-weight: 900; color: #10b981; font-family: monospace; }
+        
+        /* تنسيق زرار ماجي عشان ميتعارضش مع العداد */
+        .floating-ai-btn { 
+            position: fixed !important; bottom: 85px !important; right: 20px !important; 
+            width: fit-content !important; max-width: 200px !important;
+            background: linear-gradient(45deg, #3b82f6, #2563eb) !important; color: white !important; 
+            padding: 10px 20px !important; border-radius: 30px !important; cursor: pointer !important; 
+            display: flex !important; align-items: center !important; gap: 10px !important; 
+            z-index: 99999 !important; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4) !important; 
+            font-weight: 800 !important; font-family: 'Cairo' !important; transition: 0.3s !important;
+        }
+        .floating-ai-btn:hover { transform: scale(1.05) !important; }
+        .floating-ai-btn img { width: 25px !important; height: 25px !important; }
+        
+        /* باقي تنسيقات ماجي */
+        .ai-chat-modal { position: fixed; bottom: 140px; right: 20px; width: 360px; max-width: 90vw; background: #1e293b; border-radius: 20px; border: 1px solid #334155; display: flex; flex-direction: column; overflow: hidden; z-index: 100000; opacity: 0; visibility: hidden; transform: translateY(20px); transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .ai-chat-modal.active { opacity: 1; visibility: visible; transform: translateY(0); }
+        .ai-chat-header { background: #0f172a; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+        .ai-chat-header h3 { margin: 0; color: #f8fafc; font-size: 16px; display: flex; align-items: center; gap: 10px; font-weight: 900;}
+        .ai-chat-header img { width: 25px; height: 25px; }
+        .ai-close-btn { background: transparent; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; transition: 0.3s;}
+        .ai-close-btn:hover { color: #ef4444; }
+        .ai-chat-body { padding: 15px; height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .ai-msg { background: #334155; color: #f8fafc; padding: 12px; border-radius: 12px; border-top-right-radius: 0; max-width: 85%; align-self: flex-start; font-size: 14px; line-height: 1.6; }
+        .user-msg { background: #3b82f6; color: #fff; padding: 12px; border-radius: 12px; border-top-left-radius: 0; max-width: 85%; align-self: flex-end; font-size: 14px; line-height: 1.6; }
+        .maggie-options { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; width: 100%; }
+        .maggie-options button { background: #0f172a; color: #f8fafc; border: 1px solid #3b82f6; padding: 12px; border-radius: 10px; font-family: 'Cairo'; font-weight: 700; cursor: pointer; text-align: right; transition: 0.3s; display: flex; align-items: center; gap: 10px; font-size: 14px;}
+        .maggie-options button:hover { background: #3b82f6; }
+        .maggie-options button i { color: #3b82f6; font-size: 16px; width: 20px; text-align: center;}
+        .maggie-options button:hover i { color: #fff; }
+        .ai-chat-input { background: #0f172a; padding: 15px; border-top: 1px solid #334155; display: flex; gap: 10px; align-items: center;}
+        .ai-chat-input input { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #fff; font-family: 'Cairo'; font-weight: 600; outline: none; }
+        .ai-chat-input button { background: #10b981; color: #fff; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 900; font-family: 'Cairo'; transition: 0.3s;}
+        
+        /* تابات الدفع السريعة */
+        .payment-tabs { display: flex; border-radius: 12px; overflow: hidden; margin-bottom: 20px; border: 1px solid var(--input-border); }
+        .pay-tab { flex: 1; padding: 12px; text-align: center; font-weight: 800; cursor: pointer; background: var(--bg-body); color: var(--text-muted); transition: 0.3s; font-family: 'Cairo'; border: none; }
+        .pay-tab.active { background: #3b82f6; color: #fff; }
+        .pay-content { display: none; }
+        .pay-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* الموبايل */
+        @media (max-width: 768px) {
+            .live-counter-floating { bottom: 10px; left: 10px; padding: 8px 15px; }
+            .live-counter-info strong { font-size: 18px; }
+            .floating-ai-btn { bottom: 70px !important; }
+            .ai-chat-modal { bottom: 120px; }
+        }
+    </style>
 </head>
 <body class="index-body">
 
-    <!-- النوافذ المنبثقة -->
-    <div id="notificationModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: #f59e0b;"><i class="fas fa-bell"></i></div><h3>فعل الإشعارات الآن! 🚀</h3><p>عشان يوصلك كل جديد عن مواعيد الحصص، الامتحانات، والمراجعات.</p><div class="modal-actions"><button class="btn-confirm" id="allowNotifications">موافق، فعلها</button><button class="btn-cancel" id="closeNotifications">ليس الآن</button></div></div></div>
-    
+    <!-- 🚨 عداد الطلاب المباشر 🚨 -->
+    <div class="live-counter-floating">
+        <lottie-player src="https://assets10.lottiefiles.com/packages/lf20_1dlxeb.json" background="transparent" speed="1" style="width: 40px; height: 40px;" loop autoplay></lottie-player>
+        <div class="live-counter-info">
+            <span>أبطال المنصة</span>
+            <strong id="liveStudentsCounter">0</strong>
+        </div>
+    </div>
+
+    <!-- النوافذ المنبثقة الأساسية -->
     <div id="parentModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: var(--primary-color);"><i class="fas fa-user-shield"></i></div><h3>بوابة ولي الأمر 👨‍👩‍👧</h3><p>أدخل رقم هاتف الطالب لمتابعة مستواه ودرجاته.</p><input type="text" id="parentStudentPhone" placeholder="رقم هاتف الطالب (مثال: 010...)" style="margin-bottom: 20px; width: 100%;"><div class="modal-actions"><button class="btn-confirm" id="btnParentLogin">دخول للمتابعة</button><button class="btn-cancel" onclick="document.getElementById('parentModal').classList.remove('active')">إلغاء</button></div></div></div>
     <div id="teacherCoursesModal" class="custom-modal-overlay"><div class="custom-modal-content" style="max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto; background: var(--bg-body); border: 1px solid var(--input-border); text-align: right;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--input-border); padding-bottom: 15px; margin-bottom: 20px;"><h3 id="modalTeacherName" style="margin: 0; color: var(--text-main); font-size: 24px; font-weight: 900;">حصص الأستاذ</h3><button onclick="document.getElementById('teacherCoursesModal').classList.remove('active')" style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 40px; height: 40px; border-radius: 10px; font-size: 18px; cursor: pointer;"><i class="fas fa-times"></i></button></div><div id="modalCoursesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;"></div></div></div>
     <div id="stageSelectionModal" class="custom-modal-overlay"><div class="custom-modal-content" style="max-width: 600px;"><h3 style="color: var(--primary-color); font-size: 24px; margin-bottom: 10px;">اختر المرحلة الدراسية 📚</h3><p style="color: var(--text-muted); margin-bottom: 25px;">علشان نعرضلك حصص الأستاذ المناسبة ليك</p><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px;"><button onclick="selectStageAndLoadCourses('ابتدائي')" style="background: var(--input-bg); color: #3b82f6; border: 2px solid #3b82f6; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-child" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>ابتدائي</button><button onclick="selectStageAndLoadCourses('إعدادي')" style="background: var(--input-bg); color: #10b981; border: 2px solid #10b981; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-book-reader" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>إعدادي</button><button onclick="selectStageAndLoadCourses('ثانوي')" style="background: var(--input-bg); color: #f59e0b; border: 2px solid #f59e0b; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-graduation-cap" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>ثانوي</button><button onclick="selectStageAndLoadCourses('بكالوريا')" style="background: var(--input-bg); color: #d946ef; border: 2px solid #d946ef; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s;"><i class="fas fa-university" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>بكالوريا</button></div><button onclick="document.getElementById('stageSelectionModal').classList.remove('active')" style="margin-top: 25px; background: rgba(239,68,68,0.1); color: #ef4444; border: none; padding: 10px 30px; border-radius: 10px; font-weight: bold; cursor: pointer;">إلغاء</button></div></div>
+    
     <div id="confirmBuyModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: #10b981;"><i class="fas fa-shopping-cart"></i></div><h3>تأكيد الاشتراك</h3><p id="confirmBuyText" style="margin-bottom: 20px; font-size: 16px;"></p><div class="modal-actions"><button class="btn-confirm" id="btnExecuteBuy" style="background: #10b981;">نعم، اشترك الآن</button><button class="btn-cancel" onclick="document.getElementById('confirmBuyModal').classList.remove('active')">إلغاء</button></div></div></div>
-    <div id="chargeToBuyModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: #ef4444;"><i class="fas fa-wallet"></i></div><h3>رصيدك غير كافٍ! ⚠️</h3><p id="chargeReqText" style="margin-bottom: 15px; font-size: 15px; color: var(--text-muted);"></p><p style="font-size: 13px; color: #f59e0b; margin-bottom: 20px;">أدخل كود الشحن بالأسفل وسيتم الشحن وشراء الحصة تلقائياً.</p><input type="text" id="autoChargeCodeInput" placeholder="أدخل كود الشحن هنا" style="width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-main); font-family: monospace; font-size: 18px; text-align: center; margin-bottom: 20px;"><div class="modal-actions"><button class="btn-confirm" id="btnSubmitChargeBuy" style="background: #3b82f6;">شحن واشتراك 🚀</button><button class="btn-cancel" onclick="document.getElementById('chargeToBuyModal').classList.remove('active')">إغلاق</button></div></div></div>
+    
+    <!-- 🚨 نافذة الشراء بالبوابة أو الكود 🚨 -->
+    <div id="chargeToBuyModal" class="custom-modal-overlay">
+        <div class="custom-modal-content">
+            <div class="modal-icon" style="color: #ef4444;"><i class="fas fa-wallet"></i></div>
+            <h3>رصيدك غير كافٍ! ⚠️</h3>
+            <p id="chargeReqText" style="margin-bottom: 15px; font-size: 15px; color: var(--text-muted);"></p>
+            
+            <div class="payment-tabs">
+                <button class="pay-tab active" onclick="switchPayTab('tabCode', this)">الدفع بكود الشحن</button>
+                <button class="pay-tab" onclick="switchPayTab('tabGateway', this)">المحفظة الإلكترونية</button>
+            </div>
+
+            <div id="tabCode" class="pay-content active">
+                <p style="font-size: 13px; color: #f59e0b; margin-bottom: 15px;">أدخل كود الشحن بالأسفل وسيتم الشراء تلقائياً.</p>
+                <input type="text" id="autoChargeCodeInput" placeholder="أدخل كود الشحن هنا" style="width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-main); font-family: monospace; font-size: 18px; text-align: center; margin-bottom: 20px;">
+                <button class="btn-confirm" id="btnSubmitChargeBuy" style="background: #3b82f6; width: 100%;">شحن واشتراك بالكود 🚀</button>
+            </div>
+
+            <div id="tabGateway" class="pay-content">
+                <p style="font-size: 13px; color: #10b981; margin-bottom: 15px;">قم بتحويل المبلغ لرقم فودافون كاش الخاص بالمنصة، ثم أدخل رقمك هنا للتأكيد.</p>
+                <input type="text" id="gatewaySenderPhone" placeholder="رقم المحفظة اللي حوّلت منها (010...)" style="width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-main); font-family: monospace; font-size: 18px; text-align: center; margin-bottom: 20px;">
+                <button class="btn-confirm" id="btnConfirmGatewayBuy" style="background: #10b981; width: 100%;">تأكيد التحويل والاشتراك 💸</button>
+            </div>
+
+            <button class="btn-cancel" onclick="document.getElementById('chargeToBuyModal').classList.remove('active')" style="width: 100%; margin-top: 15px;">إغلاق</button>
+        </div>
+    </div>
+
     <div id="searchTeacherModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: #3b82f6;"><i class="fas fa-search"></i></div><h3>ابحث عن مدرسك</h3><input type="text" id="searchTeacherInput" placeholder="اكتب اسم المدرس هنا..." style="width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-main); margin-bottom: 20px;"><div class="modal-actions"><button class="btn-confirm" id="btnExecuteSearchTeacher" style="background: #3b82f6;">بحث</button><button class="btn-cancel" onclick="document.getElementById('searchTeacherModal').classList.remove('active')">إغلاق</button></div></div></div>
 
     <!-- القائمة الجانبية للموبايل -->
@@ -135,7 +244,7 @@
         </div>
     </section>
 
-    <!-- أحدث الحصص (سلايدر متحرك) -->
+    <!-- أحدث الحصص -->
     <section style="max-width: 1200px; margin: 60px auto; padding: 0 20px;">
         <div class="section-header"><h2>أحدث الحصص المضافة 🌟</h2></div>
         <div class="swiper latest-courses-slider" style="padding-bottom: 40px; overflow: hidden;">
@@ -144,7 +253,7 @@
         </div>
     </section>
 
-    <!-- الأكثر مشاهدة (Top 3 وسلايدر متحرك) -->
+    <!-- الأكثر مشاهدة -->
     <section style="max-width: 1200px; margin: 60px auto; padding: 0 20px;">
         <div class="section-header"><h2>الحصص الأكثر مشاهدة 🔥</h2></div>
         <div class="swiper top-courses-slider" style="padding-bottom: 40px; overflow: hidden;">
@@ -153,7 +262,7 @@
         </div>
     </section>
 
-    <!-- قسم الباقات الشاملة (تم تحويله لـ سلايدر) -->
+    <!-- قسم الباقات الشاملة -->
     <section class="packages-section" style="max-width: 1200px; margin: 80px auto; padding: 0 20px; overflow: hidden;">
         <div class="section-header" style="text-align: center; justify-content: center; flex-direction: column; gap: 10px;">
             <h2>الباقات الشاملة <span style="color: #f59e0b;"><i class="fas fa-crown"></i></span></h2>
@@ -167,7 +276,6 @@
             <button class="modern-filter-btn" data-filter="بكالوريا">بكالوريا</button>
         </div>
         <div class="sub-filters-container" id="packagesSubFilters"></div>
-        <!-- 🚨 سلايدر الباقات 🚨 -->
         <div class="swiper packages-slider" style="padding-bottom: 40px;">
             <div class="swiper-wrapper" id="packagesGridContainer"></div>
             <div class="swiper-pagination"></div>
@@ -198,7 +306,7 @@
             <div class="footer-contact-info">
                 <div class="contact-item"><i class="fas fa-location-dot"></i> الإسكندرية، مصر</div>
                 <div class="contact-item"><i class="fas fa-phone"></i> +20 109 313 9047</div>
-                <div class="contact-item"><i class="fas fa-envelope"></i> support@primeeacademy.com</div>
+                <div class="contact-item"><i class="fas fa-envelope"></i> primeeacademy.com@gmail.com</div>
             </div>
         </div>
         <div class="footer-bottom">
@@ -210,7 +318,7 @@
         </div>
     </div>
 
-  <!-- زرار ماجي العائم (تم إزالة onclick ووضع ID للربط الآمن) -->
+  <!-- زرار ماجي العائم -->
     <div class="floating-ai-btn" id="openMaggieBtn">
         <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Maggie AI"> تواصل مع ماجي
     </div>
@@ -233,66 +341,17 @@
             </div>
         </div>
 
-        <!-- منطقة الإدخال الديناميكية -->
         <div class="ai-chat-input" id="maggieInputArea" style="display: none;"></div>
     </div>
 
-    <style>
-        /* إصلاح شكل الزرار العائم بشكل جذري */
-        .floating-ai-btn { 
-            position: fixed !important; 
-            bottom: 20px !important; 
-            right: 20px !important; /* أو left لو عايزها عالشمال */
-            width: fit-content !important; /* دي اللي بتمنع الزرار إنه يمط بعرض الشاشة */
-            max-width: 200px !important;
-            background: linear-gradient(45deg, #3b82f6, #2563eb) !important; 
-            color: white !important; 
-            padding: 10px 20px !important; 
-            border-radius: 30px !important; 
-            cursor: pointer !important; 
-            display: flex !important; 
-            align-items: center !important; 
-            gap: 10px !important; 
-            z-index: 99999 !important; 
-            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4) !important; 
-            font-weight: 800 !important; 
-            font-family: 'Cairo' !important; 
-            transition: 0.3s !important;
+    <script>
+        function switchPayTab(tabId, btn) {
+            document.querySelectorAll('.pay-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.pay-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
         }
-        .floating-ai-btn:hover { transform: scale(1.05) !important; }
-        .floating-ai-btn img { width: 25px !important; height: 25px !important; }
-        
-        .ai-chat-modal { position: fixed; bottom: 80px; right: 20px; width: 360px; max-width: 90vw; background: #1e293b; border-radius: 20px; border: 1px solid #334155; display: flex; flex-direction: column; overflow: hidden; z-index: 100000; opacity: 0; visibility: hidden; transform: translateY(20px); transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .ai-chat-modal.active { opacity: 1; visibility: visible; transform: translateY(0); }
-        
-        .ai-chat-header { background: #0f172a; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
-        .ai-chat-header h3 { margin: 0; color: #f8fafc; font-size: 16px; display: flex; align-items: center; gap: 10px; font-weight: 900;}
-        .ai-chat-header img { width: 25px; height: 25px; }
-        .ai-close-btn { background: transparent; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; transition: 0.3s;}
-        .ai-close-btn:hover { color: #ef4444; }
-        
-        .ai-chat-body { padding: 15px; height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .ai-msg { background: #334155; color: #f8fafc; padding: 12px; border-radius: 12px; border-top-right-radius: 0; max-width: 85%; align-self: flex-start; font-size: 14px; line-height: 1.6; }
-        .user-msg { background: #3b82f6; color: #fff; padding: 12px; border-radius: 12px; border-top-left-radius: 0; max-width: 85%; align-self: flex-end; font-size: 14px; line-height: 1.6; }
-        
-        .maggie-options { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; width: 100%; }
-        .maggie-options button { background: #0f172a; color: #f8fafc; border: 1px solid #3b82f6; padding: 12px; border-radius: 10px; font-family: 'Cairo'; font-weight: 700; cursor: pointer; text-align: right; transition: 0.3s; display: flex; align-items: center; gap: 10px; font-size: 14px;}
-        .maggie-options button:hover { background: #3b82f6; }
-        .maggie-options button i { color: #3b82f6; font-size: 16px; width: 20px; text-align: center;}
-        .maggie-options button:hover i { color: #fff; }
-        
-        .ai-chat-input { background: #0f172a; padding: 15px; border-top: 1px solid #334155; display: flex; gap: 10px; align-items: center;}
-        .ai-chat-input input { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #fff; font-family: 'Cairo'; font-weight: 600; outline: none; }
-        .ai-chat-input button { background: #10b981; color: #fff; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 900; font-family: 'Cairo'; transition: 0.3s;}
-        
-        .file-upload-btn { background: #334155; padding: 12px 15px; border-radius: 10px; cursor: pointer; color: #f8fafc; display: flex; align-items: center; justify-content: center;}
-        .chat-uploaded-img { max-width: 200px; border-radius: 10px; margin-top: 5px; border: 2px solid #3b82f6; }
-        
-        .support-contact-links { display: flex; gap: 10px; margin-top: 15px; }
-        .support-contact-links a { flex: 1; text-align: center; padding: 10px; border-radius: 8px; font-weight: 800; text-decoration: none; color: #fff; font-size: 14px;}
-        .btn-call { background: #3b82f6; }
-        .btn-wa { background: #10b981; }
-    </style>
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script type="module" src="index-script.js?v=139"></script>
 </body>
