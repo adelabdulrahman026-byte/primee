@@ -16,7 +16,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // 🚨🚨 حط هنا رقم الواتساب بتاع المنصة 🚨🚨
-const WAPILOT_PLATFORM_NUMBER = "201042650344"; 
+const WAPILOT_PLATFORM_NUMBER = "201093139047"; 
 
 // دوال التنبيهات
 function showAlert(title, message) {
@@ -43,7 +43,6 @@ async function sendWhatsAppOTP(phone, otpCode) {
         let chatId = cleanPhone + "@c.us";
         let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
 
-        // 🚨 رسالة الـ OTP المطلوبة 🚨
         const msg = `مرحباً بك في منصة Primee Academy 🚀\n\nكود التفعيل الخاص بك هو: *${otpCode}*\n\nيرجى الرجوع لصفحة التسجيل وإدخال الـ OTP لإتمام إنشاء الحساب بنجاح.`;
 
         const response = await fetch(url, {
@@ -71,7 +70,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     if (!isTermsChecked) return showAlert('تنبيه', 'يجب الموافقة على الشروط والأحكام للمنصة أولاً.');
     if (phone.length < 11 || parentPhone.length < 11) return showAlert('تنبيه', 'رقم الهاتف غير صحيح.');
     
-    // 🚨 التأكد إن رقم الطالب وولي الأمر مش متطابقين 🚨
+    // التأكد إن رقم الطالب وولي الأمر مش متطابقين
     if (phone === parentPhone) {
         return showAlert('خطأ', 'رقم ولي الأمر لا يمكن أن يكون مطابقاً لرقم الطالب.');
     }
@@ -97,7 +96,6 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             address: document.getElementById('address').value.trim()
         };
 
-        // 🚨 تجهيز لينك الواتس بكلمة "عايز افعل حسابي" 🚨
         const waMsg = encodeURIComponent("عايز افعل حسابي");
         const waLink = `https://wa.me/${WAPILOT_PLATFORM_NUMBER}?text=${waMsg}`;
         
@@ -118,7 +116,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     }
 });
 
-// 2. دالة المراقبة الأوتوماتيكية (Smart Polling)
+// 2. دالة المراقبة الأوتوماتيكية (Smart Polling المُعدلة)
 function startAutoOTPProcess() {
     const container = document.getElementById('waInitActionContainer');
     
@@ -126,16 +124,20 @@ function startAutoOTPProcess() {
         <div style="color: #3b82f6; margin: 20px 0;">
             <i class="fas fa-circle-notch fa-spin" style="font-size: 50px; margin-bottom: 15px;"></i>
             <h4 style="color: #f8fafc; margin-bottom: 5px; font-weight: 900;">في انتظار رسالتك...</h4>
-            <p style="font-size: 13px; color: #94a3b8; font-weight: 600;">بمجرد إرسالك للرسالة على واتساب، سيظهر الكود هنا تلقائياً.</p>
+            <p style="font-size: 13px; color: #94a3b8; font-weight: 600;">خذ وقتك براحتك، النظام سيستمر في الانتظار لمدة دقيقتين.<br>أول ما ترسل الرسالة عبر الواتساب، الكود سيظهر هنا تلقائياً.</p>
         </div>
     `;
 
     generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
     
     let attempts = 0;
-    const maxAttempts = 6; // المراقبة بتستمر لمدة 24 ثانية لحد ما الطالب يبعت
+    // هيحاول 24 مرة (كل 5 ثواني) = دقيقتين كاملتين
+    const maxAttempts = 24; 
 
     const trySendOTP = async () => {
+        // لو الطالب قفل النافذة لأي سبب، نوقف المراقبة عشان منسحبش إنترنت
+        if (!document.getElementById('waInitModal').classList.contains('active')) return;
+
         attempts++;
         const isSent = await sendWhatsAppOTP(pendingUserData.studentPhone, generatedOTP);
         
@@ -147,16 +149,17 @@ function startAutoOTPProcess() {
             document.getElementById('otpInput').focus();
         } else {
             if (attempts < maxAttempts) {
-                setTimeout(trySendOTP, 4000); 
+                // هينتظر 5 ثواني قبل ما يجرب تاني
+                setTimeout(trySendOTP, 5000); 
             } else {
                 container.innerHTML = `
                     <div style="color: #ef4444; margin-bottom: 15px;">
                         <i class="fas fa-exclamation-triangle" style="font-size: 50px; margin-bottom: 15px;"></i>
-                        <h4 style="color: #f8fafc; margin-bottom: 5px; font-weight: 900;">لم نتمكن من إرسال الكود!</h4>
-                        <p style="font-size: 13px; color: #94a3b8; font-weight: 600;">يبدو أنك لم ترسل رسالة التفعيل بعد.</p>
+                        <h4 style="color: #f8fafc; margin-bottom: 5px; font-weight: 900;">انتهى وقت الانتظار!</h4>
+                        <p style="font-size: 13px; color: #94a3b8; font-weight: 600;">يبدو أنك تأخرت أو لم تقم بإرسال رسالة التفعيل.</p>
                     </div>
                     <button id="btnRetryOTP" style="background: #10b981; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; width: 100%; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);">
-                        <i class="fas fa-sync"></i> حاول مرة أخرى
+                        <i class="fas fa-sync"></i> جرب مرة أخرى
                     </button>
                     <button onclick="document.getElementById('waInitModal').classList.remove('active')" style="width: 100%; background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 12px; border-radius: 12px; font-weight: 900; cursor: pointer; font-family: 'Cairo'; margin-top: 10px;">إلغاء</button>
                 `;
@@ -165,7 +168,9 @@ function startAutoOTPProcess() {
         }
     };
 
-    setTimeout(trySendOTP, 5000);
+    // 🚨 هنا التعديل: هنستنى 10 ثواني كاملين قبل أول محاولة 🚨
+    // عشان ندي للموبايل التقيل فرصة يفتح الواتساب براحته من غير ما يضيع المحاولات
+    setTimeout(trySendOTP, 10000);
 }
 
 // 3. تأكيد وإنشاء الحساب النهائي
