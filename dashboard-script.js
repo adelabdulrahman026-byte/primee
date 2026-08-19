@@ -88,67 +88,78 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================
     // 1. الدفع عبر المحفظة (فحص فوري - يا نجاح يا فشل)
     // =========================================================
-    document.getElementById('btnConfirmWalletPayment')?.addEventListener('click', async () => {
-        const senderPhone = document.getElementById('senderPhoneInput').value.trim();
-        if (senderPhone.length !== 11 || !senderPhone.startsWith('01')) {
-            return showResultModal("تنبيه ⚠️", "يرجى كتابة رقم الموبايل (11 رقم) بشكل صحيح.", false);
+ document.getElementById('btnConfirmWalletPayment')?.addEventListener('click', async () => {
+    const senderPhone = document.getElementById('senderPhoneInput').value.trim();
+    if (senderPhone.length !== 11 || !senderPhone.startsWith('01')) {
+        return showResultModal("تنبيه ⚠️", "يرجى كتابة رقم الموبايل (11 رقم) بشكل صحيح.", false);
+    }
+
+    const btn = document.getElementById('btnConfirmWalletPayment');
+    btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> جاري الفحص...";
+    btn.disabled = true;
+
+    try {
+        const transfersQ = query(collection(db, "received_transfers"), where("phone", "==", senderPhone), where("used", "==", false));
+        const transfersSnap = await getDocs(transfersQ);
+
+        document.getElementById('walletModal').classList.remove('active');
+
+        if (transfersSnap.empty) {
+            // 🚨 التعديل الجذري: تسجيل العملية الفاشلة في نفس جدول الداش بورد عشان تظهرلك 🚨
+            await addDoc(collection(db, "received_transfers"), {
+                studentId: currentStudentId, 
+                studentName: currentStudentData.fullName,
+                studentPhone: currentStudentData.studentPhone,
+                phone: senderPhone, // رقم المحفظة اللي الطالب كتبه
+                amount: 0, // منعرفش لسه المبلغ كام فبنسجله صفر لحد ما تعدله إنت
+                status: "failed", 
+                courseTitle: "محاولة شحن (لم تصل/موبايل أوفلاين)",
+                type: "electronic_payment",
+                used: true, // عشان ميسحبهاش لوحده بعدين لو الماكرو رجع يشتغل
+                createdAt: new Date().toISOString()
+            });
+
+            showResultModal("فشلت العملية ❌", "لم نجد تحويل مسجل باسم هذا الرقم. تأكد من إرسال المبلغ أولاً.", false);
+            
+            const failS = `تنبيه من Primee Academy ⚠️\nفشلت محاولة شحن محفظتك من الرقم ${senderPhone} لعدم استلامنا لأي تحويل.`;
+            const failP = `إشعار من Primee Academy ⚠️\nفشلت محاولة شحن محفظة الطالب/ة: ${currentStudentData.fullName} لعدم وصول التحويل.`;
+            notifyBoth(failS, failP);
+            
+            if(window.fetchRechargeHistory) window.fetchRechargeHistory();
+        } else {
+            // الفلوس موجودة في الخزنة (السيرفر استلمها من الماكرو)
+            const transferDoc = transfersSnap.docs[0];
+            const amountAdded = parseInt(transferDoc.data().amount) || 0;
+
+            // تحديث بيانات العملية في الداش بورد باسم الطالب اللي سحبها
+            await updateDoc(doc(db, "received_transfers", transferDoc.id), { 
+                used: true, 
+                studentId: currentStudentId,
+                studentName: currentStudentData.fullName,
+                studentPhone: currentStudentData.studentPhone,
+                status: "success"
+            });
+
+            const newBalance = (currentStudentData.walletBalance || 0) + amountAdded;
+            await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
+
+            showResultModal("عملية ناجحة 🎉", `تم إضافة ${amountAdded} ج.م إلى محفظتك بنجاح!`, true);
+
+            const succS = `أهلاً بك في Primee Academy 🎉\nتم بنجاح شحن محفظتك بمبلغ ${amountAdded} ج.م من الرقم ${senderPhone}.\nرصيدك الحالي: ${newBalance} ج.م\nبالتوفيق! 🚀`;
+            const succP = `إشعار من Primee Academy 🔔\nالسيد ولي الأمر المحترم،\nنجحت عملية الشحن لمحفظة الطالب/ة: *${currentStudentData.fullName}*\nبمبلغ قدره: *${amountAdded} ج.م*.`;
+            notifyBoth(succS, succP);
+
+            setTimeout(() => window.location.reload(), 2500);
         }
 
-        const btn = document.getElementById('btnConfirmWalletPayment');
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> جاري الفحص...";
-        btn.disabled = true;
-
-        try {
-            const transfersQ = query(collection(db, "received_transfers"), where("phone", "==", senderPhone), where("used", "==", false));
-            const transfersSnap = await getDocs(transfersQ);
-
-            document.getElementById('walletModal').classList.remove('active');
-
-            if (transfersSnap.empty) {
-                // الفلوس لسه موصلتش السيرفر
-                await addDoc(collection(db, "recharge_history"), {
-                    studentId: currentStudentId, senderPhone: senderPhone, amount: 0, status: "failed", date: new Date().toISOString()
-                });
-
-                showResultModal("فشلت العملية ❌", "لم نجد تحويل مسجل باسم هذا الرقم. تأكد من إرسال المبلغ أولاً.", false);
-                
-                const failS = `تنبيه من Primee Academy ⚠️\nفشلت محاولة شحن محفظتك من الرقم ${senderPhone} لعدم استلامنا لأي تحويل.`;
-                const failP = `إشعار من Primee Academy ⚠️\nفشلت محاولة شحن محفظة الطالب/ة: ${currentStudentData.fullName} لعدم وصول التحويل.`;
-                notifyBoth(failS, failP);
-                
-                if(window.fetchRechargeHistory) window.fetchRechargeHistory();
-            } else {
-                // الفلوس موجودة في الخزنة (السيرفر استلمها من الماكرو)
-                const transferDoc = transfersSnap.docs[0];
-                const amountAdded = transferDoc.data().amount;
-
-                await updateDoc(doc(db, "received_transfers", transferDoc.id), { used: true, usedBy: currentStudentId });
-
-                const newBalance = (currentStudentData.walletBalance || 0) + amountAdded;
-                await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
-
-                await addDoc(collection(db, "recharge_history"), {
-                    studentId: currentStudentId, senderPhone: senderPhone, amount: amountAdded, status: "success", date: new Date().toISOString()
-                });
-
-                showResultModal("عملية ناجحة 🎉", `تم إضافة ${amountAdded} ج.م إلى محفظتك بنجاح!`, true);
-
-                const succS = `أهلاً بك في Primee Academy 🎉\nتم بنجاح شحن محفظتك بمبلغ ${amountAdded} ج.م من الرقم ${senderPhone}.\nرصيدك الحالي: ${newBalance} ج.م\nبالتوفيق! 🚀`;
-                const succP = `إشعار من Primee Academy 🔔\nالسيد ولي الأمر المحترم،\nنجحت عملية الشحن لمحفظة الطالب/ة: *${currentStudentData.fullName}*\nبمبلغ قدره: *${amountAdded} ج.م*.`;
-                notifyBoth(succS, succP);
-
-                setTimeout(() => window.location.reload(), 2500);
-            }
-
-        } catch (error) {
-            console.error(error);
-            showResultModal("خطأ ❌", "حدث خطأ أثناء الاتصال بالخادم.", false);
-        } finally {
-            btn.innerHTML = "تأكيد وبدء التحقق <i class='fas fa-check-circle'></i>";
-            btn.disabled = false;
-        }
-    });
-
+    } catch (error) {
+        console.error(error);
+        showResultModal("خطأ ❌", "حدث خطأ أثناء الاتصال بالخادم.", false);
+    } finally {
+        btn.innerHTML = "تأكيد وبدء التحقق <i class='fas fa-check-circle'></i>";
+        btn.disabled = false;
+    }
+});
     // =========================================================
     // 2. الشحن بالكود
     // =========================================================
