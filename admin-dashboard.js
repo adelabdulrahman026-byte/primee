@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import * as tus from "https://cdn.skypack.dev/tus-js-client"; 
+import * as tus from "https://cdn.skypack.dev/tus-js-client";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -45,7 +45,6 @@ function applyPermissions() {
 }
 applyPermissions();
 
-// التنبيهات
 function adminAlert(title, msg, type = 'success') {
     const modal = document.getElementById('customAdminAlert');
     if(!modal) return;
@@ -77,7 +76,32 @@ document.getElementById('enableSoundBtn')?.addEventListener('click', () => {
     }
 });
 
-// دالة الرفع السريعة للصور (R2)
+// 🚨 مسح كاش المنصة للطلاب 🚨
+document.getElementById('navClearCache')?.addEventListener('click', async () => {
+    if(await adminConfirm("هل أنت متأكد من مسح كاش جميع أجهزة الطلاب؟ (سيقوم النظام بتحديث نفسه عندهم)")) {
+        try {
+            await setDoc(doc(db, "settings", "system"), { cacheVersion: Date.now() }, {merge: true});
+            adminAlert("تم", "تم إرسال أمر التحديث ومسح الكاش لجميع الطلاب بنجاح.", "success");
+        } catch(e) { adminAlert("خطأ", "فشل الاتصال", "error"); }
+    }
+});
+
+async function sendWhatsAppMessage(phone, msg) {
+    if (!phone) return false;
+    try {
+        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
+        if (!docSnap.exists()) return false;
+        const keys = docSnap.data();
+        let formattedPhone = phone.toString().trim();
+        if (formattedPhone.startsWith('0')) formattedPhone = '2' + formattedPhone;
+        let chatId = formattedPhone + "@c.us";
+        let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
+        await fetch(url, { method: "POST", headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` }, body: JSON.stringify({ chat_id: chatId, text: msg }) });
+        return true;
+    } catch (e) { return false; }
+}
+window.sendWhatsAppToParent = sendWhatsAppMessage;
+
 async function uploadImageToR2(file) {
     const formData = new FormData(); formData.append("image", file);
     try {
@@ -112,6 +136,61 @@ async function uploadToVimeo(file, progressCallback) {
         });
         upload.start();
     });
+}
+
+// ==========================================
+// 🚨 الإشعارات الجماعية (واتساب) 🚨
+// ==========================================
+document.getElementById('btnStartBulk')?.addEventListener('click', async () => {
+    const text = document.getElementById('bulkMsgText').value.trim();
+    const target = document.getElementById('bulkTarget').value;
+    
+    if(!text) return adminAlert("خطأ", "برجاء كتابة الرسالة أولاً.", "error");
+    if(!await adminConfirm("هل أنت متأكد من بدء الإرسال؟ ستستغرق العملية وقتاً طويلاً لتجنب الحظر.")) return;
+
+    document.getElementById('bulkProgressWrapper').style.display = 'block';
+    document.getElementById('btnStartBulk').disabled = true;
+
+    let users = allStudentsData;
+    let totalMsgs = 0;
+    
+    // حساب العدد الإجمالي
+    users.forEach(u => {
+        if(target === 'student' || target === 'both') totalMsgs++;
+        if((target === 'parent' || target === 'both') && u.parentPhone) totalMsgs++;
+    });
+
+    let sent = 0;
+
+    for(let i=0; i<users.length; i++) {
+        let u = users[i];
+        let studentFirstName = u.fullName ? u.fullName.split(' ')[0] : 'طالب';
+        let personalizedMsg = text.replace(/{اسم}/g, studentFirstName);
+
+        if(target === 'student' || target === 'both') {
+            await sendWhatsAppMessage(u.studentPhone, personalizedMsg);
+            sent++;
+            updateBulkProgress(sent, totalMsgs);
+            await new Promise(r => setTimeout(r, 15000)); // فاصل 15 ثانية
+        }
+        
+        if((target === 'parent' || target === 'both') && u.parentPhone) {
+            await sendWhatsAppMessage(u.parentPhone, personalizedMsg);
+            sent++;
+            updateBulkProgress(sent, totalMsgs);
+            await new Promise(r => setTimeout(r, 15000));
+        }
+    }
+
+    adminAlert("تمت العملية", "تم الانتهاء من إرسال جميع الرسائل بنجاح", "success");
+    document.getElementById('btnStartBulk').disabled = false;
+});
+
+function updateBulkProgress(sent, total) {
+    let pct = Math.floor((sent / total) * 100);
+    document.getElementById('bulkProgressBar').style.width = pct + '%';
+    document.getElementById('bulkPercent').innerText = pct + '%';
+    document.getElementById('bulkStatusText').innerText = `تم إرسال ${sent} من ${total}`;
 }
 
 // ==========================================
@@ -236,7 +315,7 @@ window.endStudentChat = async function(chatId) {
 };
 
 // ==========================================
-// 1. مراقبة الطلاب والأرباح (صوت الطالب الجديد 🚨)
+// 1. مراقبة الطلاب والأرباح
 // ==========================================
 let allStudentsData = [];
 let allCoursesData = []; 
@@ -280,7 +359,6 @@ try {
         allStudentsData = [];
         snapshot.forEach(doc => allStudentsData.push({id: doc.id, ...doc.data()}));
         
-        // 🚨 صوت الإشعارات لطالب جديد
         if (!initialLoad && allStudentsData.length > previousStudentCount) {
             const audio = document.getElementById('notificationSound');
             if(audio) audio.play().catch(e=>{});
@@ -356,9 +434,10 @@ document.getElementById('btnChargeWallet')?.addEventListener('click', async () =
         const newBalance = (parseInt(currentStudentData.walletBalance) || 0) + amount; 
         await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
         
-        await addDoc(collection(db, "transactions"), {
+        await addDoc(collection(db, "received_transfers"), {
             studentId: currentStudentId, studentName: currentStudentData.fullName, studentPhone: currentStudentData.studentPhone,
             type: "charge_admin", amount: amount, courseTitle: "إيداع يدوي (إدارة)", instructor: "-",
+            status: "success",
             createdAt: new Date().toISOString()
         });
 
@@ -378,9 +457,10 @@ document.getElementById('btnDeductWallet')?.addEventListener('click', async () =
         const newBalance = Math.max(0, currentBalance - amount); 
         await updateDoc(doc(db, "users", currentStudentId), { walletBalance: newBalance });
         
-        await addDoc(collection(db, "transactions"), {
+        await addDoc(collection(db, "received_transfers"), {
             studentId: currentStudentId, studentName: currentStudentData.fullName, studentPhone: currentStudentData.studentPhone,
             type: "deduct_admin", amount: -amount, courseTitle: "خصم يدوي (إدارة)", instructor: "-",
+            status: "success",
             createdAt: new Date().toISOString()
         });
 
@@ -428,12 +508,11 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
         let newVideosArray = []; 
         const videoRows = document.querySelectorAll('#courseVideosContainer .video-row');
         
-        // 🚨 تصليح التعديل: هنا بناخد الداتا حتى لو مفيش ملف مرفوع جديد 🚨
         for (let i = 0; i < videoRows.length; i++) {
             const titleInput = videoRows[i].querySelector('.course-video-title');
             const fileInput = videoRows[i].querySelector('.course-video-file');
             const examSelect = videoRows[i].querySelector('.course-video-exam');
-            const oldUrl = videoRows[i].getAttribute('data-old-url'); // لو كان فيديو قديم
+            const oldUrl = videoRows[i].getAttribute('data-old-url'); 
             
             if(fileInput.files.length > 0) {
                 document.getElementById('videoProgressContainer').style.display = 'block';
@@ -443,7 +522,6 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
                 });
                 newVideosArray.push({ title: titleInput.value.trim(), url: vUrl, requiredExamId: examSelect.value || null });
             } else if (oldUrl && oldUrl !== 'undefined') {
-                // لو مفيش ملف بس ده فيديو قديم، خليه زي ما هو بس حدث اسمه وامتحانه
                 newVideosArray.push({ title: titleInput.value.trim(), url: oldUrl, requiredExamId: examSelect.value || null });
             } else {
                 throw new Error("يجب رفع فيديو لكل مقطع جديد.");
@@ -457,7 +535,7 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
             price: parseInt(document.getElementById('coursePrice').value) || 0,
             pdfUrl: document.getElementById('coursePdf').value.trim(),
             maxViews: parseInt(document.getElementById('courseMaxViews').value) || 0,
-            videos: newVideosArray // بنبدل الفيديوهات بالجديدة (أو القديمة المعدلة)
+            videos: newVideosArray
         };
         if(imageUrl) courseData.image = imageUrl;
 
@@ -497,7 +575,7 @@ window.exportCourseExcel = async function(courseId, courseTitle) {
             let sub = submissions[docSnap.id];
             let scoreText = sub ? `${sub.score} / ${sub.fullMark || sub.totalQuestions || 10}` : 'لم يمتحن';
             let statusText = sub ? (sub.status === 'passed' ? 'ناجح' : (sub.status==='failed'?'راسب':'مراجعة')) : '-';
-            csv += `"${u.fullName || '-'}","="""${u.studentPhone || '-'}"""","="""${u.parentPhone || '-'}"""","${u.governorate || '-'}","${statusText}","="""${scoreText}""""\n`;
+            csv += `"${u.fullName || '-'}","=""${u.studentPhone || '-'}""","=""${u.parentPhone || '-'}""","${u.governorate || '-'}","${statusText}","=""${scoreText}"""\n`;
         });
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -573,7 +651,7 @@ document.getElementById('btnCancelEdit')?.addEventListener('click', () => {
 });
 
 // ==========================================
-// 4. إدارة الامتحانات 🚨 (تعديل الـ PDF المخفي لطباعة صحيحة وخلفية بيضاء للمقالي)
+// 4. إدارة الامتحانات 🚨
 // ==========================================
 const examsRef = collection(db, "exams");
 let questionCount = 0;
@@ -642,13 +720,13 @@ window.exportExamPDF = async function(examId, examTitle) {
 
         const element = document.getElementById('examPdfReportContent');
         
-        // السر هنا عشان الـ PDF يطبع صح وهو في الكلاس الجديد المخفي
-        element.style.left = "0";
+        // السر عشان الـ PDF يطبع صح: إظهاره ثانية واحدة والطباعة 
+        element.style.top = "0";
         html2pdf().set({
             margin: 10, filename: `نتيجة_امتحان_${examTitle}.pdf`, image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         }).from(element).save().then(() => {
-            element.style.left = "-9999px"; 
+            element.style.top = "-9999px"; 
         });
 
     } catch(e) { adminAlert("خطأ", "فشل تحميل التقرير", "error"); }
@@ -682,7 +760,6 @@ function renderExamsTable() {
     });
 }
 
-// ألوان مريحة في الأسئلة بدل الأبيض
 document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
     questionCount++;
     const container = document.getElementById('questionsContainer');
@@ -694,21 +771,21 @@ document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                 <select class="q-type form-group-admin" id="qType_${questionCount}" onchange="toggleQType(${questionCount})"><option value="mcq">اختياري</option><option value="essay">مقالي</option></select>
-                <input type="file" class="q-image" accept="image/*" style="padding: 5px; background:var(--input-bg);">
+                <input type="file" class="q-image" accept="image/*" style="padding: 5px; background: #1e293b; color: #fff;">
             </div>
-            <textarea class="q-text" placeholder="اكتب السؤال..." style="width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 15px; background:#f8fafc; color:#0f172a; border:1px solid #334155; font-weight:800;" required></textarea>
+            <textarea class="q-text" placeholder="اكتب السؤال..." style="width: 100%; padding: 12px; border-radius: 8px; margin-bottom: 15px; background: #1e293b; color: #ffffff; border: 1px solid #334155;" required></textarea>
             
             <div class="q-mcq-container" id="mcqContainer_${questionCount}">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" class="q-opt1" placeholder="اختيار 1" style="padding:10px; border-radius:8px; background:#f8fafc; color:#0f172a;"><input type="text" class="q-opt2" placeholder="اختيار 2" style="padding:10px; border-radius:8px; background:#f8fafc; color:#0f172a;">
-                    <input type="text" class="q-opt3" placeholder="اختيار 3" style="padding:10px; border-radius:8px; background:#f8fafc; color:#0f172a;"><input type="text" class="q-opt4" placeholder="اختيار 4" style="padding:10px; border-radius:8px; background:#f8fafc; color:#0f172a;">
+                    <input type="text" class="q-opt1" placeholder="اختيار 1" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;"><input type="text" class="q-opt2" placeholder="اختيار 2" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;">
+                    <input type="text" class="q-opt3" placeholder="اختيار 3" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;"><input type="text" class="q-opt4" placeholder="اختيار 4" style="padding:10px; border-radius:8px; background: #1e293b; color: #fff; border: 1px solid #334155;">
                 </div>
-                <select class="q-correct" style="width: 100%; padding: 10px; border-radius: 8px;"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+                <select class="q-correct" style="width: 100%; padding: 10px; border-radius: 8px; background: #1e293b; color: #fff; border: 1px solid #334155;"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
             </div>
 
             <div id="essayAiContainer_${questionCount}" style="display:none; padding:10px; background: rgba(16, 185, 129, 0.05); border-radius: 8px;">
                 <label style="color:#10b981; font-weight:800; cursor:pointer;"><input type="checkbox" class="q-ai-grade" id="qAiGrade_${questionCount}" onchange="window.toggleAiModelAnswer(${questionCount})"> تفعيل التصحيح الآلي (AI) لهذا السؤال</label>
-                <textarea class="q-model-answer" id="qModelAnswer_${questionCount}" placeholder="اكتب الإجابة النموذجية..." style="width:100%; padding:10px; border-radius:8px; margin-top:10px; background:#f8fafc; color:#0f172a; border:1px solid #334155; display:none; font-weight:800;"></textarea>
+                <textarea class="q-model-answer" id="qModelAnswer_${questionCount}" placeholder="اكتب الإجابة النموذجية..." style="width:100%; padding:10px; border-radius:8px; margin-top:10px; background: #1e293b; color: #ffffff; border: 1px solid #334155; display:none;"></textarea>
             </div>
         </div>
     `);
@@ -788,7 +865,7 @@ window.editExam = async function(id) {
 document.getElementById('btnCancelExamEdit')?.addEventListener('click', () => { document.getElementById('editingExamId').value=""; document.getElementById('addExamForm').reset(); document.getElementById('questionsContainer').innerHTML=''; questionCount=0; document.getElementById('btnCancelExamEdit').style.display='none'; });
 
 // ==========================================
-// 5. سجل المشاهدات والتصحيح 🚨 (رقم ولي الأمر وتصحيح المقالي)
+// 5. سجل المشاهدات والتصحيح 🚨 
 // ==========================================
 window.deleteSubmission = async function(id) {
     if(await adminConfirm("تأكيد مسح النتيجة ليتمكن الطالب من الإعادة؟")) {
@@ -872,7 +949,7 @@ document.getElementById('btnSaveEssayGrade')?.addEventListener('click', async ()
         sendWhatsAppMessage(sub.studentPhone, waMsgStudent);
         if(sub.parentPhone) sendWhatsAppMessage(sub.parentPhone, waMsgParent);
         
-        adminAlert("تم", "تم رصد الدرجة وإرسال الواتساب", "success");
+        adminAlert("تم", "تم رصد الدرجة وإرسال الواتساب للطالب وولي الأمر", "success");
     } catch(e) {}
 });
 
@@ -902,21 +979,16 @@ window.editStudentScore = async function(id, cur, total) {
 }
 
 // ==========================================
-// 🚨 المحفظة (إصلاح مشكلة التواريخ عشان الجدول يظهر) 🚨
+// 🚨 المحفظة المربوطة بـ received_transfers وتعديل العملية الفاشلة 🚨
 // ==========================================
 let allTransactions = [];
-onSnapshot(query(collection(db, "transactions")), (snap) => {
+onSnapshot(query(collection(db, "received_transfers")), (snap) => {
     const table = document.getElementById('adminWalletTable');
     if(!table) return; table.innerHTML = '';
     allTransactions = [];
     snap.forEach(d => allTransactions.push({id: d.id, ...d.data()}));
     
-    // الحل الجذري عشان السورت ميضربش من التواريخ الناقصة
-    let filteredTrans = [...allTransactions].sort((a,b) => {
-        let dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        let dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateB - dateA;
-    });
+    let filteredTrans = [...allTransactions].sort((a,b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     
     if (ROLE === 'assistant' && AST_TEACHER) {
         filteredTrans = filteredTrans.filter(t => t.instructor === AST_TEACHER || t.instructor === "-");
@@ -925,15 +997,49 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
     filteredTrans.forEach(t => {
         let tType = t.type === 'purchase_course' ? '<span style="color:#ef4444;">شراء حصة</span>' : '<span style="color:#10b981;">شحن رصيد</span>';
         let tDate = t.createdAt ? new Date(t.createdAt).toLocaleString('ar-EG') : '-';
+        
+        let actionBtn = '';
+        if(t.status === 'success') {
+            actionBtn = `<span style="color:#10b981; font-weight:800;">ناجحة ✔️</span>`;
+        } else {
+            actionBtn = `<button onclick="approveTransfer('${t.id}', '${t.studentId}', ${t.amount || 0})" style="background:#10b981; color:#fff; padding:5px 10px; border-radius:5px; border:none; cursor:pointer; font-weight:bold;">تأكيد ونجاح</button>`;
+        }
+
         table.innerHTML += `<tr>
             <td dir="ltr" style="font-size:12px;">${tDate}</td>
-            <td><strong>${t.studentName}</strong><br><small style="color:#f59e0b;">${t.studentPhone}</small></td>
+            <td><strong>${t.studentName || '-'}</strong><br><small style="color:#f59e0b;">${t.studentPhone || '-'}</small></td>
             <td>${tType}</td>
-            <td style="font-weight:900;" dir="ltr">${t.amount} ج.م</td>
-            <td><strong>${t.courseTitle || '-'}</strong><br><small style="color:#3b82f6;">أ. ${t.instructor || '-'}</small></td>
+            <td style="font-weight:900;" dir="ltr">${t.amount || 0} ج.م</td>
+            <td>
+                <strong>${t.courseTitle || 'عملية شحن'}</strong><br>
+                <div style="margin-top: 5px;">${actionBtn}</div>
+            </td>
         </tr>`;
     });
 });
+
+window.approveTransfer = async function(id, studentId, amount) {
+    if(!await adminConfirm(`تأكيد العملية وإضافة ${amount} ج.م لرصيد الطالب؟`)) return;
+    try {
+        await updateDoc(doc(db, "received_transfers", id), { status: 'success' });
+        
+        const userRef = doc(db, "users", studentId);
+        const userSnap = await getDoc(userRef);
+        if(userSnap.exists()){
+            let newBal = (parseInt(userSnap.data().walletBalance) || 0) + parseInt(amount);
+            await updateDoc(userRef, { walletBalance: newBal });
+            
+            const phone = userSnap.data().studentPhone;
+            const parent = userSnap.data().parentPhone;
+            const msg = `إشعار من Primee Academy 🔔\nتم تأكيد عملية الشحن بنجاح ✅\nالمبلغ المضاف: ${amount} ج.م\nرصيدك الحالي: ${newBal} ج.م`;
+            
+            await sendWhatsAppMessage(phone, msg);
+            if(parent) await sendWhatsAppMessage(parent, msg);
+            
+            adminAlert("تم", "تمت الموافقة وإضافة الرصيد وإرسال إشعار للطالب.", "success");
+        }
+    } catch(e){ adminAlert("خطأ", "فشل التحديث", "error"); }
+};
 
 // ==========================================
 // 🚨 تقرير المدرس المالي 🚨
@@ -998,12 +1104,13 @@ document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     document.getElementById('pdfTeacherCoursesTableBody').innerHTML = cHtml || `<tr><td colspan="4" style="text-align:center;">لا توجد مبيعات</td></tr>`;
 
     const element = document.getElementById('pdfReportContent');
-    element.style.left = "0";
+    // إظهاره عشان يطبع بس وهو مخفي بالـ CSS
+    element.style.top = "0";
     html2pdf().set({
         margin: 10, filename: `تقرير_${teacher}.pdf`, image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(element).save().then(() => {
-        element.style.left = "-9999px";
+        element.style.top = "-9999px";
     });
 });
 
@@ -1137,7 +1244,7 @@ try {
     });
 } catch(e) {}
 
-// 8. إدارة الباقات 🚨 (إضافة اسم المقطع وإصلاح الإكسيل والتعديل)
+// 8. إدارة الباقات 🚨 (إضافة اسم المقطع وتنزيل الإكسيل)
 const packagesRef = collection(db, "packages");
 
 window.deletePackage = async function(id) {
@@ -1207,7 +1314,7 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
             newPrice: parseInt(document.getElementById('pkgNewPrice').value) || 0,
             features: document.getElementById('pkgFeatures').value.split(','),
             maxViews: parseInt(document.getElementById('pkgMaxViews').value) || 0,
-            videos: newVideosArray // استبدال بالفيديوهات (الجديدة والقديمة)
+            videos: newVideosArray 
         };
         if(imageUrl) pkgData.imageUrl = imageUrl;
 
@@ -1216,7 +1323,7 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
             document.getElementById('btnCancelPkgEdit').click();
             adminAlert("تم", "تم التحديث بنجاح", "success");
         } else {
-            if(!imageUrl && newVideosArray.length === 0) throw new Error("يجب رفع صورة وغلاف");
+            if(!imageUrl && newVideosArray.length === 0) throw new Error("يجب رفع صورة غلاف");
             pkgData.createdAt = new Date().toISOString();
             pkgData.views = 0;
             await addDoc(packagesRef, pkgData);
