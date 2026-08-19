@@ -15,7 +15,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// 🚨🚨 حط هنا رقم الواتساب بتاع المنصة المربوط بـ WaPilot 🚨🚨
+// 🚨🚨 حط هنا رقم الواتساب بتاع المنصة 🚨🚨
 const WAPILOT_PLATFORM_NUMBER = "201093139047"; 
 
 // دوال التنبيهات
@@ -43,7 +43,8 @@ async function sendWhatsAppOTP(phone, otpCode) {
         let chatId = cleanPhone + "@c.us";
         let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
 
-        const msg = `مرحباً بك في منصة Primee Academy 🚀\n\nكود التأكيد الخاص بك هو: *${otpCode}*\n\nلا تشارك هذا الكود مع أحد حفاظاً على سرية حسابك.`;
+        // 🚨 رسالة الـ OTP المطلوبة 🚨
+        const msg = `مرحباً بك في منصة Primee Academy 🚀\n\nكود التفعيل الخاص بك هو: *${otpCode}*\n\nيرجى الرجوع لصفحة التسجيل وإدخال الـ OTP لإتمام إنشاء الحساب بنجاح.`;
 
         const response = await fetch(url, {
             method: "POST",
@@ -51,20 +52,29 @@ async function sendWhatsAppOTP(phone, otpCode) {
             body: JSON.stringify({ chat_id: chatId, text: msg })
         });
 
-        if (!response.ok) return false; // لو الجلسة مقفولة هترجع false
-        return true; // لو اتبعتت بنجاح هترجع true
+        if (!response.ok) return false; 
+        return true; 
     } catch (e) { 
         return false; 
     }
 }
 
-// 1. عند الضغط على إنشاء حساب 
+// 1. عند الضغط على إنشاء حساب (استكمال التفعيل)
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
 
     const phone = document.getElementById('studentPhone').value.trim();
-    if (phone.length < 11) return showAlert('تنبيه', 'رقم الهاتف غير صحيح.');
+    const parentPhone = document.getElementById('parentPhone').value.trim();
+    const isTermsChecked = document.getElementById('terms').checked;
+
+    if (!isTermsChecked) return showAlert('تنبيه', 'يجب الموافقة على الشروط والأحكام للمنصة أولاً.');
+    if (phone.length < 11 || parentPhone.length < 11) return showAlert('تنبيه', 'رقم الهاتف غير صحيح.');
+    
+    // 🚨 التأكد إن رقم الطالب وولي الأمر مش متطابقين 🚨
+    if (phone === parentPhone) {
+        return showAlert('خطأ', 'رقم ولي الأمر لا يمكن أن يكون مطابقاً لرقم الطالب.');
+    }
 
     btn.innerHTML = "جاري التحقق... ⏳"; 
     btn.disabled = true;
@@ -73,40 +83,38 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         const q = query(collection(db, "users"), where("studentPhone", "==", phone));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
-            btn.innerHTML = "إنشاء الحساب الآن"; btn.disabled = false;
+            btn.innerHTML = "استكمال تفعيل الحساب (اضغط هنا)"; btn.disabled = false;
             return showAlert('خطأ', 'رقم الهاتف هذا مسجل لدينا بالفعل!');
         }
 
         pendingUserData = {
             fullName: document.getElementById('fullName').value.trim(),
             studentPhone: phone,
-            parentPhone: document.getElementById('parentPhone').value.trim(),
+            parentPhone: parentPhone,
             password: document.getElementById('password').value,
             grade: document.getElementById('grade').value,
             governorate: document.getElementById('governorate').value,
             address: document.getElementById('address').value.trim()
         };
 
-        const waMsg = encodeURIComponent("طلب تفعيل حسابي في منصة Primee Academy");
+        // 🚨 تجهيز لينك الواتس بكلمة "عايز افعل حسابي" 🚨
+        const waMsg = encodeURIComponent("عايز افعل حسابي");
         const waLink = `https://wa.me/${WAPILOT_PLATFORM_NUMBER}?text=${waMsg}`;
         
-        // تجهيز النافذة بالزرار الأول
         document.getElementById('waInitActionContainer').innerHTML = `
             <a id="btnSendWaInit" href="${waLink}" target="_blank" style="background: #25d366; color: #fff; padding: 15px; border-radius: 12px; text-decoration: none; font-weight: 800; display: block; font-family: 'Cairo'; transition: 0.3s; box-shadow: 0 10px 20px rgba(37, 211, 102, 0.2);">
-                <i class="fas fa-paper-plane"></i> أرسل رسالة التفعيل الآن
+                <i class="fab fa-whatsapp" style="margin-left: 5px;"></i> لتفعيل حسابك اضغط هنا
             </a>
-            <button onclick="document.getElementById('waInitModal').classList.remove('active')" style="width: 100%; background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 12px; border-radius: 12px; font-weight: 900; cursor: pointer; font-family: 'Cairo'; margin-top: 10px;">إلغاء</button>
+            <button onclick="document.getElementById('waInitModal').classList.remove('active')" style="width: 100%; background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 12px; border-radius: 12px; font-weight: 900; cursor: pointer; font-family: 'Cairo'; margin-top: 15px;">إلغاء</button>
         `;
 
-        // ربط نظام المراقبة الأوتوماتيكي بالزرار
         document.getElementById('btnSendWaInit').addEventListener('click', startAutoOTPProcess);
-        
         document.getElementById('waInitModal').classList.add('active');
 
     } catch (error) {
         showAlert('خطأ', 'حدث خطأ، يرجى المحاولة لاحقاً.');
     } finally {
-        btn.innerHTML = "إنشاء الحساب الآن"; btn.disabled = false;
+        btn.innerHTML = "استكمال تفعيل الحساب (اضغط هنا)"; btn.disabled = false;
     }
 });
 
@@ -114,7 +122,6 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 function startAutoOTPProcess() {
     const container = document.getElementById('waInitActionContainer');
     
-    // تحويل الواجهة لوضع "جاري الانتظار"
     container.innerHTML = `
         <div style="color: #3b82f6; margin: 20px 0;">
             <i class="fas fa-circle-notch fa-spin" style="font-size: 50px; margin-bottom: 15px;"></i>
@@ -126,25 +133,22 @@ function startAutoOTPProcess() {
     generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
     
     let attempts = 0;
-    const maxAttempts = 6; // هيحاول 6 مرات (كل 4 ثواني) يعني معاه 24 ثانية يبعت الرسالة براحته
+    const maxAttempts = 6; // المراقبة بتستمر لمدة 24 ثانية لحد ما الطالب يبعت
 
     const trySendOTP = async () => {
         attempts++;
         const isSent = await sendWhatsAppOTP(pendingUserData.studentPhone, generatedOTP);
         
         if (isSent) {
-            // 🎉 نجاح! الكود اتبعت، هنقفل نافذة الانتظار ونفتح نافذة الـ OTP أوتوماتيك 🎉
             document.getElementById('waInitModal').classList.remove('active');
             document.getElementById('displayOtpPhone').textContent = pendingUserData.studentPhone;
             document.getElementById('otpModal').classList.add('active');
             document.getElementById('otpInput').value = '';
             document.getElementById('otpInput').focus();
         } else {
-            // لسه مبعتش.. لو لسه مخلصش المحاولات هيجرب تاني
             if (attempts < maxAttempts) {
                 setTimeout(trySendOTP, 4000); 
             } else {
-                // فشل بعد استنفاذ كل المحاولات (الطالب مبعتش الرسالة أو قفل الواتس)
                 container.innerHTML = `
                     <div style="color: #ef4444; margin-bottom: 15px;">
                         <i class="fas fa-exclamation-triangle" style="font-size: 50px; margin-bottom: 15px;"></i>
@@ -161,11 +165,10 @@ function startAutoOTPProcess() {
         }
     };
 
-    // هيبدأ أول محاولة بعد 5 ثواني من دوسة الطالب على اللينك عشان يلحق يفتح الواتساب
     setTimeout(trySendOTP, 5000);
 }
 
-// 3. تأكيد وإنشاء الحساب
+// 3. تأكيد وإنشاء الحساب النهائي
 document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
     const inputOtp = document.getElementById('otpInput').value.trim();
     if (inputOtp !== generatedOTP) {
