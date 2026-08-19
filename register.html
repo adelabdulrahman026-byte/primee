@@ -265,25 +265,16 @@
         </div>
     </div>
 
- <!-- 🚨 1. نافذة خطوة إرسال الطالب للرسالة أولاً (الجديدة) 🚨 -->
+<!-- 🚨 نافذة فتح جلسة الواتساب (التلقائية) 🚨 -->
     <div class="modal-overlay" id="waInitModal">
-        <div class="modal-content" style="max-width: 400px; padding: 30px; text-align: center;">
+        <div class="modal-content" style="max-width: 400px; padding: 30px; text-align: center; background: #1e293b; border: 1px solid #334155; border-radius: 20px;">
             <div style="color: #25d366; font-size: 50px; margin-bottom: 15px;"><i class="fab fa-whatsapp"></i></div>
-            <h3 style="color: var(--text-main); margin-bottom: 10px; font-weight: 900;">خطوة بسيطة لتفعيل حسابك</h3>
-            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px; font-weight: 600;">
+            <h3 style="color: #f8fafc; margin-bottom: 10px; font-weight: 900;">خطوة بسيطة لتفعيل حسابك</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 25px; font-weight: 600;">
                 حفاظاً على أمانك، يرجى إرسال رسالة تفعيل لرقم المنصة أولاً لنتمكن من إرسال كود الـ OTP إليك.
             </p>
-            <div style="display: flex; flex-direction: column; gap: 15px;">
-                <a id="btnSendWaInit" href="#" target="_blank" style="background: #25d366; color: #fff; padding: 15px; border-radius: 12px; text-decoration: none; font-weight: 800; font-family: 'Cairo'; transition: 0.3s; box-shadow: 0 10px 20px rgba(37, 211, 102, 0.2);">
-                    <i class="fas fa-paper-plane"></i> 1. أرسل رسالة التفعيل الآن
-                </a>
-                
-                <button id="btnRequestOTP" style="background: #3b82f6; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; transition: 0.3s; display: none;">
-                    <i class="fas fa-check-circle"></i> 2. أرسلت الرسالة، ابعتلي الكود 🚀
-                </button>
-                
-                <button onclick="document.getElementById('waInitModal').classList.remove('active')" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 12px; border-radius: 12px; font-weight: 900; cursor: pointer; font-family: 'Cairo'; margin-top: 10px;">إلغاء وتعديل الرقم</button>
-            </div>
+            <!-- 🚨 الديف ده فاضي لأن الجافاسكريبت هيضخ جواه الأزرار والأنيميشن 🚨 -->
+            <div id="waInitActionContainer" style="display: flex; flex-direction: column;"></div>
         </div>
     </div>
 
