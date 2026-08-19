@@ -16,7 +16,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // 🚨🚨 حط هنا رقم الواتساب بتاع المنصة 🚨🚨
-const WAPILOT_PLATFORM_NUMBER = "201093139047"; 
+const WAPILOT_PLATFORM_NUMBER = "201042650344"; 
 
 // دوال التنبيهات
 function showAlert(title, message) {
