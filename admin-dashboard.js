@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import * as tus from "https://cdn.skypack.dev/tus-js-client"; // رجعت المكتبة اللي كانت شغالة معاك!
+import * as tus from "https://cdn.skypack.dev/tus-js-client"; 
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -402,7 +402,7 @@ document.getElementById('btnToggleBlock')?.addEventListener('click', async () =>
 });
 
 // ==========================================
-// 3. إدارة الكورسات 🚨 (دالة الرفع زي ما هي + اسم المقطع + إكسيل نظيف)
+// 3. إدارة الكورسات 🚨 (إصلاح الإكسيل والفيديوهات)
 // ==========================================
 const coursesRef = collection(db, "courses");
 
@@ -427,29 +427,27 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
 
         let newVideosArray = []; 
         const videoRows = document.querySelectorAll('#courseVideosContainer .video-row');
-        let hasVideosToUpload = false;
-        videoRows.forEach(row => { if(row.querySelector('.course-video-file').files.length > 0) hasVideosToUpload = true; });
-
-        if(hasVideosToUpload) {
-            document.getElementById('videoProgressContainer').style.display = 'block';
-            for (let i = 0; i < videoRows.length; i++) {
-                const titleInput = videoRows[i].querySelector('.course-video-title');
-                const fileInput = videoRows[i].querySelector('.course-video-file');
-                const examSelect = videoRows[i].querySelector('.course-video-exam');
-                
-                if(fileInput.files.length > 0) {
-                    document.getElementById('videoStatus').textContent = `جاري رفع المقطع (${titleInput.value})...`;
-                    let vUrl = await uploadToVimeo(fileInput.files[0], (p) => {
-                        document.getElementById('videoProgressBar').style.width = p + '%';
-                    });
-                    newVideosArray.push({ 
-                        title: titleInput.value.trim(), 
-                        url: vUrl, 
-                        requiredExamId: examSelect.value || null 
-                    });
-                }
+        
+        // 🚨 تصليح التعديل: هنا بناخد الداتا حتى لو مفيش ملف مرفوع جديد 🚨
+        for (let i = 0; i < videoRows.length; i++) {
+            const titleInput = videoRows[i].querySelector('.course-video-title');
+            const fileInput = videoRows[i].querySelector('.course-video-file');
+            const examSelect = videoRows[i].querySelector('.course-video-exam');
+            const oldUrl = videoRows[i].getAttribute('data-old-url'); // لو كان فيديو قديم
+            
+            if(fileInput.files.length > 0) {
+                document.getElementById('videoProgressContainer').style.display = 'block';
+                document.getElementById('videoStatus').textContent = `جاري رفع المقطع (${titleInput.value})...`;
+                let vUrl = await uploadToVimeo(fileInput.files[0], (p) => {
+                    document.getElementById('videoProgressBar').style.width = p + '%';
+                });
+                newVideosArray.push({ title: titleInput.value.trim(), url: vUrl, requiredExamId: examSelect.value || null });
+            } else if (oldUrl && oldUrl !== 'undefined') {
+                // لو مفيش ملف بس ده فيديو قديم، خليه زي ما هو بس حدث اسمه وامتحانه
+                newVideosArray.push({ title: titleInput.value.trim(), url: oldUrl, requiredExamId: examSelect.value || null });
+            } else {
+                throw new Error("يجب رفع فيديو لكل مقطع جديد.");
             }
-            document.getElementById('videoStatus').textContent = `تم رفع الفيديوهات بنجاح ✔️`;
         }
 
         const courseData = {
@@ -458,20 +456,15 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
             grade: document.getElementById('courseGrade').value,
             price: parseInt(document.getElementById('coursePrice').value) || 0,
             pdfUrl: document.getElementById('coursePdf').value.trim(),
-            maxViews: parseInt(document.getElementById('courseMaxViews').value) || 0
+            maxViews: parseInt(document.getElementById('courseMaxViews').value) || 0,
+            videos: newVideosArray // بنبدل الفيديوهات بالجديدة (أو القديمة المعدلة)
         };
         if(imageUrl) courseData.image = imageUrl;
 
         if(editingId) {
-            const existingDoc = await getDoc(doc(db, "courses", editingId));
-            let currentVideos = existingDoc.data().videos || [];
-            // لو رفعنا فيديو جديد بنضيفه، لو مرفوعناش بنسيب القديم
-            courseData.videos = newVideosArray.length > 0 ? [...currentVideos, ...newVideosArray] : currentVideos; 
             await updateDoc(doc(db, "courses", editingId), courseData);
             document.getElementById('btnCancelEdit').click();
         } else {
-            if(!imageUrl && newVideosArray.length === 0) throw new Error("يجب رفع صورة وفيديو واحد على الأقل");
-            courseData.videos = newVideosArray;
             courseData.createdAt = new Date().toISOString();
             courseData.views = 0;
             await addDoc(coursesRef, courseData);
@@ -486,7 +479,7 @@ document.getElementById('addCourseForm')?.addEventListener('submit', async (e) =
     }
 });
 
-// 🚨 تصدير الإكسيل بعلامات تنصيص عشان ميطلعش قرف 🚨
+// 🚨 تصدير إكسيل الكورسات (بعلامات تنصيص لمنع الخلل) 🚨
 window.exportCourseExcel = async function(courseId, courseTitle) {
     adminAlert("جاري التحضير", "يتم تجميع البيانات...", "success");
     try {
@@ -504,7 +497,7 @@ window.exportCourseExcel = async function(courseId, courseTitle) {
             let sub = submissions[docSnap.id];
             let scoreText = sub ? `${sub.score} / ${sub.fullMark || sub.totalQuestions || 10}` : 'لم يمتحن';
             let statusText = sub ? (sub.status === 'passed' ? 'ناجح' : (sub.status==='failed'?'راسب':'مراجعة')) : '-';
-            csv += `"${u.fullName || '-'}","${u.studentPhone || '-'}","${u.parentPhone || '-'}","${u.governorate || '-'}","${statusText}","${scoreText}"\n`;
+            csv += `"${u.fullName || '-'}","="""${u.studentPhone || '-'}"""","="""${u.parentPhone || '-'}"""","${u.governorate || '-'}","${statusText}","="""${scoreText}""""\n`;
         });
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -558,7 +551,15 @@ window.editCourse = async function(id) {
         document.getElementById('coursePrice').value = c.price || 0;
         if(c.pdfUrl) document.getElementById('coursePdf').value = c.pdfUrl;
         document.getElementById('courseMaxViews').value = c.maxViews || 0;
-        document.getElementById('btnSaveCourse').innerHTML = 'حفظ التعديلات وإضافة فيديو';
+        
+        document.getElementById('courseVideosContainer').innerHTML = '';
+        if(c.videos) {
+            c.videos.forEach(v => {
+                window.addCourseVideoRow(v.title, v.url, v.requiredExamId);
+            });
+        }
+
+        document.getElementById('btnSaveCourse').innerHTML = 'حفظ التعديلات';
         document.getElementById('btnCancelEdit').style.display = 'block';
         window.scrollTo({top: document.getElementById('addCourseForm').offsetTop - 50, behavior: 'smooth'});
     }
@@ -871,7 +872,7 @@ document.getElementById('btnSaveEssayGrade')?.addEventListener('click', async ()
         sendWhatsAppMessage(sub.studentPhone, waMsgStudent);
         if(sub.parentPhone) sendWhatsAppMessage(sub.parentPhone, waMsgParent);
         
-        adminAlert("تم", "تم رصد الدرجة وإرسال الواتس", "success");
+        adminAlert("تم", "تم رصد الدرجة وإرسال الواتساب", "success");
     } catch(e) {}
 });
 
@@ -901,7 +902,7 @@ window.editStudentScore = async function(id, cur, total) {
 }
 
 // ==========================================
-// 🚨 المحفظة (العمليات المالية - حماية التواريخ المخفية) 🚨
+// 🚨 المحفظة (إصلاح مشكلة التواريخ عشان الجدول يظهر) 🚨
 // ==========================================
 let allTransactions = [];
 onSnapshot(query(collection(db, "transactions")), (snap) => {
@@ -910,8 +911,12 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
     allTransactions = [];
     snap.forEach(d => allTransactions.push({id: d.id, ...d.data()}));
     
-    // حل مشكلة NaN بسبب التواريخ الفارغة اللي كانت بتخفي الجدول
-    let filteredTrans = [...allTransactions].sort((a,b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    // الحل الجذري عشان السورت ميضربش من التواريخ الناقصة
+    let filteredTrans = [...allTransactions].sort((a,b) => {
+        let dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        let dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+    });
     
     if (ROLE === 'assistant' && AST_TEACHER) {
         filteredTrans = filteredTrans.filter(t => t.instructor === AST_TEACHER || t.instructor === "-");
@@ -931,7 +936,7 @@ onSnapshot(query(collection(db, "transactions")), (snap) => {
 });
 
 // ==========================================
-// 🚨 تقرير المدرس المالي (الحصص المشتراة فعلياً) 🚨
+// 🚨 تقرير المدرس المالي 🚨
 // ==========================================
 document.getElementById('btnGenerateReport')?.addEventListener('click', () => {
     const teacher = document.getElementById('reportTeacherSelect').value;
@@ -1033,7 +1038,7 @@ document.getElementById('generateCodesForm')?.addEventListener('submit', async (
         let csv = "\uFEFF\"الكود\",\"القيمة\",\"المندوب\",\"النوع\"\n";
         for (let i = 0; i < count; i++) {
             const uniqueCode = "PR-" + generateAlphanumericCode();
-            csv += `"${uniqueCode}","${price}","${delegate}","wallet"\n`; 
+            csv += `="${uniqueCode}","="${price}","="${delegate}","wallet"\n`; 
             await addDoc(codesRef, {
                 code: uniqueCode, value: price, delegate: delegate, type: 'wallet',
                 isUsed: false, usedByPhone: null, usedByName: null, usedAt: null, createdAt: batchDate
@@ -1083,7 +1088,7 @@ document.getElementById('filterCodeStatus')?.addEventListener('change', renderCo
 
 document.getElementById('btnExportAllCodes')?.addEventListener('click', () => {
     let csv = "\uFEFF\"الكود\",\"القيمة\",\"المندوب\",\"الحالة\",\"الطالب\",\"رقم الطالب\"\n";
-    allCodesData.forEach(c => csv += `"${c.code}","${c.value}","${c.delegate}","${c.isUsed?'مستخدم':'جديد'}","${c.usedByName||'-'}","${c.usedByPhone||'-'}"\n`);
+    allCodesData.forEach(c => csv += `="${c.code}","="${c.value}","="${c.delegate}","${c.isUsed?'مستخدم':'جديد'}","="${c.usedByName||'-'}","="${c.usedByPhone||'-'}"\n`);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
     link.download = `سجل_الأكواد.csv`; link.click();
@@ -1132,7 +1137,7 @@ try {
     });
 } catch(e) {}
 
-// 8. إدارة الباقات 🚨 (إضافة اسم المقطع وتنزيل الإكسيل)
+// 8. إدارة الباقات 🚨 (إضافة اسم المقطع وإصلاح الإكسيل والتعديل)
 const packagesRef = collection(db, "packages");
 
 window.deletePackage = async function(id) {
@@ -1151,7 +1156,7 @@ window.exportPackageExcel = async function(pkgId, pkgName) {
         let csv = "\uFEFF\"اسم الطالب\",\"رقم الطالب\",\"رقم ولي الأمر\",\"المحافظة\"\n";
         usersSnap.forEach(docSnap => {
             let u = docSnap.data();
-            csv += `"${u.fullName || '-'}","${u.studentPhone || '-'}","${u.parentPhone || '-'}","${u.governorate || '-'}"\n`;
+            csv += `"${u.fullName || '-'}","="${u.studentPhone || '-'}","="${u.parentPhone || '-'}","${u.governorate || '-'}"\n`;
         });
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1174,24 +1179,25 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
 
         let newVideosArray = []; 
         const videoRows = document.querySelectorAll('#packageVideosContainer .video-row');
-        let hasVideosToUpload = false;
-        videoRows.forEach(row => { if(row.querySelector('.pkg-video-file').files.length > 0) hasVideosToUpload = true; });
-
-        if(hasVideosToUpload) {
-            document.getElementById('pkgVideoProgressContainer').style.display = 'block';
-            for (let i = 0; i < videoRows.length; i++) {
-                const titleInput = videoRows[i].querySelector('.pkg-video-title');
-                const fileInput = videoRows[i].querySelector('.pkg-video-file');
-                const examSelect = videoRows[i].querySelector('.pkg-video-exam');
-                if(fileInput.files.length > 0) {
-                    document.getElementById('pkgVideoStatus').textContent = `جاري الرفع (${titleInput.value})...`;
-                    let vUrl = await uploadToVimeo(fileInput.files[0], (p) => {
-                        document.getElementById('pkgVideoProgressBar').style.width = p + '%';
-                    });
-                    newVideosArray.push({ title: titleInput.value.trim(), url: vUrl, requiredExamId: examSelect.value || null });
-                }
+        
+        for (let i = 0; i < videoRows.length; i++) {
+            const titleInput = videoRows[i].querySelector('.pkg-video-title');
+            const fileInput = videoRows[i].querySelector('.pkg-video-file');
+            const examSelect = videoRows[i].querySelector('.pkg-video-exam');
+            const oldUrl = videoRows[i].getAttribute('data-old-url'); 
+            
+            if(fileInput.files.length > 0) {
+                document.getElementById('pkgVideoProgressContainer').style.display = 'block';
+                document.getElementById('pkgVideoStatus').textContent = `جاري الرفع (${titleInput.value})...`;
+                let vUrl = await uploadToVimeo(fileInput.files[0], (p) => {
+                    document.getElementById('pkgVideoProgressBar').style.width = p + '%';
+                });
+                newVideosArray.push({ title: titleInput.value.trim(), url: vUrl, requiredExamId: examSelect.value || null });
+            } else if (oldUrl && oldUrl !== 'undefined') {
+                newVideosArray.push({ title: titleInput.value.trim(), url: oldUrl, requiredExamId: examSelect.value || null });
+            } else {
+                throw new Error("يجب رفع فيديو لكل مقطع جديد.");
             }
-            document.getElementById('pkgVideoStatus').textContent = `تم الرفع بنجاح ✔️`;
         }
 
         const pkgData = {
@@ -1200,20 +1206,17 @@ document.getElementById('addPackageForm')?.addEventListener('submit', async (e) 
             oldPrice: parseInt(document.getElementById('pkgOldPrice').value) || 0,
             newPrice: parseInt(document.getElementById('pkgNewPrice').value) || 0,
             features: document.getElementById('pkgFeatures').value.split(','),
-            maxViews: parseInt(document.getElementById('pkgMaxViews').value) || 0
+            maxViews: parseInt(document.getElementById('pkgMaxViews').value) || 0,
+            videos: newVideosArray // استبدال بالفيديوهات (الجديدة والقديمة)
         };
         if(imageUrl) pkgData.imageUrl = imageUrl;
 
         if (editingId) {
-            const existingDoc = await getDoc(doc(db, "packages", editingId));
-            let currentVideos = existingDoc.data().videos || [];
-            pkgData.videos = newVideosArray.length > 0 ? [...currentVideos, ...newVideosArray] : currentVideos; 
             await updateDoc(doc(db, "packages", editingId), pkgData);
             document.getElementById('btnCancelPkgEdit').click();
             adminAlert("تم", "تم التحديث بنجاح", "success");
         } else {
-            if(!imageUrl && !editingId) throw new Error("يجب رفع صورة غلاف");
-            pkgData.videos = newVideosArray;
+            if(!imageUrl && newVideosArray.length === 0) throw new Error("يجب رفع صورة وغلاف");
             pkgData.createdAt = new Date().toISOString();
             pkgData.views = 0;
             await addDoc(packagesRef, pkgData);
@@ -1263,6 +1266,14 @@ window.editPackage = async function(id) {
         document.getElementById('pkgNewPrice').value = p.newPrice || '';
         document.getElementById('pkgFeatures').value = p.features ? p.features.join(',') : '';
         document.getElementById('pkgMaxViews').value = p.maxViews || 0;
+        
+        document.getElementById('packageVideosContainer').innerHTML = '';
+        if(p.videos) {
+            p.videos.forEach(v => {
+                window.addPackageVideoRow(v.title, v.url, v.requiredExamId);
+            });
+        }
+
         document.getElementById('btnSavePackage').innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات وإضافة المحتوى';
         document.getElementById('btnCancelPkgEdit').style.display = 'block';
         window.scrollTo({top: document.getElementById('addPackageForm').offsetTop - 50, behavior: 'smooth'});
