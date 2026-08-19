@@ -15,6 +15,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// 🚨 رقم واتساب المنصة المربوط بـ WaPilot (استبدله برقمك) 🚨
+const WAPILOT_PLATFORM_NUMBER = "201042650344"; 
+
 // دوال التنبيهات
 function showAlert(title, message) {
     document.getElementById('alertTitle').textContent = title;
@@ -53,7 +56,6 @@ async function sendWhatsAppOTP(phone, otpCode) {
             body: JSON.stringify({ chat_id: chatId, text: msg })
         });
 
-        // 🚨 التأكد إن السيرفر استقبل الأمر بنجاح 🚨
         if (!response.ok) {
             const errData = await response.json();
             console.error("خطأ من WaPilot:", errData);
@@ -67,7 +69,7 @@ async function sendWhatsAppOTP(phone, otpCode) {
     }
 }
 
-// 1. عند الضغط على إنشاء حساب (نرسل الـ OTP أولاً)
+// 1. عند الضغط على إنشاء حساب (نتأكد من الداتا ونفتح نافذة الواتساب)
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
@@ -75,7 +77,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     const phone = document.getElementById('studentPhone').value.trim();
     if (phone.length < 11) return showAlert('تنبيه', 'رقم الهاتف غير صحيح.');
 
-    btn.innerHTML = "جاري التحقق وإرسال الكود... ⏳"; 
+    btn.innerHTML = "جاري التحقق... ⏳"; 
     btn.disabled = true;
 
     try {
@@ -98,22 +100,18 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
             address: document.getElementById('address').value.trim()
         };
 
-        // توليد 4 أرقام عشوائية
-        generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
+        // 🚨 إخفاء زر طلب الكود وتجهيز لينك الواتساب 🚨
+        const btnRequest = document.getElementById('btnRequestOTP');
+        if(btnRequest) btnRequest.style.display = 'none';
 
-        // 🚨 إرسال الواتساب والتحقق من نجاح الإرسال قبل فتح النافذة 🚨
-        const isSent = await sendWhatsAppOTP(phone, generatedOTP);
-        
-        if (!isSent) {
-            btn.innerHTML = "إنشاء الحساب الآن"; btn.disabled = false;
-            return showAlert('عذراً', 'فشل إرسال كود التأكيد. يرجى التأكد من صحة الرقم أو المحاولة لاحقاً.');
+        const waMsg = encodeURIComponent("طلب تفعيل حسابي في منصة Primee Academy");
+        const waLinkBtn = document.getElementById('btnSendWaInit');
+        if(waLinkBtn) {
+            waLinkBtn.href = `https://wa.me/${WAPILOT_PLATFORM_NUMBER}?text=${waMsg}`;
         }
-
-        // فتح نافذة الـ OTP (لو الإرسال تم بنجاح فقط)
-        document.getElementById('displayOtpPhone').textContent = phone;
-        document.getElementById('otpModal').classList.add('active');
-        document.getElementById('otpInput').value = '';
-        document.getElementById('otpInput').focus();
+        
+        // فتح نافذة إرسال التفعيل
+        document.getElementById('waInitModal').classList.add('active');
 
     } catch (error) {
         console.error(error);
@@ -123,7 +121,49 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     }
 });
 
-// 2. عند إدخال الـ OTP والتأكيد
+// 2. إظهار زرار "أرسلت الرسالة" بعد ما الطالب يدوس على اللينك
+document.getElementById('btnSendWaInit')?.addEventListener('click', () => {
+    setTimeout(() => {
+        document.getElementById('btnRequestOTP').style.display = 'block';
+    }, 2000);
+});
+
+// 3. الطالب داس "ابعتلي الكود" (هنا بنولد الـ OTP ونبعت)
+document.getElementById('btnRequestOTP')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnRequestOTP');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "جاري إرسال الكود... ⏳"; 
+    btn.disabled = true;
+
+    try {
+        // توليد 4 أرقام عشوائية
+        generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
+
+        // إرسال الواتساب
+        const isSent = await sendWhatsAppOTP(pendingUserData.studentPhone, generatedOTP);
+        
+        if (!isSent) {
+            showAlert('عذراً', 'فشل إرسال كود التأكيد. يرجى التأكد من إرسال رسالة التفعيل أولاً للمنصة لفتح المحادثة.');
+            btn.innerHTML = originalText; btn.disabled = false;
+            return;
+        }
+
+        // إخفاء نافذة الواتس وفتح نافذة الـ OTP بتاعتك
+        document.getElementById('waInitModal').classList.remove('active');
+        
+        document.getElementById('displayOtpPhone').textContent = pendingUserData.studentPhone;
+        document.getElementById('otpModal').classList.add('active');
+        document.getElementById('otpInput').value = '';
+        document.getElementById('otpInput').focus();
+
+    } catch (error) {
+        showAlert('خطأ', 'حدث خطأ، يرجى المحاولة لاحقاً.');
+    } finally {
+        btn.innerHTML = originalText; btn.disabled = false;
+    }
+});
+
+// 4. عند إدخال الـ OTP والتأكيد (نفس كودك الأصلي)
 document.getElementById('btnVerifyOtp').addEventListener('click', async () => {
     const inputOtp = document.getElementById('otpInput').value.trim();
     if (inputOtp !== generatedOTP) {
