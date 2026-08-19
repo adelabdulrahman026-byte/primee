@@ -327,19 +327,18 @@ function renderTeachers(filterText) {
     let html = '';
     filtered.forEach((t, index) => {
         let stgText = t.stages ? t.stages.split(',').slice(0, 2).join(' | ') : '';
-        let bgColor = teacherGradients[index % teacherGradients.length]; // توزيع الألوان
+        let bgColor = teacherGradients[index % teacherGradients.length]; // توزيع الألوان بذكاء
         
         let isFollowing = globalUserData && globalUserData.followingTeachers && globalUserData.followingTeachers.includes(t.name);
         let followBtnHtml = isFollowing 
             ? `<button class="btn-follow-teacher" style="background:#10b981; border-color:#10b981;" onclick="event.stopPropagation();">تم المتابعة ✔️</button>`
             : `<button class="btn-follow-teacher" onclick="event.stopPropagation(); followTeacher('${t.name}')">متابعة الأستاذ <i class="fas fa-heart"></i></button>`;
 
+        // 🚨 التعديل الجديد: الخلفية بقت ورا المدرس مش فوقه 🚨
         html += `
-        <div class="swiper-slide">
-            <!-- خلفية ملونة تحت الصورة -->
-            <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: ${bgColor}; border-radius: 20px; z-index: -1;"></div>
-            <img src="${t.imageUrl}" alt="${t.name}" class="cover-card-img" style="mix-blend-mode: luminosity;">
-            <div class="cover-card-fade">
+        <div class="swiper-slide" style="background: ${bgColor}; border-radius: 20px; overflow: hidden; position: relative;">
+            <img src="${t.imageUrl}" alt="${t.name}" class="cover-card-img" style="position: relative; z-index: 1;">
+            <div class="cover-card-fade" style="z-index: 2;">
                 <div style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); color: #f59e0b; padding: 5px 12px; border-radius: 8px; font-size: 13px; font-weight: 800; border: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-book"></i> ${t.subject}</div>
                 <h3>${t.name}</h3><p>${stgText}</p>
                 <button class="cover-card-btn" onclick="openTeacherCourses('${t.name}')">تصفح الحصص <i class="fas fa-arrow-left"></i></button>
@@ -474,10 +473,11 @@ async function fetchCoursesSliders() {
 fetchCoursesSliders();
 
 // ==========================================
-// 🚨 الشراء والدفع عبر البوابة أو الكود 🚨
+// 🚨 الشراء وتطبيق البرومو كود وتوجيه لوحة التحكم 🚨
 // ==========================================
 window.currentViewingTeacher = "";
 window.pendingCourseId = null;
+window.originalCoursePrice = 0;
 window.pendingCoursePrice = 0;
 window.pendingCourseTitle = "";
 window.pendingCourseType = "course"; // course or package
@@ -536,32 +536,75 @@ window.selectStageAndLoadCourses = async function(stageKeyword) {
     } catch(e) {}
 }
 
+window.updateConfirmBuyText = function() {
+    document.getElementById('confirmBuyText').innerHTML = `سعر الاشتراك: <strong style="color:#ef4444">${window.pendingCoursePrice} ج.م</strong><br>رصيدك الحالي: <strong style="color:#10b981">${window.currentUserBalance} ج.م</strong>`;
+};
+
 window.buyCourseAction = async function(courseId, price, title, type = 'course') {
     if(!loggedInPhone || !globalUserData) { window.location.href = 'login.html'; return; } 
-    const btn = event.target; const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+    
+    window.currentUserId = globalUserData.id;
+    window.currentUserBalance = parseInt(globalUserData.walletBalance) || 0;
+    window.currentUserCourses = globalUserData.myCourses || []; 
+    window.currentUserPackages = globalUserData.myPackages || []; 
+    window.currentUserNotifications = globalUserData.notifications || []; 
 
-    try {
-        window.currentUserId = globalUserData.id;
-        window.currentUserBalance = parseInt(globalUserData.walletBalance) || 0;
-        window.currentUserCourses = globalUserData.myCourses || []; 
-        window.currentUserPackages = globalUserData.myPackages || []; 
-        window.currentUserNotifications = globalUserData.notifications || []; 
+    window.pendingCourseId = courseId;
+    window.originalCoursePrice = parseInt(price) || 0;
+    window.pendingCoursePrice = window.originalCoursePrice; // السعر قبل الخصم
+    window.pendingCourseTitle = title;
+    window.pendingCourseType = type;
 
-        window.pendingCourseId = courseId;
-        window.pendingCoursePrice = parseInt(price) || 0;
-        window.pendingCourseTitle = title;
-        window.pendingCourseType = type;
+    // تصفير بيانات البرومو كود في كل مرة
+    document.getElementById('promoCodeInput').value = '';
+    document.getElementById('promoCodeInput').disabled = false;
+    document.getElementById('btnApplyPromo').disabled = false;
+    document.getElementById('btnApplyPromo').innerHTML = 'تطبيق';
+    document.getElementById('promoStatusMsg').innerHTML = '';
 
-        if(window.currentUserBalance >= window.pendingCoursePrice) {
-            document.getElementById('confirmBuyText').innerHTML = `سعر الاشتراك: <strong style="color:#ef4444">${window.pendingCoursePrice} ج.م</strong><br>رصيدك: <strong style="color:#10b981">${window.currentUserBalance} ج.م</strong><br><br>هل أنت متأكد من الشراء؟`;
-            document.getElementById('confirmBuyModal').classList.add('active');
-        } else {
-            document.getElementById('chargeReqText').innerHTML = `السعر <strong>${window.pendingCoursePrice} ج.م</strong> ورصيدك <strong>${window.currentUserBalance} ج.م</strong>.<br>تحتاج لشحن <strong>${window.pendingCoursePrice - window.currentUserBalance} ج.م</strong>.`;
-            document.getElementById('chargeToBuyModal').classList.add('active');
-        }
-    } catch (e) {} finally { btn.innerHTML = originalText; btn.disabled = false; }
+    window.updateConfirmBuyText();
+    document.getElementById('confirmBuyModal').classList.add('active');
 }
+
+// تطبيق البرومو كود
+document.getElementById('btnApplyPromo')?.addEventListener('click', async () => {
+    const codeInput = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+    if(!codeInput) return;
+    
+    const btn = document.getElementById('btnApplyPromo');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.disabled = true;
+    
+    try {
+        const q = query(collection(db, "promo_codes"), where("code", "==", codeInput));
+        const snap = await getDocs(q);
+        
+        if(snap.empty) {
+            document.getElementById('promoStatusMsg').innerHTML = '<span style="color:#ef4444;">كود الخصم غير صحيح.</span>';
+            btn.innerHTML = 'تطبيق'; btn.disabled = false;
+            return;
+        }
+        
+        const promoData = snap.docs[0].data();
+        if(new Date() > new Date(promoData.expiry)) {
+            document.getElementById('promoStatusMsg').innerHTML = '<span style="color:#ef4444;">عذراً، هذا الكود منتهي الصلاحية.</span>';
+            btn.innerHTML = 'تطبيق'; btn.disabled = false;
+            return;
+        }
+        
+        const discountPercent = parseInt(promoData.discount) || 0;
+        const discountAmount = (window.originalCoursePrice * discountPercent) / 100;
+        window.pendingCoursePrice = Math.floor(window.originalCoursePrice - discountAmount);
+        
+        document.getElementById('promoStatusMsg').innerHTML = `<span style="color:#10b981;">تم تطبيق خصم ${discountPercent}% بنجاح! 🎉</span>`;
+        document.getElementById('promoCodeInput').disabled = true;
+        window.updateConfirmBuyText();
+        btn.innerHTML = 'تم ✔️';
+        
+    } catch(e) {
+        document.getElementById('promoStatusMsg').innerHTML = '<span style="color:#ef4444;">حدث خطأ أثناء الفحص.</span>';
+        btn.innerHTML = 'تطبيق'; btn.disabled = false;
+    }
+});
 
 async function executePurchaseAndAddCourse(newBalance) {
     let typeName = window.pendingCourseType === 'package' ? 'الباقة' : 'الحصة';
@@ -596,6 +639,13 @@ async function executePurchaseAndAddCourse(newBalance) {
 }
 
 document.getElementById('btnExecuteBuy')?.addEventListener('click', async () => {
+    // 🚨 التعديل المطلوب: لو معندوش رصيد، هنحوله للداش بورد عشان يشحن 🚨
+    if (window.currentUserBalance < window.pendingCoursePrice) {
+        alert("رصيدك الحالي غير كافٍ لإتمام الشراء.\nسيتم تحويلك إلى لوحة التحكم لشحن رصيدك (باستخدام كود شحن أو فودافون كاش).");
+        window.location.href = 'student-dashboard.html';
+        return;
+    }
+
     const btn = document.getElementById('btnExecuteBuy');
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الشراء...'; btn.disabled = true;
 
@@ -603,86 +653,7 @@ document.getElementById('btnExecuteBuy')?.addEventListener('click', async () => 
         await executePurchaseAndAddCourse(window.currentUserBalance - window.pendingCoursePrice);
         alert("🎉 مبروك! تم الشراء بنجاح وإضافتها لكورساتك.");
         window.location.href = 'student-dashboard.html'; 
-    } catch(e) { alert("حدث خطأ."); btn.innerHTML = 'نعم، اشترك'; btn.disabled = false; }
-});
-
-// 🚨 الشحن المباشر بالكود وقت الشراء 🚨
-document.getElementById('btnSubmitChargeBuy')?.addEventListener('click', async () => {
-    const codeVal = document.getElementById('autoChargeCodeInput').value.trim();
-    if(!codeVal) return alert("يرجى إدخال الكود.");
-    const btn = document.getElementById('btnSubmitChargeBuy');
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>...'; btn.disabled = true;
-
-    try {
-        const q = query(collection(db, "charge_codes"), where("code", "==", codeVal));
-        const snap = await getDocs(q);
-        if (snap.empty) throw new Error("الكود غير صحيح.");
-        const codeDoc = snap.docs[0]; const codeData = codeDoc.data();
-        if (codeData.isUsed) throw new Error("مستخدم مسبقاً.");
-
-        const codeValue = parseInt(codeData.value);
-        const newTempBalance = window.currentUserBalance + codeValue;
-
-        await updateDoc(doc(db, "charge_codes", codeDoc.id), { isUsed: true, usedByPhone: loggedInPhone, usedAt: new Date().toISOString() });
-
-        window.currentUserNotifications.push({ title: "تم شحن الرصيد 💰", text: `تم إضافة ${codeValue} ج.م بنجاح.`, date: new Date().toISOString() });
-
-        if(newTempBalance >= window.pendingCoursePrice) {
-            await executePurchaseAndAddCourse(newTempBalance - window.pendingCoursePrice);
-            alert(`🎉 تم شحن (${codeValue} ج.م) وتم الشراء بنجاح!`);
-            window.location.href = 'student-dashboard.html';
-        } else {
-            await updateDoc(doc(db, "users", window.currentUserId), { walletBalance: newTempBalance, notifications: window.currentUserNotifications });
-            window.currentUserBalance = newTempBalance;
-            document.getElementById('autoChargeCodeInput').value = '';
-            alert(`✅ تم شحن (${codeValue} ج.م). رصيدك الآن (${newTempBalance} ج.م) لا يكفي، أدخل كود آخر.`);
-            btn.innerHTML = 'شحن واشتراك بالكود 🚀'; btn.disabled = false;
-        }
-    } catch(err) { alert(err.message); btn.innerHTML = 'شحن واشتراك بالكود 🚀'; btn.disabled = false; }
-});
-
-// 🚨 الشحن عبر بوابة الدفع وقت الشراء 🚨
-document.getElementById('btnConfirmGatewayBuy')?.addEventListener('click', async () => {
-    const senderPhone = document.getElementById('gatewaySenderPhone').value.trim();
-    if (senderPhone.length !== 11 || !senderPhone.startsWith('01')) {
-        return alert("يرجى كتابة رقم الموبايل (11 رقم) بشكل صحيح.");
-    }
-
-    const btn = document.getElementById('btnConfirmGatewayBuy');
-    btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> جاري الفحص..."; btn.disabled = true;
-
-    try {
-        const transfersQ = query(collection(db, "received_transfers"), where("phone", "==", senderPhone), where("used", "==", false));
-        const transfersSnap = await getDocs(transfersQ);
-
-        if (transfersSnap.empty) {
-            // تسجيل محاولة فاشلة في فايربيز عشان الإدارة تشوفها
-            await addDoc(collection(db, "received_transfers"), {
-                studentId: globalUserData.id, studentName: globalUserData.fullName, studentPhone: globalUserData.studentPhone,
-                phone: senderPhone, amount: 0, status: "failed", type: "electronic_payment", used: true,
-                courseTitle: "محاولة شحن وتفعيل مباشر (فاشلة)", createdAt: new Date().toISOString()
-            });
-            alert("فشلت العملية ❌\nلم نجد تحويل مسجل من هذا الرقم، يرجى تحويل المبلغ أولاً ثم المحاولة مجدداً.");
-        } else {
-            const transferDoc = transfersSnap.docs[0];
-            const amountAdded = parseInt(transferDoc.data().amount) || 0;
-
-            await updateDoc(doc(db, "received_transfers", transferDoc.id), { used: true, studentId: globalUserData.id, studentName: globalUserData.fullName, studentPhone: globalUserData.studentPhone, status: "success" });
-
-            const newTempBalance = window.currentUserBalance + amountAdded;
-            
-            if(newTempBalance >= window.pendingCoursePrice) {
-                await executePurchaseAndAddCourse(newTempBalance - window.pendingCoursePrice);
-                alert(`🎉 تم التأكيد! تم شحن محفظتك بـ (${amountAdded} ج.م) وتم شراء المادة بنجاح.`);
-                window.location.href = 'student-dashboard.html';
-            } else {
-                await updateDoc(doc(db, "users", window.currentUserId), { walletBalance: newTempBalance });
-                window.currentUserBalance = newTempBalance;
-                alert(`✅ تم شحن (${amountAdded} ج.م). رصيدك الآن (${newTempBalance} ج.م) لسه مش مكفي!`);
-            }
-        }
-    } catch(err) { alert("خطأ في الخادم."); } 
-    finally { btn.innerHTML = "تأكيد التحويل والاشتراك 💸"; btn.disabled = false; }
+    } catch(e) { alert("حدث خطأ."); btn.innerHTML = 'نعم، اشترك الآن'; btn.disabled = false; }
 });
 
 // ==========================================
@@ -695,7 +666,6 @@ let currentTransferDocId = null;
 let currentTransferAttempts = null;
 let currentOldDeviceId = null;
 
-// الحل الجذري عشان الزرار يفتح
 document.getElementById('openMaggieBtn')?.addEventListener('click', () => {
     document.getElementById('maggieChatModal').classList.add('active');
     if(typeof window.resetMaggieChat === 'function') window.resetMaggieChat();
