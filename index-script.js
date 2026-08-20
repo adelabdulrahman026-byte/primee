@@ -165,7 +165,9 @@ function closeDrawer() { document.getElementById('stagesDrawer')?.classList.remo
 document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
 document.getElementById('btnParentLogin')?.addEventListener('click', () => { const p = document.getElementById('parentStudentPhone').value; if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; else alert("رقم غير صحيح"); });
 
-const themeBtn = document.getElementById('themeToggleBtn');
+// ==========================================
+// 🌗 الوضع الليلي / النهاري — متزامن بين زرار الديسكتوب وزرار الموبايل
+// ==========================================
 const heroVideoBg = document.getElementById('heroVideoBg');
 const heroOverlayColor = document.getElementById('heroOverlayColor');
 const dayVideoUrl = "https://www.primeeacademy.com/day.mp4"; 
@@ -179,22 +181,31 @@ function applyThemeColors(isDark) {
     if (heroOverlayColor) heroOverlayColor.style.background = isDark ? 'rgba(15, 23, 42, 0.6)' : 'rgba(255, 255, 255, 0.4)';
 }
 
-if(themeBtn) {
-    const icon = themeBtn.querySelector('i');
-    const isDark = document.body.getAttribute('data-theme') === 'dark' || localStorage.getItem('theme') === 'dark';
-    if(isDark) { document.body.setAttribute('data-theme', 'dark'); icon.classList.replace('fa-moon', 'fa-sun'); }
-    applyThemeColors(isDark);
-    themeBtn.addEventListener('click', () => {
-        const currentlyDark = document.body.getAttribute('data-theme') === 'dark';
-        if(currentlyDark) { 
-            document.body.removeAttribute('data-theme'); localStorage.setItem('theme','light'); 
-            icon.classList.replace('fa-sun','fa-moon'); applyThemeColors(false);
-        } else { 
-            document.body.setAttribute('data-theme','dark'); localStorage.setItem('theme','dark'); 
-            icon.classList.replace('fa-moon','fa-sun'); applyThemeColors(true);
-        }
-    });
+function syncThemeIcons(isDark) {
+    const desktopIcon = document.querySelector('#themeToggleBtn i');
+    if (desktopIcon) desktopIcon.classList.toggle('fa-sun', isDark), desktopIcon.classList.toggle('fa-moon', !isDark);
 }
+
+function setTheme(isDark) {
+    if (isDark) { document.body.setAttribute('data-theme', 'dark'); localStorage.setItem('theme', 'dark'); }
+    else { document.body.removeAttribute('data-theme'); localStorage.setItem('theme', 'light'); }
+    syncThemeIcons(isDark);
+    applyThemeColors(isDark);
+}
+
+function toggleTheme() {
+    const currentlyDark = document.body.getAttribute('data-theme') === 'dark';
+    setTheme(!currentlyDark);
+}
+
+const themeBtn = document.getElementById('themeToggleBtn');
+const themeBtnMobile = document.getElementById('themeToggleBtnMobile');
+
+const initialIsDark = document.body.getAttribute('data-theme') === 'dark' || localStorage.getItem('theme') === 'dark';
+setTheme(initialIsDark);
+
+themeBtn?.addEventListener('click', toggleTheme);
+themeBtnMobile?.addEventListener('click', toggleTheme);
 
 document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', () => {
     const term = document.getElementById('searchTeacherInput').value.trim().toLowerCase();
@@ -336,7 +347,7 @@ function renderTeachers(filterText) {
 
         // 🚨 التعديل الجديد: الخلفية بقت ورا المدرس مش فوقه 🚨
         html += `
-        <div class="swiper-slide" style="background: ${bgColor}; border-radius: 20px; overflow: hidden; position: relative;">
+        <div class="swiper-slide modern-teacher-card" style="background: ${bgColor}; border-radius: 20px; overflow: hidden; position: relative;">
             <img src="${t.imageUrl}" alt="${t.name}" class="cover-card-img" style="position: relative; z-index: 1;">
             <div class="cover-card-fade" style="z-index: 2;">
                 <div style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); color: #f59e0b; padding: 5px 12px; border-radius: 8px; font-size: 13px; font-weight: 800; border: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-book"></i> ${t.subject}</div>
