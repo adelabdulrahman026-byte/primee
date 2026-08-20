@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, updateDoc, doc, getDoc, arrayUnion, onSnapshot, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, updateDoc, doc, getDoc, arrayUnion, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -14,7 +14,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// 🎨 دالة عرض الإشعارات الشيكة بدل alert()
+// 🎨 دالة عرض الإشعارات
 // ==========================================
 window.pmNotify = function(title, message, type = 'success') {
     const modal = document.getElementById('pmNotifyModal');
@@ -23,7 +23,6 @@ window.pmNotify = function(title, message, type = 'success') {
     const msgEl = document.getElementById('pmNotifyMessage');
     const btnEl = document.getElementById('pmNotifyBtn');
 
-    // الأيقونة واللون حسب النوع
     if (type === 'success') {
         iconEl.innerHTML = '<i class="fas fa-check-circle"></i>';
         iconEl.style.color = '#10b981';
@@ -36,7 +35,7 @@ window.pmNotify = function(title, message, type = 'success') {
         iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
         iconEl.style.color = '#f59e0b';
         btnEl.style.background = '#f59e0b';
-    } else if (type === 'info') {
+    } else {
         iconEl.innerHTML = '<i class="fas fa-info-circle"></i>';
         iconEl.style.color = '#3b82f6';
         btnEl.style.background = '#3b82f6';
@@ -48,7 +47,7 @@ window.pmNotify = function(title, message, type = 'success') {
 };
 
 // ==========================================
-// 🚨 دالة إرسال رسائل الواتساب العامة للمنصة 🚨
+// 🚨 دالة إرسال رسائل الواتساب
 // ==========================================
 window.sendWhatsAppToPhone = async function(phone, msg) {
     if (!phone) return false;
@@ -97,7 +96,7 @@ if(heroTitle) {
     }, 3500);
 }
 
-// 🚨 تحديث عداد الطلاب الحي 🚨
+// 🚨 عداد الطلاب الحي 🚨
 async function updateLiveCounter() {
     try {
         const snap = await getDocs(collection(db, 'users'));
@@ -121,7 +120,7 @@ function animateValue(id, start, end, duration) {
 updateLiveCounter();
 
 const loggedInPhone = localStorage.getItem('studentPhone');
-let globalUserData = null; // هنحتفظ ببيانات اليوزر عشان نحتاجها في الإشعارات
+let globalUserData = null;
 if (loggedInPhone) {
     const myC = document.getElementById('myCoursesLink');
     if (myC) myC.style.display = 'block';
@@ -194,13 +193,29 @@ async function fetchStudentNavData(phone) {
     } catch (e) {}
 }
 
-document.getElementById('openDrawer')?.addEventListener('click', () => { document.getElementById('stagesDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('active'); document.body.style.overflow='hidden'; });
-function closeDrawer() { document.getElementById('stagesDrawer')?.classList.remove('open'); document.getElementById('drawerOverlay')?.classList.remove('active'); document.body.style.overflow=''; }
-document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
-document.getElementById('btnParentLogin')?.addEventListener('click', () => { const p = document.getElementById('parentStudentPhone').value; if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; else pmNotify("رقم غير صحيح", "رجاءً أدخل رقم هاتف صحيح مكوّن من 10 أرقام على الأقل.", "error"); });
+// معالجة القائمة الجانبية وإخفاء زرار ماجي عند فتحها
+document.getElementById('openDrawer')?.addEventListener('click', () => { 
+    document.getElementById('stagesDrawer').classList.add('open'); 
+    document.getElementById('drawerOverlay').classList.add('active'); 
+    document.body.classList.add('drawer-opened');
+    document.body.style.overflow='hidden'; 
+});
+function closeDrawer() { 
+    document.getElementById('stagesDrawer')?.classList.remove('open'); 
+    document.getElementById('drawerOverlay')?.classList.remove('active'); 
+    document.body.classList.remove('drawer-opened');
+    document.body.style.overflow=''; 
+}
+document.getElementById('closeDrawer')?.addEventListener('click', closeDrawer); 
+document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
+document.getElementById('btnParentLogin')?.addEventListener('click', () => { 
+    const p = document.getElementById('parentStudentPhone').value; 
+    if(p.length>=10) window.location.href=`parent-report.html?phone=${p}`; 
+    else pmNotify("رقم غير صحيح", "رجاءً أدخل رقم هاتف صحيح مكوّن من 10 أرقام على الأقل.", "error"); 
+});
 
 // ==========================================
-// 🌗 الوضع الليلي / النهاري — متزامن بين زرار الديسكتوب وزرار الموبايل
+// 🌗 الوضع الليلي / النهاري
 // ==========================================
 const heroVideoBg = document.getElementById('heroVideoBg');
 const heroOverlayColor = document.getElementById('heroOverlayColor');
@@ -234,7 +249,6 @@ function toggleTheme() {
 
 const themeBtn = document.getElementById('themeToggleBtn');
 const themeBtnMobile = document.getElementById('themeToggleBtnMobile');
-
 const initialIsDark = document.body.getAttribute('data-theme') === 'dark' || localStorage.getItem('theme') === 'dark';
 setTheme(initialIsDark);
 
@@ -246,8 +260,8 @@ document.getElementById('btnExecuteSearchTeacher')?.addEventListener('click', ()
     document.getElementById('searchTeacherModal').classList.remove('active');
     document.getElementById('viewAllTeachersBtn').click(); 
     setTimeout(() => {
-        document.querySelectorAll('.modern-teacher-card').forEach(card => {
-            const name = card.querySelector('h3').innerText.toLowerCase();
+        document.querySelectorAll('.primee-teacher-card').forEach(card => {
+            const name = card.querySelector('h4').innerText.toLowerCase();
             card.parentElement.style.display = name.includes(term) ? 'block' : 'none';
         });
         document.getElementById('teachersSection').scrollIntoView({behavior: 'smooth'});
@@ -260,6 +274,7 @@ const subStagesMap = {
     'ثانوي': ['الأول الثانوي', 'الثاني الثانوي', 'الثالث الثانوي'],
     'بكالوريا': ['الأول بكالوريا', 'الثاني بكالوريا', 'الثالث بكالوريا']
 };
+
 function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
     const mainBtns = document.querySelectorAll(`#${mainContainerId} .modern-filter-btn`);
     const subContainer = document.getElementById(subContainerId);
@@ -293,18 +308,17 @@ function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
 }
 
 // ==========================================
-// 🚨 المدرسين والتلوين وزرار المتابعة 🚨
+// 🎨 كروت المدرسين الفاخرة وخلفيات الجريدينت
 // ==========================================
 let allTeachersData = [];
 let teachersSwiperInstance = null;
 
-// ألوان متناسقة لكروت المدرسين
-const teacherGradients = [
-    'linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(29, 78, 216, 0.9))', // Blue
-    'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(4, 120, 87, 0.9))',  // Green
-    'linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(180, 83, 9, 0.9))',  // Orange
-    'linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(109, 40, 217, 0.9))', // Purple
-    'linear-gradient(135deg, rgba(236, 72, 153, 0.9), rgba(190, 24, 93, 0.9))'   // Pink
+const teacherCardGradients = [
+    'radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.45), #0b1329 80%)',
+    'radial-gradient(circle at 50% 20%, rgba(139, 92, 246, 0.45), #0f1026 80%)',
+    'radial-gradient(circle at 50% 20%, rgba(16, 185, 129, 0.45), #07191d 80%)',
+    'radial-gradient(circle at 50% 20%, rgba(245, 158, 11, 0.45), #1c1408 80%)',
+    'radial-gradient(circle at 50% 20%, rgba(236, 72, 153, 0.45), #1f0d1a 80%)'
 ];
 
 window.followTeacher = async function(tName) {
@@ -327,12 +341,11 @@ window.followTeacher = async function(tName) {
         globalUserData.followingTeachers = following;
         globalUserData.followingTeachers.push(tName);
         
-        // إرسال واتساب
         const msg = `أهلاً بك يا بطل 🚀\nتم متابعة الأستاذ: *${tName}* بنجاح.\nهيوصلك إشعار فوراً بأي حصة أو باقة جديدة تنزل للأستاذ.`;
         window.sendWhatsAppToPhone(globalUserData.studentPhone, msg);
         
         btn.innerHTML = 'تم المتابعة ✔️';
-        btn.style.background = '#10b981'; btn.style.borderColor = '#10b981';
+        btn.style.background = 'rgba(16,185,129,0.25)'; btn.style.borderColor = '#10b981'; btn.style.color = '#10b981';
     } catch(e) {
         pmNotify("حدث خطأ", "حدث خطأ أثناء المتابعة. حاول مرة أخرى.", "error"); btn.innerHTML = oldHtml; btn.disabled = false;
     }
@@ -347,21 +360,31 @@ async function fetchTeachers() {
         snap.forEach(doc => {
             const t = { id: doc.id, ...doc.data() };
             allTeachersData.push(t);
+            
+            // تصميم الهيرو الفاخر بدون خلفيات بيضاء
             heroFadeHtml += `
-            <div class="swiper-slide hero-slide-fade" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
-                <div class="teacher-glow-bg"></div>
-                <img src="${t.imageUrl}" alt="${t.name}" class="teacher-fade-png" loading="lazy" decoding="async">
-                <div class="hero-teacher-info">
-                    <h4 class="hero-teacher-name">${t.name}</h4>
-                    <span class="hero-teacher-subject">${t.subject}</span>
-                    <div class="pm-hero-grades">${t.stages ? t.stages.split(',').map(s => s.trim()).filter(Boolean).map(s => `<span class="pm-grade-chip pm-chip-sm">${s}</span>`).join('') : ''}</div>
+            <div class="swiper-slide" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
+                <div class="hero-slide-card">
+                    <div class="hero-teacher-glow"></div>
+                    <img src="${t.imageUrl}" alt="${t.name}" class="hero-teacher-img" loading="lazy" decoding="async">
+                    <div class="hero-teacher-overlay-box">
+                        <h3 class="hero-teacher-animated-name">${t.name}</h3>
+                        <span class="hero-teacher-badge-subject"><i class="fas fa-book-open"></i> ${t.subject}</span>
+                    </div>
                 </div>
             </div>`;
         });
+        
         if(heroFadeGrid) {
             heroFadeGrid.innerHTML = heroFadeHtml;
             if(typeof Swiper !== 'undefined') {
-                new Swiper('.hero-fade-slider', { effect: 'fade', fadeEffect: { crossFade: true }, grabCursor: true, loop: true, autoplay: { delay: 3000, disableOnInteraction: false } });
+                new Swiper('.hero-fade-slider', { 
+                    effect: 'fade', 
+                    fadeEffect: { crossFade: true }, 
+                    grabCursor: true, 
+                    loop: true, 
+                    autoplay: { delay: 3200, disableOnInteraction: false } 
+                });
             }
         }
         renderTeachers('all');
@@ -371,62 +394,73 @@ async function fetchTeachers() {
 function renderTeachers(filterText) {
     const grid = document.getElementById('teachersGrid');
     const filtered = allTeachersData.filter(t => filterText === 'all' ? true : t.stages && t.stages.includes(filterText));
-    if(filtered.length === 0) { grid.innerHTML = '<div style="text-align:center; width:100%; color:#94a3b8; padding:30px;">لا يوجد مدرسين هنا.</div>'; return; }
+    if(filtered.length === 0) { 
+        grid.innerHTML = '<div style="text-align:center; width:100%; color:#94a3b8; padding:30px;">لا يوجد مدرسين هنا.</div>'; 
+        return; 
+    }
     
     let html = '';
     filtered.forEach((t, index) => {
-        let stgList = t.stages ? t.stages.split(',').map(s => s.trim()).filter(Boolean) : [];
-        let stgText = stgList.map(s => `<span class="pm-grade-chip">${s}</span>`).join('');
-        let bgColor = teacherGradients[index % teacherGradients.length]; // توزيع الألوان بذكاء
-        
+        let cardBg = teacherCardGradients[index % teacherCardGradients.length];
         let isFollowing = globalUserData && globalUserData.followingTeachers && globalUserData.followingTeachers.includes(t.name);
+        
         let followBtnHtml = isFollowing 
-            ? `<button class="btn-follow-teacher" style="background:#10b981; border-color:#10b981;" onclick="event.stopPropagation();">تم المتابعة ✔️</button>`
-            : `<button class="btn-follow-teacher" onclick="event.stopPropagation(); followTeacher('${t.name}')">متابعة الأستاذ <i class="fas fa-heart"></i></button>`;
+            ? `<button class="btn-follow-modern" style="background:rgba(16,185,129,0.2); border-color:#10b981; color:#10b981;" onclick="event.stopPropagation();">تمت المتابعة ✔️</button>`
+            : `<button class="btn-follow-modern" onclick="event.stopPropagation(); followTeacher('${t.name}')">متابعة الأستاذ <i class="fas fa-heart"></i></button>`;
 
-        // 🚨 التعديل الجديد: الخلفية بقت ورا المدرس مش فوقه 🚨
+        // تصميم الكارت بدون صفوف ومع خلفية شيك ومجسمة
         html += `
-        <div class="swiper-slide modern-teacher-card" style="background: ${bgColor}; border-radius: 20px; overflow: hidden; position: relative;">
-            <img src="${t.imageUrl}" alt="${t.name}" class="cover-card-img" loading="lazy" decoding="async" style="position: relative; z-index: 1;">
-            <div class="cover-card-fade" style="z-index: 2;">
-                <div style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); color: #f59e0b; padding: 5px 12px; border-radius: 8px; font-size: 13px; font-weight: 800; border: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-book"></i> ${t.subject}</div>
-                <h3>${t.name}</h3><div class="pm-grade-chips">${stgText}</div>
-                <button class="cover-card-btn" onclick="openTeacherCourses('${t.name}')">تصفح الحصص <i class="fas fa-arrow-left"></i></button>
-                ${followBtnHtml}
+        <div class="swiper-slide" style="width: auto; display: flex; justify-content: center;">
+            <div class="primee-teacher-card" onclick="openTeacherCourses('${t.name}')">
+                <div class="pt-card-bg-glow" style="background: ${cardBg};"></div>
+                <div class="pt-card-subject-tag"><i class="fas fa-graduation-cap"></i> ${t.subject}</div>
+                <img src="${t.imageUrl}" alt="${t.name}" class="pt-card-img" loading="lazy" decoding="async">
+                <div class="pt-card-info-box">
+                    <h4 class="pt-card-name">${t.name}</h4>
+                    <div class="pt-card-actions">
+                        <button class="btn-view-lessons" onclick="event.stopPropagation(); openTeacherCourses('${t.name}')">
+                            <span>تصفح الحصص</span>
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        ${followBtnHtml}
+                    </div>
+                </div>
             </div>
         </div>`;
     });
+    
     grid.innerHTML = html;
     if(teachersSwiperInstance) teachersSwiperInstance.destroy(true, true);
-    const sliderContainer = document.querySelector('.teachers-slider');
-    if(!sliderContainer.classList.contains('teachers-grid-active') && typeof Swiper !== 'undefined') {
+    
+    if(typeof Swiper !== 'undefined') {
         teachersSwiperInstance = new Swiper('.teachers-slider', {
-            effect: 'coverflow', grabCursor: true, centeredSlides: true, slidesPerView: 'auto',
-            coverflowEffect: { rotate: 0, stretch: -30, depth: 150, modifier: 1, slideShadows: false },
-            autoplay: { delay: 3000, disableOnInteraction: false },
+            slidesPerView: 'auto',
+            spaceBetween: 25,
+            grabCursor: true,
+            autoplay: { delay: 3500, disableOnInteraction: false },
             pagination: { el: '.swiper-pagination', clickable: true },
             navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }
         });
     }
 }
+
 fetchTeachers();
 setupNestedFilters('teachersMainFilters', 'teachersSubFilters', renderTeachers);
 
 document.getElementById('viewAllTeachersBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
-    // رندر كل المدرسين في المودال
     const grid = document.getElementById('allTeachersGrid');
     let html = '';
     allTeachersData.forEach((t, idx) => {
-        let stgList = t.stages ? t.stages.split(',').map(s => s.trim()).filter(Boolean) : [];
-        let stgChips = stgList.map(s => `<span class="pm-grade-chip">${s}</span>`).join('');
+        let cardBg = teacherCardGradients[idx % teacherCardGradients.length];
         html += `
-        <div class="pm-compact-teacher-card" onclick="document.getElementById('allTeachersModal').classList.remove('active'); openTeacherCourses('${t.name}')">
-            <img src="${t.imageUrl}" alt="${t.name}" loading="lazy" decoding="async">
-            <div class="pm-compact-card-info">
-                <h4>${t.name}</h4>
-                <span class="pm-compact-card-subject"><i class="fas fa-book"></i> ${t.subject}</span>
-                <div class="pm-compact-grades">${stgChips}</div>
+        <div class="primee-teacher-card" style="width: 100%; height: 380px;" onclick="document.getElementById('allTeachersModal').classList.remove('active'); openTeacherCourses('${t.name}')">
+            <div class="pt-card-bg-glow" style="background: ${cardBg};"></div>
+            <div class="pt-card-subject-tag"><i class="fas fa-book"></i> ${t.subject}</div>
+            <img src="${t.imageUrl}" alt="${t.name}" class="pt-card-img" loading="lazy" decoding="async">
+            <div class="pt-card-info-box">
+                <h4 class="pt-card-name">${t.name}</h4>
+                <button class="btn-view-lessons" style="padding: 8px 12px; font-size: 13px;">تصفح الحصص <i class="fas fa-arrow-left"></i></button>
             </div>
         </div>`;
     });
@@ -452,7 +486,11 @@ async function fetchPackages() {
 function renderPackages(filterText) {
     const grid = document.getElementById('packagesGridContainer');
     const filtered = allPackagesData.filter(p => filterText === 'all' ? true : p.grade && p.grade.includes(filterText));
-    if(filtered.length === 0) { grid.innerHTML = '<div style="text-align:center; width:100%; color:#94a3b8; padding:30px;">لا يوجد باقات هنا.</div>'; if (packagesSwiperInstance) packagesSwiperInstance.destroy(true, true); return; }
+    if(filtered.length === 0) { 
+        grid.innerHTML = '<div style="text-align:center; width:100%; color:#94a3b8; padding:30px;">لا يوجد باقات هنا.</div>'; 
+        if (packagesSwiperInstance) packagesSwiperInstance.destroy(true, true); 
+        return; 
+    }
 
     let html = '';
     filtered.forEach(pkg => {
@@ -531,14 +569,14 @@ async function fetchCoursesSliders() {
 fetchCoursesSliders();
 
 // ==========================================
-// 🚨 الشراء وتطبيق البرومو كود وتوجيه لوحة التحكم 🚨
+// 🚨 الشراء والاشتراك
 // ==========================================
 window.currentViewingTeacher = "";
 window.pendingCourseId = null;
 window.originalCoursePrice = 0;
 window.pendingCoursePrice = 0;
 window.pendingCourseTitle = "";
-window.pendingCourseType = "course"; // course or package
+window.pendingCourseType = "course";
 
 window.openTeacherCourses = function(instructorName) {
     window.currentViewingTeacher = instructorName;
@@ -609,11 +647,10 @@ window.buyCourseAction = async function(courseId, price, title, type = 'course')
 
     window.pendingCourseId = courseId;
     window.originalCoursePrice = parseInt(price) || 0;
-    window.pendingCoursePrice = window.originalCoursePrice; // السعر قبل الخصم
+    window.pendingCoursePrice = window.originalCoursePrice;
     window.pendingCourseTitle = title;
     window.pendingCourseType = type;
 
-    // تصفير بيانات البرومو كود في كل مرة
     document.getElementById('promoCodeInput').value = '';
     document.getElementById('promoCodeInput').disabled = false;
     document.getElementById('btnApplyPromo').disabled = false;
@@ -688,7 +725,6 @@ async function executePurchaseAndAddCourse(newBalance) {
 
     await updateDoc(doc(db, "users", window.currentUserId), updateData);
     
-    // إرسال واتساب للنجاح
     const sMsg = `أهلاً بك يا بطل 🎉\nتم شراء ${typeName} ("${window.pendingCourseTitle}") بنجاح.\nنتمنى لك التفوق والنجاح! 🚀`;
     const pMsg = `إشعار من Primee Academy 🔔\nتم اشتراك الطالب/ة: ${globalUserData.fullName} في ${typeName} ("${window.pendingCourseTitle}") بنجاح.`;
     
@@ -697,9 +733,8 @@ async function executePurchaseAndAddCourse(newBalance) {
 }
 
 document.getElementById('btnExecuteBuy')?.addEventListener('click', async () => {
-    // 🚨 التعديل المطلوب: لو معندوش رصيد، هنحوله للداش بورد عشان يشحن 🚨
     if (window.currentUserBalance < window.pendingCoursePrice) {
-        pmNotify("رصيد غير كافٍ ⚠️", "رصيدك الحالي غير كافٍ لإتمام الشراء.\nسيتم تحويلك إلى لوحة التحكم لشحن رصيدك (باستخدام كود شحن أو فودافون كاش).", "warning");
+        pmNotify("رصيد غير كافٍ ⚠️", "رصيدك الحالي غير كافٍ لإتمام الشراء.\nسيتم تحويلك إلى لوحة التحكم لشحن رصيدك.", "warning");
         window.location.href = 'student-dashboard.html';
         return;
     }
@@ -715,7 +750,7 @@ document.getElementById('btnExecuteBuy')?.addEventListener('click', async () => 
 });
 
 // ==========================================
-// 🚀 المساعدة الذكية ماجي (AI & Live Chat) 🚨
+// 🚀 المساعدة الذكية ماجي (AI & Live Chat)
 // ==========================================
 const WORKER_URL = "https://ai.adelabdulrahman026.workers.dev";
 window.liveChatInterval = null;
