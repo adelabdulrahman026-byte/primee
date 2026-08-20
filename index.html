@@ -109,127 +109,145 @@
         }
         @keyframes textShimmer { to { background-position: 200% center; } }
 
-        /* ---------- كروت نخبة المعلمين (كل الأزرار ظاهرة 100%) ---------- */
+        /* ---------- كروت نخبة المعلمين (ظهور 100% وإلغاء أي تعتيم) ---------- */
+        .teachers-slider .swiper-slide {
+            opacity: 1 !important;
+            filter: none !important;
+            visibility: visible !important;
+            transform: none !important;
+            width: 270px !important;
+            height: auto !important;
+            display: flex !important;
+            justify-content: center !important;
+        }
+
         .swiper.teachers-slider {
             padding: 20px 5px 60px !important;
-            overflow: visible;
+            overflow: visible !important;
         }
+
         .primee-teacher-card {
-            width: 270px;
-            height: 470px; /* زيادة الارتفاع عشان يشيل الصورتين والأزرار كاملة */
-            border-radius: 24px;
-            overflow: hidden;
-            position: relative;
-            background: #0d1527;
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            transition: all 0.35s ease;
+            width: 270px !important;
+            height: 480px !important;
+            border-radius: 24px !important;
+            overflow: hidden !important;
+            position: relative !important;
+            background: #0d1527 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            opacity: 1 !important;
+            filter: none !important;
             cursor: pointer;
+            transition: all 0.35s ease;
         }
         .primee-teacher-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(99, 102, 241, 0.5);
-            box-shadow: 0 20px 40px rgba(59,130,246,0.28);
+            transform: translateY(-8px) !important;
+            border-color: rgba(99, 102, 241, 0.5) !important;
+            box-shadow: 0 20px 40px rgba(59,130,246,0.28) !important;
         }
         .pt-card-bg-glow {
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            opacity: 0.95;
+            position: absolute !important;
+            inset: 0 !important;
+            z-index: 1 !important;
+            opacity: 1 !important;
         }
         .pt-card-img {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 86%;
-            height: 60%;
-            object-fit: contain;
-            z-index: 2;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+            position: relative !important;
+            top: 0 !important;
+            left: 0 !important;
+            transform: none !important;
+            width: 100% !important;
+            height: 270px !important;
+            object-fit: contain !important;
+            z-index: 2 !important;
+            margin-top: 20px !important;
+            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5)) !important;
             transition: transform 0.35s ease;
         }
         .primee-teacher-card:hover .pt-card-img {
-            transform: translateX(-50%) scale(1.04);
+            transform: scale(1.04) !important;
         }
         .pt-card-subject-tag {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            z-index: 4;
-            background: rgba(15, 23, 42, 0.88);
-            backdrop-filter: blur(8px);
-            color: #fbbf24;
-            padding: 5px 12px;
-            border-radius: 10px;
-            font-size: 12px;
-            font-weight: 800;
-            border: 1px solid rgba(255,255,255,0.14);
+            position: absolute !important;
+            top: 14px !important;
+            right: 14px !important;
+            z-index: 4 !important;
+            background: rgba(15, 23, 42, 0.9) !important;
+            backdrop-filter: blur(8px) !important;
+            color: #fbbf24 !important;
+            padding: 5px 12px !important;
+            border-radius: 10px !important;
+            font-size: 12px !important;
+            font-weight: 800 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
         }
         .pt-card-info-box {
-            position: relative;
-            z-index: 3;
-            background: linear-gradient(180deg, rgba(13,21,39,0) 0%, rgba(13,21,39,0.92) 20%, #0d1527 100%);
-            padding: 16px 14px 16px;
-            text-align: center;
+            position: relative !important;
+            z-index: 3 !important;
+            background: linear-gradient(180deg, rgba(13, 21, 39, 0.2) 0%, rgba(13, 21, 39, 0.98) 35%, #0d1527 100%) !important;
+            padding: 15px 14px 18px !important;
+            text-align: center !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
         }
         .pt-card-name {
             font-family: 'Baloo Bhaijaan 2', 'Cairo', sans-serif !important;
-            font-size: 19px;
-            font-weight: 900;
-            color: #ffffff;
-            margin: 0 0 10px 0;
-            text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+            font-size: 19px !important;
+            font-weight: 900 !important;
+            color: #ffffff !important;
+            margin: 0 0 12px 0 !important;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6) !important;
         }
         .pt-card-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            width: 100% !important;
         }
         .btn-view-lessons {
-            width: 100%;
-            background: linear-gradient(135deg, var(--pm-blue), var(--pm-purple));
-            color: #ffffff;
-            border: none;
-            padding: 9px 12px;
-            border-radius: 12px;
-            font-family: 'Cairo';
-            font-weight: 800;
-            font-size: 13px;
-            cursor: pointer;
+            width: 100% !important;
+            background: linear-gradient(135deg, var(--pm-blue), var(--pm-purple)) !important;
+            color: #ffffff !important;
+            border: none !important;
+            padding: 10px !important;
+            border-radius: 12px !important;
+            font-family: 'Cairo' !important;
+            font-weight: 800 !important;
+            font-size: 13px !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
             transition: 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
         }
         .btn-view-lessons:hover {
-            background: linear-gradient(135deg, #2563eb, #6d28d9);
+            background: linear-gradient(135deg, #2563eb, #6d28d9) !important;
         }
         .btn-follow-modern {
-            width: 100%;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #e2e8f0;
-            padding: 8px 12px;
-            border-radius: 12px;
-            font-family: 'Cairo';
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
+            width: 100% !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #e2e8f0 !important;
+            padding: 9px !important;
+            border-radius: 12px !important;
+            font-family: 'Cairo' !important;
+            font-weight: 700 !important;
+            font-size: 12px !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
             transition: 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
         }
         .btn-follow-modern:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: #ef4444;
-            color: #ff8080;
+            background: rgba(239, 68, 68, 0.2) !important;
+            border-color: #ef4444 !important;
+            color: #ff8080 !important;
         }
 
         /* ---------- سويتش الوضع الليلي / النهاري في القائمة ---------- */
@@ -369,7 +387,7 @@
         @media (max-width: 768px) {
             .floating-ai-btn { bottom: 70px !important; right: 15px !important; padding: 10px 18px !important; font-size: 13px !important; }
             .live-counter-floating { bottom: 10px; left: 10px; padding: 6px 12px; }
-            .primee-teacher-card { width: 235px; height: 440px; }
+            .primee-teacher-card { width: 235px !important; height: 440px !important; }
         }
     </style>
 </head>
@@ -407,7 +425,7 @@
             <div class="modal-icon" id="pmNotifyIcon" style="color: #10b981;"><i class="fas fa-check-circle"></i></div>
             <h3 id="pmNotifyTitle" style="color: var(--text-main); font-size: 22px; margin: 15px 0 10px; font-weight: 900;"></h3>
             <p id="pmNotifyMessage" style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px; font-weight: 600; line-height: 1.6;"></p>
-            <button id="pmNotifyBtn" onclick="document.getElementById('pmNotifyModal').classList.remove('active')" style="background: var(--primary-color); color white; border: none; padding: 12px 35px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer;">تمام</button>
+            <button id="pmNotifyBtn" onclick="document.getElementById('pmNotifyModal').classList.remove('active')" style="background: var(--primary-color); color: white; border: none; padding: 12px 35px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer;">تمام</button>
         </div>
     </div>
 
