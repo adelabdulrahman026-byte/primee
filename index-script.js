@@ -407,11 +407,11 @@ function renderTeachers(filterText) {
         let isFollowing = globalUserData && globalUserData.followingTeachers && globalUserData.followingTeachers.includes(t.name);
         
         let followBtnHtml = isFollowing 
-            ? `<button class="btn-follow-modern" style="background:rgba(16,185,129,0.2); border-color:#10b981; color:#10b981;" onclick="event.stopPropagation();">تمت المتابعة ✔️</button>`
+            ? `<button class="btn-follow-modern" style="background:rgba(16,185,129,0.2) !important; border-color:#10b981 !important; color:#10b981 !important;" onclick="event.stopPropagation();">تمت المتابعة ✔️</button>`
             : `<button class="btn-follow-modern" onclick="event.stopPropagation(); followTeacher('${t.name}')">متابعة الأستاذ <i class="fas fa-heart"></i></button>`;
 
         html += `
-        <div class="swiper-slide" style="width: auto; display: flex; justify-content: center;">
+        <div class="swiper-slide">
             <div class="primee-teacher-card" onclick="openTeacherCourses('${t.name}')">
                 <div class="pt-card-bg-glow" style="background: ${cardBg};"></div>
                 <div class="pt-card-subject-tag"><i class="fas fa-graduation-cap"></i> ${t.subject}</div>
@@ -436,7 +436,7 @@ function renderTeachers(filterText) {
     if(typeof Swiper !== 'undefined') {
         teachersSwiperInstance = new Swiper('.teachers-slider', {
             slidesPerView: 'auto',
-            spaceBetween: 20,
+            spaceBetween: 22,
             centeredSlides: false,
             grabCursor: true,
             autoplay: { delay: 3500, disableOnInteraction: false },
