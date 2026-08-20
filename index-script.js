@@ -47,7 +47,7 @@ window.pmNotify = function(title, message, type = 'success') {
 };
 
 // ==========================================
-// 🚨 دالة إرسال رسائل الواتساب
+// 🚨 دالة إرسال رسائل الواتساب العامة للمنصة 🚨
 // ==========================================
 window.sendWhatsAppToPhone = async function(phone, msg) {
     if (!phone) return false;
@@ -96,7 +96,7 @@ if(heroTitle) {
     }, 3500);
 }
 
-// 🚨 عداد الطلاب الحي 🚨
+// 🚨 تحديث عداد الطلاب الحي 🚨
 async function updateLiveCounter() {
     try {
         const snap = await getDocs(collection(db, 'users'));
@@ -193,7 +193,6 @@ async function fetchStudentNavData(phone) {
     } catch (e) {}
 }
 
-// معالجة القائمة الجانبية وإخفاء زرار ماجي عند فتحها
 document.getElementById('openDrawer')?.addEventListener('click', () => { 
     document.getElementById('stagesDrawer').classList.add('open'); 
     document.getElementById('drawerOverlay').classList.add('active'); 
@@ -233,6 +232,11 @@ function applyThemeColors(isDark) {
 function syncThemeIcons(isDark) {
     const desktopIcon = document.querySelector('#themeToggleBtn i');
     if (desktopIcon) desktopIcon.classList.toggle('fa-sun', isDark), desktopIcon.classList.toggle('fa-moon', !isDark);
+    
+    const mobileSwitchIcon = document.querySelector('#themeToggleBtnMobile .pm-switch-circle i');
+    if (mobileSwitchIcon) {
+        mobileSwitchIcon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
+    }
 }
 
 function setTheme(isDark) {
@@ -308,17 +312,17 @@ function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
 }
 
 // ==========================================
-// 🎨 كروت المدرسين الفاخرة وخلفيات الجريدينت
+// 🎨 كروت المدرسين والألوان الفخمة
 // ==========================================
 let allTeachersData = [];
 let teachersSwiperInstance = null;
 
 const teacherCardGradients = [
-    'radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.45), #0b1329 80%)',
-    'radial-gradient(circle at 50% 20%, rgba(139, 92, 246, 0.45), #0f1026 80%)',
-    'radial-gradient(circle at 50% 20%, rgba(16, 185, 129, 0.45), #07191d 80%)',
-    'radial-gradient(circle at 50% 20%, rgba(245, 158, 11, 0.45), #1c1408 80%)',
-    'radial-gradient(circle at 50% 20%, rgba(236, 72, 153, 0.45), #1f0d1a 80%)'
+    'radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.5), #0b1329 85%)',
+    'radial-gradient(circle at 50% 20%, rgba(139, 92, 246, 0.5), #0f1026 85%)',
+    'radial-gradient(circle at 50% 20%, rgba(16, 185, 129, 0.5), #07191d 85%)',
+    'radial-gradient(circle at 50% 20%, rgba(245, 158, 11, 0.5), #1c1408 85%)',
+    'radial-gradient(circle at 50% 20%, rgba(236, 72, 153, 0.5), #1f0d1a 85%)'
 ];
 
 window.followTeacher = async function(tName) {
@@ -331,7 +335,7 @@ window.followTeacher = async function(tName) {
         let following = globalUserData.followingTeachers || [];
         if(following.includes(tName)) {
             pmNotify("متابعة موجودة", "أنت تتابع هذا المدرس بالفعل.", "info");
-            btn.innerHTML = 'تم المتابعة ✔️'; return;
+            btn.innerHTML = 'تمت المتابعة ✔️'; return;
         }
         
         await updateDoc(doc(db, "users", globalUserData.id), {
@@ -341,10 +345,11 @@ window.followTeacher = async function(tName) {
         globalUserData.followingTeachers = following;
         globalUserData.followingTeachers.push(tName);
         
+        // إرسال واتساب للمتابعة
         const msg = `أهلاً بك يا بطل 🚀\nتم متابعة الأستاذ: *${tName}* بنجاح.\nهيوصلك إشعار فوراً بأي حصة أو باقة جديدة تنزل للأستاذ.`;
         window.sendWhatsAppToPhone(globalUserData.studentPhone, msg);
         
-        btn.innerHTML = 'تم المتابعة ✔️';
+        btn.innerHTML = 'تمت المتابعة ✔️';
         btn.style.background = 'rgba(16,185,129,0.25)'; btn.style.borderColor = '#10b981'; btn.style.color = '#10b981';
     } catch(e) {
         pmNotify("حدث خطأ", "حدث خطأ أثناء المتابعة. حاول مرة أخرى.", "error"); btn.innerHTML = oldHtml; btn.disabled = false;
@@ -361,15 +366,12 @@ async function fetchTeachers() {
             const t = { id: doc.id, ...doc.data() };
             allTeachersData.push(t);
             
-            // تصميم الهيرو الفاخر بدون خلفيات بيضاء
             heroFadeHtml += `
             <div class="swiper-slide" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
-                <div class="hero-slide-card">
-                    <div class="hero-teacher-glow"></div>
+                <div class="hero-teacher-stage">
                     <img src="${t.imageUrl}" alt="${t.name}" class="hero-teacher-img" loading="lazy" decoding="async">
-                    <div class="hero-teacher-overlay-box">
-                        <h3 class="hero-teacher-animated-name">${t.name}</h3>
-                        <span class="hero-teacher-badge-subject"><i class="fas fa-book-open"></i> ${t.subject}</span>
+                    <div class="hero-teacher-name-capsule">
+                        <h3 class="hero-teacher-name-txt">${t.name}</h3>
                     </div>
                 </div>
             </div>`;
@@ -383,7 +385,7 @@ async function fetchTeachers() {
                     fadeEffect: { crossFade: true }, 
                     grabCursor: true, 
                     loop: true, 
-                    autoplay: { delay: 3200, disableOnInteraction: false } 
+                    autoplay: { delay: 3400, disableOnInteraction: false } 
                 });
             }
         }
@@ -408,7 +410,6 @@ function renderTeachers(filterText) {
             ? `<button class="btn-follow-modern" style="background:rgba(16,185,129,0.2); border-color:#10b981; color:#10b981;" onclick="event.stopPropagation();">تمت المتابعة ✔️</button>`
             : `<button class="btn-follow-modern" onclick="event.stopPropagation(); followTeacher('${t.name}')">متابعة الأستاذ <i class="fas fa-heart"></i></button>`;
 
-        // تصميم الكارت بدون صفوف ومع خلفية شيك ومجسمة
         html += `
         <div class="swiper-slide" style="width: auto; display: flex; justify-content: center;">
             <div class="primee-teacher-card" onclick="openTeacherCourses('${t.name}')">
@@ -435,7 +436,8 @@ function renderTeachers(filterText) {
     if(typeof Swiper !== 'undefined') {
         teachersSwiperInstance = new Swiper('.teachers-slider', {
             slidesPerView: 'auto',
-            spaceBetween: 25,
+            spaceBetween: 20,
+            centeredSlides: false,
             grabCursor: true,
             autoplay: { delay: 3500, disableOnInteraction: false },
             pagination: { el: '.swiper-pagination', clickable: true },
@@ -661,7 +663,6 @@ window.buyCourseAction = async function(courseId, price, title, type = 'course')
     document.getElementById('confirmBuyModal').classList.add('active');
 }
 
-// تطبيق البرومو كود
 document.getElementById('btnApplyPromo')?.addEventListener('click', async () => {
     const codeInput = document.getElementById('promoCodeInput').value.trim().toUpperCase();
     if(!codeInput) return;
