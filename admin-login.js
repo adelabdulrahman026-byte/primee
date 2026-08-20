@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
@@ -12,32 +11,19 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
 
-function showAlert(title, message) {
-    alert(`${title}: ${message}`);
-}
-
-document.getElementById('adminLoginForm')?.addEventListener('submit', async (e) => {
+document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btnAdminSubmit');
-    const user = document.getElementById('adminUsername').value.trim().toLowerCase();
+    const user = document.getElementById('adminUsername').value.trim();
     const pass = document.getElementById('adminPassword').value.trim();
 
-    btn.innerHTML = "جاري التحقق المشفر... ⏳"; 
-    btn.disabled = true;
+    btn.innerHTML = "جاري التحقق... ⏳"; btn.disabled = true;
 
     try {
-        // تحويل اسم المستخدم لإيميل رسمي على نطاق المنصة
-        let email = user.includes('@') ? user : `${user}@primeeacademy.com`;
-
-        // 🚨 1. تسجيل الدخول الرسمي المشفر في Firebase Auth 🚨
-        const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-        const uid = userCredential.user.uid;
-
-        // التحقق إذا كان سوبر أدمن
-        if (email === "superadmin@primeeacademy.com") {
+        // دخول السوبر أدمن (أنت)
+        if (user === "superadmin" && pass === "primee@2026") {
             localStorage.setItem('adminLoggedIn', 'true');
             localStorage.setItem('role', 'superadmin');
             localStorage.setItem('astName', 'المدير العام');
@@ -45,10 +31,12 @@ document.getElementById('adminLoginForm')?.addEventListener('submit', async (e) 
             return;
         }
 
-        // 🚨 2. التحقق من صلاحيات المساعد من خلال الـ UID المشفر 🚨
-        const astDoc = await getDoc(doc(db, "assistants", uid));
-        if (astDoc.exists()) {
-            const astData = astDoc.data();
+        // دخول المساعدين
+        const q = query(collection(db, "assistants"), where("username", "==", user), where("password", "==", pass));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            const astData = querySnapshot.docs[0].data();
             localStorage.setItem('adminLoggedIn', 'true');
             localStorage.setItem('role', 'assistant');
             localStorage.setItem('astName', astData.name);
@@ -56,18 +44,11 @@ document.getElementById('adminLoginForm')?.addEventListener('submit', async (e) 
             localStorage.setItem('astPerms', JSON.stringify(astData.permissions || []));
             window.location.replace('admin-dashboard.html');
         } else {
-            showAlert('خطأ في الصلاحيات', 'هذا الحساب غير مسجل كمساعد مصرح له في النظام.');
+            showAlert('مرفوض', 'اسم المستخدم أو كلمة المرور غير صحيحة.');
         }
-
     } catch (error) {
-        console.error("Login Error:", error);
-        let msg = "اسم المستخدم أو كلمة المرور غير صحيحة.";
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            msg = "بيانات الدخول غير صحيحة، يرجى التأكد من اسم المستخدم وكلمة المرور.";
-        }
-        showAlert('فشل الدخول', msg);
+        showAlert('خطأ', 'حدث خطأ في الاتصال بقاعدة البيانات.');
     } finally {
-        btn.innerHTML = "تسجيل الدخول"; 
-        btn.disabled = false;
+        btn.innerHTML = "تسجيل الدخول"; btn.disabled = false;
     }
 });
