@@ -4,73 +4,260 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Primee Academy - المنصة التعليمية الأولى</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&family=Baloo+Bhaijaan+2:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <link rel="stylesheet" href="style.css?v=130">
     <style>
-        /* زرار المتابعة بتاع المدرس */
-        .btn-follow-teacher {
-            background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff;
-            padding: 5px 15px; border-radius: 8px; font-family: 'Cairo'; font-weight: 800; cursor: pointer;
-            margin-top: 10px; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%;
+        /* ==========================================================
+           🎨 PRIMEE — طبقة تحسينات التصميم (Design Enhancement Layer)
+           تُضاف فوق style.css الأساسي ولا تلغي أي كلاس موجود في الجافاسكريبت
+           ========================================================== */
+        :root{
+            --pm-blue:#3b82f6; --pm-blue-dark:#1d4ed8;
+            --pm-purple:#7c3aed; --pm-purple-dark:#5b21b6;
+            --pm-green:#10b981; --pm-amber:#f59e0b; --pm-pink:#ec4899;
+            --pm-ring: conic-gradient(from 0deg, var(--pm-blue), var(--pm-purple), var(--pm-pink), var(--pm-amber), var(--pm-blue));
+            --pm-glass: rgba(255,255,255,0.08);
+            --pm-radius: 26px;
         }
-        .btn-follow-teacher:hover { background: #ef4444; border-color: #ef4444; }
+        h1, h2, .nav-brand, .hero-badge, .creative-tip-number, .footer-logo h3{
+            font-family: 'Baloo Bhaijaan 2','Cairo',sans-serif !important;
+        }
+        @media (prefers-reduced-motion: reduce){
+            *{ animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+        }
 
-        /* كارت عداد الطلاب العائم */
+        /* ---------- خلفية أورورا متحركة عامة خلف الصفحة ---------- */
+        .pm-aurora{ position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+        .pm-aurora span{
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: .35;
+            animation: pmFloat 18s ease-in-out infinite;
+        }
+        .pm-aurora span:nth-child(1){ width: 420px; height: 420px; background: var(--pm-blue); top: -120px; right: -80px; animation-duration: 22s; }
+        .pm-aurora span:nth-child(2){ width: 380px; height: 380px; background: var(--pm-pink); bottom: -140px; left: -100px; animation-duration: 26s; animation-delay: -6s; }
+        .pm-aurora span:nth-child(3){ width: 300px; height: 300px; background: var(--pm-amber); top: 40%; left: 45%; animation-duration: 20s; animation-delay: -3s; opacity: .18; }
+        @keyframes pmFloat{
+            0%,100%{ transform: translate(0,0) scale(1); }
+            33%{ transform: translate(40px,-30px) scale(1.1); }
+            66%{ transform: translate(-30px,25px) scale(0.95); }
+        }
+
+        /* ---------- عداد الطلاب العائم — نسخة أشيك ---------- */
         .live-counter-floating {
-            position: fixed; bottom: 20px; left: 20px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px);
-            border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; gap: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 99998; color: #fff; transition: 0.3s;
+            position: fixed; bottom: 20px; left: 20px;
+            background: linear-gradient(135deg, rgba(15,23,42,.9), rgba(30,41,59,.85));
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(59,130,246,.35); border-radius: 20px; padding: 10px 18px 10px 10px;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 15px 35px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.03) inset;
+            z-index: 99998; color: #fff; transition: .35s cubic-bezier(.2,.8,.2,1);
         }
-        .live-counter-floating:hover { transform: translateY(-5px); border-color: #3b82f6; }
-        .live-counter-info { display: flex; flex-direction: column; line-height: 1.2; }
-        .live-counter-info span { font-size: 12px; color: #94a3b8; font-weight: 700; }
-        .live-counter-info strong { font-size: 22px; font-weight: 900; color: #10b981; font-family: monospace; }
-        
-        /* تنسيق زرار ماجي عشان ميتعارضش مع العداد */
-        .floating-ai-btn { 
-            position: fixed !important; bottom: 85px !important; right: 20px !important; 
-            width: fit-content !important; max-width: 200px !important;
-            background: linear-gradient(45deg, #3b82f6, #2563eb) !important; color: white !important; 
-            padding: 10px 20px !important; border-radius: 30px !important; cursor: pointer !important; 
-            display: flex !important; align-items: center !important; gap: 10px !important; 
-            z-index: 99999 !important; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4) !important; 
-            font-weight: 800 !important; font-family: 'Cairo' !important; transition: 0.3s !important;
+        .live-counter-floating::before{
+            content:''; position: absolute; inset: -1px; border-radius: 20px; padding: 1px;
+            background: var(--pm-ring); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude; opacity: .5; animation: pmSpin 6s linear infinite;
         }
-        .floating-ai-btn:hover { transform: scale(1.05) !important; }
-        .floating-ai-btn img { width: 25px !important; height: 25px !important; }
-        
-        /* باقي تنسيقات ماجي */
-        .ai-chat-modal { position: fixed; bottom: 140px; right: 20px; width: 360px; max-width: 90vw; background: #1e293b; border-radius: 20px; border: 1px solid #334155; display: flex; flex-direction: column; overflow: hidden; z-index: 100000; opacity: 0; visibility: hidden; transform: translateY(20px); transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .ai-chat-modal.active { opacity: 1; visibility: visible; transform: translateY(0); }
-        .ai-chat-header { background: #0f172a; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
-        .ai-chat-header h3 { margin: 0; color: #f8fafc; font-size: 16px; display: flex; align-items: center; gap: 10px; font-weight: 900;}
-        .ai-chat-header img { width: 25px; height: 25px; }
-        .ai-close-btn { background: transparent; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; transition: 0.3s;}
-        .ai-close-btn:hover { color: #ef4444; }
-        .ai-chat-body { padding: 15px; height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .ai-msg { background: #334155; color: #f8fafc; padding: 12px; border-radius: 12px; border-top-right-radius: 0; max-width: 85%; align-self: flex-start; font-size: 14px; line-height: 1.6; }
-        .user-msg { background: #3b82f6; color: #fff; padding: 12px; border-radius: 12px; border-top-left-radius: 0; max-width: 85%; align-self: flex-end; font-size: 14px; line-height: 1.6; }
-        .maggie-options { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; width: 100%; }
-        .maggie-options button { background: #0f172a; color: #f8fafc; border: 1px solid #3b82f6; padding: 12px; border-radius: 10px; font-family: 'Cairo'; font-weight: 700; cursor: pointer; text-align: right; transition: 0.3s; display: flex; align-items: center; gap: 10px; font-size: 14px;}
-        .maggie-options button:hover { background: #3b82f6; }
-        .maggie-options button i { color: #3b82f6; font-size: 16px; width: 20px; text-align: center;}
-        .maggie-options button:hover i { color: #fff; }
-        .ai-chat-input { background: #0f172a; padding: 15px; border-top: 1px solid #334155; display: flex; gap: 10px; align-items: center;}
-        .ai-chat-input input { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: #fff; font-family: 'Cairo'; font-weight: 600; outline: none; }
-        .ai-chat-input button { background: #10b981; color: #fff; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 900; font-family: 'Cairo'; transition: 0.3s;}
-        
-        /* الموبايل */
+        .live-counter-floating:hover { transform: translateY(-6px) scale(1.02); border-color: var(--pm-blue); }
+        .live-counter-info { display: flex; flex-direction: column; line-height: 1.25; }
+        .live-counter-info span { font-size: 11px; color: #94a3b8; font-weight: 700; letter-spacing: .3px; }
+        .live-counter-info strong { font-size: 22px; font-weight: 900; color: var(--pm-green); font-family: monospace; text-shadow: 0 0 18px rgba(16,185,129,.55); }
+        @keyframes pmSpin{ to{ transform: rotate(360deg); } }
+
+        /* ---------- زرار ماجي العائم — أشيك وأكثر حيوية ---------- */
+        .floating-ai-btn {
+            position: fixed !important; bottom: 85px !important; right: 20px !important;
+            width: fit-content !important; max-width: 210px !important;
+            background: linear-gradient(135deg, var(--pm-blue), var(--pm-purple)) !important; color: white !important;
+            padding: 11px 20px !important; border-radius: 30px !important; cursor: pointer !important;
+            display: flex !important; align-items: center !important; gap: 10px !important;
+            z-index: 99999 !important;
+            box-shadow: 0 8px 22px rgba(124,58,237,.45), 0 0 0 0 rgba(124,58,237,.5) !important;
+            font-weight: 800 !important; font-family: 'Cairo' !important; transition: .3s !important;
+            animation: pmPulseBtn 2.6s ease-out infinite;
+        }
+        .floating-ai-btn:hover { transform: scale(1.06) translateY(-2px) !important; }
+        .floating-ai-btn img { width: 25px !important; height: 25px !important; filter: drop-shadow(0 0 6px rgba(255,255,255,.6)); }
+        @keyframes pmPulseBtn{
+            0%{ box-shadow: 0 8px 22px rgba(124,58,237,.45), 0 0 0 0 rgba(124,58,237,.45); }
+            70%{ box-shadow: 0 8px 22px rgba(124,58,237,.45), 0 0 0 14px rgba(124,58,237,0); }
+            100%{ box-shadow: 0 8px 22px rgba(124,58,237,.45), 0 0 0 0 rgba(124,58,237,0); }
+        }
+
+        /* ==========================================================
+           💬 شات ماجي — واجهة جديدة بالكامل
+           ========================================================== */
+        .ai-chat-modal {
+            position: fixed; bottom: 140px; right: 20px; width: 380px; max-width: 92vw;
+            background: linear-gradient(180deg, #17213a 0%, #101827 100%);
+            border-radius: 22px; border: 1px solid rgba(148,163,184,.15);
+            display: flex; flex-direction: column; overflow: hidden; z-index: 100000;
+            opacity: 0; visibility: hidden; transform: translateY(24px) scale(.98);
+            transition: all .35s cubic-bezier(.2,.8,.2,1);
+            box-shadow: 0 25px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04) inset;
+        }
+        .ai-chat-modal.active { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+        .ai-chat-header {
+            background: linear-gradient(120deg, var(--pm-blue-dark), var(--pm-purple-dark) 70%);
+            padding: 16px 18px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,.08); position: relative; overflow: hidden;
+        }
+        .ai-chat-header::after{
+            content:''; position:absolute; inset:0; background: radial-gradient(120px 60px at 20% 0%, rgba(255,255,255,.18), transparent 70%);
+        }
+        .ai-chat-header h3 { margin: 0; color: #f8fafc; font-size: 16px; display: flex; align-items: center; gap: 10px; font-weight: 900; z-index:1; }
+        .ai-chat-header img { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.15); padding: 4px; box-shadow: 0 0 0 2px rgba(16,185,129,.9), 0 0 14px rgba(16,185,129,.6); }
+        .ai-close-btn { background: rgba(255,255,255,.1); border: none; color: #e2e8f0; font-size: 15px; width: 32px; height: 32px; border-radius: 10px; cursor: pointer; transition: .25s; z-index:1; }
+        .ai-close-btn:hover { color: #fff; background: #ef4444; transform: rotate(90deg); }
+        .ai-chat-body { padding: 16px; height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+            background-image: radial-gradient(rgba(148,163,184,.06) 1px, transparent 1px); background-size: 16px 16px; }
+        .ai-chat-body::-webkit-scrollbar{ width:6px; }
+        .ai-chat-body::-webkit-scrollbar-thumb{ background: rgba(148,163,184,.3); border-radius: 10px; }
+
+        .ai-msg {
+            background: #263349; color: #f1f5f9; padding: 12px 14px; border-radius: 16px 16px 16px 4px;
+            max-width: 88%; align-self: flex-start; font-size: 14px; line-height: 1.7;
+            box-shadow: 0 4px 12px rgba(0,0,0,.2); border: 1px solid rgba(255,255,255,.05);
+            animation: pmMsgIn .35s ease-out;
+        }
+        .user-msg {
+            background: linear-gradient(135deg, var(--pm-blue), #2563eb); color: #fff; padding: 12px 14px;
+            border-radius: 16px 16px 4px 16px; max-width: 88%; align-self: flex-end; font-size: 14px; line-height: 1.7;
+            box-shadow: 0 6px 16px rgba(37,99,235,.35); animation: pmMsgIn .35s ease-out;
+        }
+        @keyframes pmMsgIn{ from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform: translateY(0);} }
+
+        .maggie-options { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; width: 100%; }
+        .maggie-options button {
+            background: rgba(255,255,255,.03); color: #f1f5f9; border: 1px solid rgba(59,130,246,.35);
+            padding: 13px 14px; border-radius: 13px; font-family: 'Cairo'; font-weight: 700; cursor: pointer;
+            text-align: right; transition: .25s; display: flex; align-items: center; gap: 12px; font-size: 14px;
+        }
+        .maggie-options button i {
+            color: #fff; font-size: 14px; width: 30px; height: 30px; min-width: 30px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, var(--pm-blue), var(--pm-purple)); transition: .25s;
+        }
+        .maggie-options button:hover { background: rgba(59,130,246,.14); border-color: var(--pm-blue); transform: translateX(-3px); }
+        .maggie-options button:hover i { transform: scale(1.08); }
+
+        .ai-chat-input { background: rgba(15,23,42,.9); padding: 14px; border-top: 1px solid rgba(255,255,255,.07); display: flex; gap: 10px; align-items: center; }
+        .ai-chat-input input {
+            flex: 1; padding: 12px 16px; border-radius: 30px; border: 1px solid rgba(148,163,184,.25);
+            background: rgba(255,255,255,.04); color: #fff; font-family: 'Cairo'; font-weight: 600; outline: none; transition: .25s;
+        }
+        .ai-chat-input input:focus { border-color: var(--pm-blue); background: rgba(59,130,246,.08); }
+        .ai-chat-input button {
+            background: linear-gradient(135deg, var(--pm-green), #059669); color: #fff; border: none; width: 44px; height: 44px;
+            border-radius: 50%; cursor: pointer; font-weight: 900; font-family: 'Cairo'; transition: .25s;
+            display:flex; align-items:center; justify-content:center; box-shadow: 0 6px 16px rgba(16,185,129,.4);
+        }
+        .ai-chat-input button:hover{ transform: scale(1.08) rotate(-8deg); }
+        .file-upload-btn{ display:flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:50% !important; }
+        .support-contact-links{ display:flex; gap:10px; margin-top:10px; }
+        .support-contact-links a{
+            flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px; border-radius:11px;
+            font-weight:800; font-size:13px; text-decoration:none; transition:.25s;
+        }
+        .btn-call{ background: rgba(59,130,246,.15); color:#93c5fd; border:1px solid rgba(59,130,246,.35); }
+        .btn-call:hover{ background: var(--pm-blue); color:#fff; }
+        .btn-wa{ background: rgba(37,211,102,.15); color:#6ee7a0; border:1px solid rgba(37,211,102,.35); }
+        .btn-wa:hover{ background:#25d366; color:#0f172a; }
+
+        /* ==========================================================
+           👨‍🏫 كروت المدرسين — تصميم "الهالة المتوهجة"
+           ========================================================== */
+        .swiper.teachers-slider .swiper-slide{
+            border-radius: var(--pm-radius) !important; position: relative !important; isolation: isolate;
+            box-shadow: 0 18px 45px rgba(15,23,42,.28) !important; transition: transform .4s cubic-bezier(.2,.8,.2,1), box-shadow .4s !important;
+        }
+        .swiper.teachers-slider .swiper-slide::before{
+            content:''; position:absolute; inset:0; padding:2.5px; border-radius: var(--pm-radius); z-index:5;
+            background: var(--pm-ring); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude; opacity:0; transition:.4s; animation: pmSpin 5s linear infinite; pointer-events:none;
+        }
+        .swiper.teachers-slider .swiper-slide:hover{ transform: translateY(-10px) !important; box-shadow: 0 26px 55px rgba(59,130,246,.28) !important; }
+        .swiper.teachers-slider .swiper-slide:hover::before{ opacity:1; }
+        .swiper.teachers-slider .swiper-slide .cover-card-img{
+            transition: transform .6s cubic-bezier(.2,.8,.2,1) !important; filter: saturate(1.08);
+        }
+        .swiper.teachers-slider .swiper-slide:hover .cover-card-img{ transform: scale(1.08) !important; }
+        .cover-card-fade{
+            background: linear-gradient(180deg, transparent 0%, transparent 35%, rgba(6,10,20,.55) 65%, rgba(6,10,20,.94) 100%) !important;
+        }
+        .cover-card-fade h3{
+            font-family:'Baloo Bhaijaan 2','Cairo',sans-serif !important; font-size: 21px !important;
+            text-shadow: 0 2px 10px rgba(0,0,0,.5);
+        }
+        .cover-card-btn{
+            backdrop-filter: blur(6px); background: rgba(255,255,255,.14) !important; border:1px solid rgba(255,255,255,.35) !important;
+            transition:.3s !important;
+        }
+        .cover-card-btn:hover{ background:#fff !important; color:#111 !important; }
+        .btn-follow-teacher {
+            background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.35); color: #fff;
+            padding: 8px 15px; border-radius: 30px; font-family: 'Cairo'; font-weight: 800; cursor: pointer;
+            margin-top: 10px; transition: .3s; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+            backdrop-filter: blur(6px);
+        }
+        .btn-follow-teacher:hover { background: linear-gradient(135deg,#ef4444,#dc2626); border-color: #ef4444; transform: translateY(-2px); box-shadow: 0 8px 18px rgba(239,68,68,.35); }
+
+        /* شارة المادة أعلى الكارت */
+        .teachers-slider .swiper-slide > div[style*="top: 15px"]{
+            backdrop-filter: blur(8px) !important; box-shadow: 0 4px 14px rgba(0,0,0,.3) !important;
+        }
+
+        /* شرائح الهيرو المتلألئة */
+        .hero-slide-fade{ position: relative; }
+        .teacher-glow-bg{
+            position:absolute; inset:-20%; border-radius:50%; z-index:0;
+            background: radial-gradient(circle, rgba(59,130,246,.35), transparent 65%);
+            filter: blur(10px); animation: pmGlowPulse 3.4s ease-in-out infinite;
+        }
+        @keyframes pmGlowPulse{ 0%,100%{ opacity:.5; transform:scale(1);} 50%{ opacity:.9; transform:scale(1.08);} }
+        .hero-teacher-name{ font-family:'Baloo Bhaijaan 2','Cairo',sans-serif !important; }
+
+        /* ---------- كروت الباقات والحصص: لمسة ارتفاع وتوهج ---------- */
+        .premium-package-card{ transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s !important; }
+        .premium-package-card:hover{ transform: translateY(-8px) !important; box-shadow: 0 22px 45px rgba(124,58,237,.22) !important; }
+        .course-slide-card{ transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s !important; }
+        .course-slide-card:hover{ transform: translateY(-6px) !important; box-shadow: 0 18px 38px rgba(59,130,246,.2) !important; }
+        .c-slide-img{ transition:.4s; }
+        .course-slide-card:hover .c-slide-img{ filter: brightness(1.04); }
+
+        /* ---------- زر التبديل الليلي/النهاري في الموبايل ---------- */
+        .pm-mobile-theme-row{
+            display:flex; align-items:center; justify-content:space-between; gap:10px;
+            background: var(--pm-glass); border:1px solid rgba(148,163,184,.2); border-radius:14px;
+            padding:12px 16px; margin: 4px 0 14px 0; font-family:'Cairo'; font-weight:800; font-size:14px;
+        }
+        .pm-mobile-theme-row span{ display:flex; align-items:center; gap:8px; }
+        #themeToggleBtnMobile{
+            width:52px; height:30px; border-radius:30px; border:none; cursor:pointer; position:relative;
+            background: linear-gradient(135deg,#334155,#1e293b); transition:.3s; flex-shrink:0;
+        }
+        #themeToggleBtnMobile::after{
+            content:''; position:absolute; top:3px; right:3px; width:24px; height:24px; border-radius:50%;
+            background:#fbbf24; transition:.3s; box-shadow: 0 0 10px rgba(251,191,36,.7);
+        }
+        body[data-theme="dark"] #themeToggleBtnMobile::after{ right: 25px; background:#93c5fd; box-shadow:0 0 10px rgba(147,197,253,.7); }
+
+        /* ---------- الموبايل ---------- */
         @media (max-width: 768px) {
-            .live-counter-floating { bottom: 10px; left: 10px; padding: 8px 15px; }
-            .live-counter-info strong { font-size: 18px; }
+            .live-counter-floating { bottom: 10px; left: 10px; padding: 8px 14px 8px 8px; }
+            .live-counter-info strong { font-size: 17px; }
             .floating-ai-btn { bottom: 70px !important; }
-            .ai-chat-modal { bottom: 120px; }
+            .ai-chat-modal { bottom: 0 !important; right: 0 !important; left: 0 !important; width: 100% !important; max-width: 100% !important;
+                border-radius: 22px 22px 0 0 !important; max-height: 88vh; }
+            .ai-chat-body{ height: 52vh; }
+            .pm-aurora span{ filter: blur(50px); opacity:.25; }
         }
     </style>
 </head>
 <body class="index-body">
+
+    <!-- 🌌 خلفية أورورا متحركة -->
+    <div class="pm-aurora" aria-hidden="true"><span></span><span></span><span></span></div>
 
     <!-- 🚨 عداد الطلاب المباشر 🚨 -->
     <div class="live-counter-floating">
@@ -115,6 +302,10 @@
         <div class="drawer-header">
             <div class="nav-brand" style="font-size: 24px;">Primee<span>.</span></div>
             <button id="closeDrawer" class="btn-close-drawer"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="pm-mobile-theme-row">
+            <span><i class="fas fa-circle-half-stroke"></i> الوضع الليلي / النهاري</span>
+            <button id="themeToggleBtnMobile" title="تغيير المظهر" aria-label="تغيير المظهر"></button>
         </div>
         <div id="mobileAuthSection" class="mobile-auth-wrapper">
             <a href="login.html" class="btn-primary-mobile">تسجيل الدخول</a>
