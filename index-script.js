@@ -367,7 +367,7 @@ async function fetchTeachers() {
             allTeachersData.push(t);
             
             heroFadeHtml += `
-            <div class="swiper-slide" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer;">
+            <div class="swiper-slide" onclick="openTeacherCourses('${t.name}')" style="cursor:pointer; display:flex; justify-content:center; align-items:flex-end; height:100%;">
                 <div class="hero-teacher-stage">
                     <img src="${t.imageUrl}" alt="${t.name}" class="hero-teacher-img" loading="lazy" decoding="async">
                     <div class="hero-teacher-name-capsule">
