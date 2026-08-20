@@ -87,7 +87,7 @@ function animateValue(id, start, end, duration) {
 updateLiveCounter();
 
 const loggedInPhone = localStorage.getItem('studentPhone');
-let globalUserData = null; // هنحتفظ ببيانات اليوزر عشان نحتاجها في الإشعارات
+let globalUserData = null; 
 if (loggedInPhone) {
     const myC = document.getElementById('myCoursesLink');
     if (myC) myC.style.display = 'block';
@@ -253,13 +253,12 @@ function setupNestedFilters(mainContainerId, subContainerId, onFilterCallback) {
 let allTeachersData = [];
 let teachersSwiperInstance = null;
 
-// ألوان متناسقة لكروت المدرسين
 const teacherGradients = [
-    'linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(29, 78, 216, 0.9))', // Blue
-    'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(4, 120, 87, 0.9))',  // Green
-    'linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(180, 83, 9, 0.9))',  // Orange
-    'linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(109, 40, 217, 0.9))', // Purple
-    'linear-gradient(135deg, rgba(236, 72, 153, 0.9), rgba(190, 24, 93, 0.9))'   // Pink
+    'linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(29, 78, 216, 0.9))', 
+    'linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(4, 120, 87, 0.9))',  
+    'linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(180, 83, 9, 0.9))',  
+    'linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(109, 40, 217, 0.9))', 
+    'linear-gradient(135deg, rgba(236, 72, 153, 0.9), rgba(190, 24, 93, 0.9))'    
 ];
 
 window.followTeacher = async function(tName) {
@@ -282,7 +281,6 @@ window.followTeacher = async function(tName) {
         globalUserData.followingTeachers = following;
         globalUserData.followingTeachers.push(tName);
         
-        // إرسال واتساب
         const msg = `أهلاً بك يا بطل 🚀\nتم متابعة الأستاذ: *${tName}* بنجاح.\nهيوصلك إشعار فوراً بأي حصة أو باقة جديدة تنزل للأستاذ.`;
         window.sendWhatsAppToPhone(globalUserData.studentPhone, msg);
         
@@ -327,14 +325,13 @@ function renderTeachers(filterText) {
     let html = '';
     filtered.forEach((t, index) => {
         let stgText = t.stages ? t.stages.split(',').slice(0, 2).join(' | ') : '';
-        let bgColor = teacherGradients[index % teacherGradients.length]; // توزيع الألوان بذكاء
+        let bgColor = teacherGradients[index % teacherGradients.length]; 
         
         let isFollowing = globalUserData && globalUserData.followingTeachers && globalUserData.followingTeachers.includes(t.name);
         let followBtnHtml = isFollowing 
             ? `<button class="btn-follow-teacher" style="background:#10b981; border-color:#10b981;" onclick="event.stopPropagation();">تم المتابعة ✔️</button>`
             : `<button class="btn-follow-teacher" onclick="event.stopPropagation(); followTeacher('${t.name}')">متابعة الأستاذ <i class="fas fa-heart"></i></button>`;
 
-        // 🚨 التعديل الجديد: الخلفية بقت ورا المدرس مش فوقه 🚨
         html += `
         <div class="swiper-slide" style="background: ${bgColor}; border-radius: 20px; overflow: hidden; position: relative;">
             <img src="${t.imageUrl}" alt="${t.name}" class="cover-card-img" style="position: relative; z-index: 1;">
@@ -480,7 +477,7 @@ window.pendingCourseId = null;
 window.originalCoursePrice = 0;
 window.pendingCoursePrice = 0;
 window.pendingCourseTitle = "";
-window.pendingCourseType = "course"; // course or package
+window.pendingCourseType = "course"; 
 
 window.openTeacherCourses = function(instructorName) {
     window.currentViewingTeacher = instructorName;
@@ -551,11 +548,10 @@ window.buyCourseAction = async function(courseId, price, title, type = 'course')
 
     window.pendingCourseId = courseId;
     window.originalCoursePrice = parseInt(price) || 0;
-    window.pendingCoursePrice = window.originalCoursePrice; // السعر قبل الخصم
+    window.pendingCoursePrice = window.originalCoursePrice; 
     window.pendingCourseTitle = title;
     window.pendingCourseType = type;
 
-    // تصفير بيانات البرومو كود في كل مرة
     document.getElementById('promoCodeInput').value = '';
     document.getElementById('promoCodeInput').disabled = false;
     document.getElementById('btnApplyPromo').disabled = false;
@@ -606,42 +602,49 @@ document.getElementById('btnApplyPromo')?.addEventListener('click', async () => 
     }
 });
 
-async function executePurchaseAndAddCourse(newBalance) {
+// 🚨 الدالة الآمنة الجديدة للشراء عبر Cloudflare Worker (تتجاوز قيود Firestore Rules بأمان) 🚨
+const WORKER_URL = "https://ai.adelabdulrahman026.workers.dev"; // تأكد أنه رابط الـ Worker الخاص بك
+
+async function executePurchaseAndAddCourseViaWorker() {
     let typeName = window.pendingCourseType === 'package' ? 'الباقة' : 'الحصة';
     
-    if (window.pendingCourseType === 'package') {
-        if(!window.currentUserPackages.includes(window.pendingCourseId)) window.currentUserPackages.push(window.pendingCourseId);
-    } else {
-        if(!window.currentUserCourses.includes(window.pendingCourseId)) window.currentUserCourses.push(window.pendingCourseId);
+    try {
+        const response = await fetch(`${WORKER_URL}?action=buy_course`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "buy_course",
+                studentId: window.currentUserId,
+                courseId: window.pendingCourseId,
+                courseType: window.pendingCourseType,
+                price: window.pendingCoursePrice
+            })
+        });
+
+        const result = await response.json();
+        
+        if (!result.success) {
+            alert("❌ فشلت العملية: " + (result.error || "خطأ غير معروف"));
+            return false;
+        }
+
+        // إرسال واتساب للنجاح
+        const sMsg = `أهلاً بك يا بطل 🎉\nتم شراء ${typeName} ("${window.pendingCourseTitle}") بنجاح.\nنتمنى لك التفوق والنجاح! 🚀`;
+        const pMsg = `إشعار من Primee Academy 🔔\nتم اشتراك الطالب/ة: ${globalUserData.fullName} في ${typeName} ("${window.pendingCourseTitle}") بنجاح.`;
+        
+        window.sendWhatsAppToPhone(globalUserData.studentPhone, sMsg);
+        if(globalUserData.parentPhone) window.sendWhatsAppToPhone(globalUserData.parentPhone, pMsg);
+
+        return true;
+    } catch(e) {
+        alert("حدث خطأ في الاتصال بالخادم الآمن.");
+        return false;
     }
-    
-    window.currentUserNotifications.push({
-        title: `تم الاشتراك في ${typeName} 📚`,
-        text: `تم الاشتراك في "${window.pendingCourseTitle}" بنجاح، تقدر تتابعها من الداش بورد.`,
-        date: new Date().toISOString()
-    });
-
-    let updateData = {
-        walletBalance: newBalance,
-        notifications: window.currentUserNotifications
-    };
-    if (window.pendingCourseType === 'package') updateData.myPackages = window.currentUserPackages;
-    else updateData.myCourses = window.currentUserCourses;
-
-    await updateDoc(doc(db, "users", window.currentUserId), updateData);
-    
-    // إرسال واتساب للنجاح
-    const sMsg = `أهلاً بك يا بطل 🎉\nتم شراء ${typeName} ("${window.pendingCourseTitle}") بنجاح.\nنتمنى لك التفوق والنجاح! 🚀`;
-    const pMsg = `إشعار من Primee Academy 🔔\nتم اشتراك الطالب/ة: ${globalUserData.fullName} في ${typeName} ("${window.pendingCourseTitle}") بنجاح.`;
-    
-    window.sendWhatsAppToPhone(globalUserData.studentPhone, sMsg);
-    if(globalUserData.parentPhone) window.sendWhatsAppToPhone(globalUserData.parentPhone, pMsg);
 }
 
 document.getElementById('btnExecuteBuy')?.addEventListener('click', async () => {
-    // 🚨 التعديل المطلوب: لو معندوش رصيد، هنحوله للداش بورد عشان يشحن 🚨
     if (window.currentUserBalance < window.pendingCoursePrice) {
-        alert("رصيدك الحالي غير كافٍ لإتمام الشراء.\nسيتم تحويلك إلى لوحة التحكم لشحن رصيدك (باستخدام كود شحن أو فودافون كاش).");
+        alert("رصيدك الحالي غير كافٍ لإتمام الشراء.\nسيتم تحويلك إلى لوحة التحكم لشحن رصيدك.");
         window.location.href = 'student-dashboard.html';
         return;
     }
@@ -650,16 +653,24 @@ document.getElementById('btnExecuteBuy')?.addEventListener('click', async () => 
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الشراء...'; btn.disabled = true;
 
     try {
-        await executePurchaseAndAddCourse(window.currentUserBalance - window.pendingCoursePrice);
-        alert("🎉 مبروك! تم الشراء بنجاح وإضافتها لكورساتك.");
-        window.location.href = 'student-dashboard.html'; 
-    } catch(e) { alert("حدث خطأ."); btn.innerHTML = 'نعم، اشترك الآن'; btn.disabled = false; }
+        const success = await executePurchaseAndAddCourseViaWorker();
+        if (success) {
+            alert("🎉 مبروك! تم الشراء بنجاح وإضافتها لكورساتك.");
+            window.location.href = 'student-dashboard.html'; 
+        } else {
+            btn.innerHTML = 'نعم، اشترك الآن'; 
+            btn.disabled = false;
+        }
+    } catch(e) { 
+        alert("حدث خطأ."); 
+        btn.innerHTML = 'نعم، اشترك الآن'; 
+        btn.disabled = false; 
+    }
 });
 
 // ==========================================
 // 🚀 المساعدة الذكية ماجي (AI & Live Chat) 🚨
 // ==========================================
-const WORKER_URL = "https://ai.adelabdulrahman026.workers.dev";
 window.liveChatInterval = null;
 window.liveChatUnsubscribe = null;
 let currentTransferDocId = null;
