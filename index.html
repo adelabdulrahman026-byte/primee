@@ -11,210 +11,168 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-    <link rel="stylesheet" href="style.css?v=130">
+    <link rel="stylesheet" href="style.css?v=131">
     <style>
         :root{
             --pm-blue:#3b82f6; --pm-blue-dark:#1d4ed8;
             --pm-purple:#7c3aed; --pm-purple-dark:#5b21b6;
             --pm-green:#10b981; --pm-amber:#f59e0b; --pm-pink:#ec4899;
+            --bg-body: #090d16; /* لون خلفية غامق */
+            --bg-card: #111827; /* لون كروت أفتح قليلاً */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-border: rgba(148, 163, 184, 0.2);
         }
-        h1, h2, .nav-brand, .hero-badge, .creative-tip-number, .footer-logo h3{
+        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Cairo', sans-serif; }
+        h1, h2, h3, h4, .nav-brand, .creative-tip-number, .footer-logo h3{
             font-family: 'Baloo Bhaijaan 2','Cairo',sans-serif !important;
         }
 
         .pm-aurora{ position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
         .pm-aurora span{
-            position: absolute; border-radius: 50%; filter: blur(90px); opacity: .28;
+            position: absolute; border-radius: 50%; filter: blur(120px); opacity: .2;
             animation: pmFloat 18s ease-in-out infinite;
         }
         .pm-aurora span:nth-child(1){ width: 450px; height: 450px; background: var(--pm-blue); top: -120px; right: -80px; }
         .pm-aurora span:nth-child(2){ width: 400px; height: 400px; background: var(--pm-purple); bottom: -140px; left: -100px; animation-delay: -6s; }
-        .pm-aurora span:nth-child(3){ width: 320px; height: 320px; background: var(--pm-pink); top: 40%; left: 45%; animation-delay: -3s; opacity: .15; }
+        .pm-aurora span:nth-child(3){ width: 320px; height: 320px; background: var(--pm-pink); top: 40%; left: 45%; animation-delay: -3s; opacity: .1; }
         @keyframes pmFloat{
             0%,100%{ transform: translate(0,0) scale(1); }
             50%{ transform: translate(30px,-25px) scale(1.08); }
         }
 
-        /* ---------- الهيرو: المدرس بحجم سينمائي وواضح ---------- */
+        /* ---------- الهيرو: تصميم أنظف ---------- */
         .hero-flex-container {
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             justify-content: space-between;
             gap: 20px;
-            min-height: 480px;
+            min-height: 400px;
             position: relative;
         }
         .hero-content {
-            padding-bottom: 30px;
             z-index: 2;
-            max-width: 58%;
+            max-width: 50%;
+            text-align: right;
         }
-        .hero-image {
-            width: 420px;
-            height: 480px;
-            position: relative;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            flex-shrink: 0;
-            z-index: 3;
-            overflow: visible;
+        .hero-wrapper {
+            border-radius: 20px; 
+            margin: 20px auto; 
+            max-width: 1350px; 
+            padding: 40px;
+            background: radial-gradient(circle at center, var(--bg-card) 0%, var(--bg-body) 100%);
         }
-        .hero-teacher-stage {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-        }
-        .hero-teacher-img {
-            max-height: 440px !important;
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-            filter: drop-shadow(0 20px 30px rgba(0,0,0,0.65));
-            z-index: 2;
-            transform-origin: bottom center;
-            transition: transform 0.4s ease;
-        }
-        .hero-teacher-stage:hover .hero-teacher-img {
-            transform: scale(1.03);
-        }
-        .hero-teacher-name-capsule {
-            position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.88);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.2);
+        .hero-badge {
+            background: rgba(124, 58, 237, 0.1);
+            color: var(--pm-purple);
+            padding: 6px 15px;
             border-radius: 30px;
-            padding: 8px 28px;
-            z-index: 4;
-            box-shadow: 0 12px 30px rgba(0,0,0,0.6), 0 0 20px rgba(124,58,237,0.35);
-            white-space: nowrap;
+            font-weight: 800;
+            display: inline-block;
+            margin-bottom: 15px;
+            font-size: 14px;
         }
-        .hero-teacher-name-txt {
-            font-family: 'Baloo Bhaijaan 2', 'Cairo', sans-serif !important;
-            font-size: 22px;
-            font-weight: 900;
-            margin: 0;
-            background: linear-gradient(90deg, #ffffff, #93c5fd, #c084fc, #ffffff);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: textShimmer 3.2s linear infinite;
+        #heroTitle { font-size: 40px; font-weight: 900; color: #fff; margin-bottom: 15px; line-height: 1.3; }
+        #heroTitle span { color: var(--pm-amber); }
+        .hero-content p { color: var(--text-muted); font-size: 16px; line-height: 1.6; margin-bottom: 30px; max-width: 90%; }
+        .hero-buttons { display: flex; gap: 15px; }
+        .btn-primary-hero {
+            background: var(--pm-amber);
+            color: #000;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        @keyframes textShimmer { to { background-position: 200% center; } }
+        .btn-secondary-hero {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 800;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .hero-image { width: 45%; max-height: 380px; position: relative; z-index: 3; }
+        .hero-teacher-img { max-height: 100%; max-width: 100%; object-fit: contain; }
 
-        /* ---------- كروت نخبة المعلمين (ظهور 100% وإلغاء أي تعتيم) ---------- */
-        .teachers-slider .swiper-slide {
-            opacity: 1 !important;
-            filter: none !important;
-            visibility: visible !important;
-            transform: none !important;
-            width: 270px !important;
-            height: auto !important;
-            display: flex !important;
-            justify-content: center !important;
-        }
-
-        .swiper.teachers-slider {
-            padding: 20px 5px 60px !important;
-            overflow: visible !important;
-        }
+        /* ---------- كروت المدرسين: تصميم بسيط وواضح ---------- */
+        .swiper.teachers-slider { padding: 30px 5px 60px !important; }
+        .teachers-slider .swiper-slide { width: 260px !important; height: auto !important; display: flex !important; justify-content: center !important; }
 
         .primee-teacher-card {
-            width: 270px !important;
-            height: 480px !important;
-            border-radius: 24px !important;
+            width: 100% !important;
+            height: 400px !important;
+            border-radius: 20px !important;
             overflow: hidden !important;
             position: relative !important;
-            background: #0d1527 !important;
-            border: 1px solid rgba(255, 255, 255, 0.15) !important;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4) !important;
+            background: var(--bg-card) !important;
+            border: 1px solid var(--input-border) !important;
             display: flex !important;
             flex-direction: column !important;
-            justify-content: space-between !important;
-            opacity: 1 !important;
-            filter: none !important;
-            cursor: pointer;
             transition: all 0.35s ease;
+            cursor: pointer;
         }
         .primee-teacher-card:hover {
             transform: translateY(-8px) !important;
-            border-color: rgba(99, 102, 241, 0.5) !important;
-            box-shadow: 0 20px 40px rgba(59,130,246,0.28) !important;
+            border-color: var(--pm-blue) !important;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4) !important;
         }
-        .pt-card-bg-glow {
-            position: absolute !important;
-            inset: 0 !important;
-            z-index: 1 !important;
-            opacity: 1 !important;
+        .pt-card-img-wrapper {
+            position: relative !important;
+            width: 100% !important;
+            height: 220px !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            background: radial-gradient(circle at top, rgba(59, 130, 246, 0.1) 0%, transparent 80%);
         }
         .pt-card-img {
-            position: relative !important;
-            top: 0 !important;
-            left: 0 !important;
-            transform: none !important;
-            width: 100% !important;
-            height: 270px !important;
+            max-height: 200px !important;
+            max-width: 90% !important;
             object-fit: contain !important;
-            z-index: 2 !important;
-            margin-top: 20px !important;
-            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5)) !important;
-            transition: transform 0.35s ease;
+            transition: 0.35s ease;
         }
-        .primee-teacher-card:hover .pt-card-img {
-            transform: scale(1.04) !important;
-        }
+        .primee-teacher-card:hover .pt-card-img { transform: scale(1.04) !important; }
         .pt-card-subject-tag {
             position: absolute !important;
-            top: 14px !important;
-            right: 14px !important;
-            z-index: 4 !important;
-            background: rgba(15, 23, 42, 0.9) !important;
-            backdrop-filter: blur(8px) !important;
-            color: #fbbf24 !important;
-            padding: 5px 12px !important;
-            border-radius: 10px !important;
-            font-size: 12px !important;
-            font-weight: 800 !important;
-            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            bottom: 10px !important;
+            right: 10px !important;
+            background: rgba(245, 158, 11, 0.1) !important;
+            color: var(--pm-amber) !important;
+            padding: 4px 10px !important;
+            border-radius: 8px !important;
+            font-size: 11px !important;
+            font-weight: 900 !important;
         }
         .pt-card-info-box {
-            position: relative !important;
-            z-index: 3 !important;
-            background: linear-gradient(180deg, rgba(13, 21, 39, 0.2) 0%, rgba(13, 21, 39, 0.98) 35%, #0d1527 100%) !important;
-            padding: 15px 14px 18px !important;
-            text-align: center !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
+            padding: 20px 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-grow: 1;
+            justify-content: space-between;
         }
         .pt-card-name {
-            font-family: 'Baloo Bhaijaan 2', 'Cairo', sans-serif !important;
-            font-size: 19px !important;
-            font-weight: 900 !important;
-            color: #ffffff !important;
-            margin: 0 0 12px 0 !important;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6) !important;
+            font-size: 18px;
+            font-weight: 900;
+            color: #fff;
+            margin: 0;
+            font-family: 'Baloo Bhaijaan 2', sans-serif !important;
         }
-        .pt-card-actions {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 8px !important;
-            width: 100% !important;
-        }
+        .pt-card-actions { display: flex; flex-direction: column; gap: 8px; }
         .btn-view-lessons {
-            width: 100% !important;
-            background: linear-gradient(135deg, var(--pm-blue), var(--pm-purple)) !important;
-            color: #ffffff !important;
+            background: var(--pm-blue) !important;
+            color: #fff !important;
             border: none !important;
             padding: 10px !important;
-            border-radius: 12px !important;
-            font-family: 'Cairo' !important;
+            border-radius: 8px !important;
             font-weight: 800 !important;
             font-size: 13px !important;
             cursor: pointer !important;
@@ -222,172 +180,23 @@
             align-items: center !important;
             justify-content: center !important;
             gap: 6px !important;
-            transition: 0.3s;
-        }
-        .btn-view-lessons:hover {
-            background: linear-gradient(135deg, #2563eb, #6d28d9) !important;
         }
         .btn-follow-modern {
-            width: 100% !important;
-            background: rgba(255, 255, 255, 0.08) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            color: #e2e8f0 !important;
+            background: transparent !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: var(--text-muted) !important;
             padding: 9px !important;
-            border-radius: 12px !important;
-            font-family: 'Cairo' !important;
+            border-radius: 8px !important;
             font-weight: 700 !important;
             font-size: 12px !important;
-            cursor: pointer !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 6px !important;
-            transition: 0.3s;
         }
-        .btn-follow-modern:hover {
-            background: rgba(239, 68, 68, 0.2) !important;
-            border-color: #ef4444 !important;
-            color: #ff8080 !important;
-        }
-
-        /* ---------- سويتش الوضع الليلي / النهاري في القائمة ---------- */
-        .pm-theme-switch-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: var(--input-bg, rgba(255,255,255,0.05));
-            border: 1px solid var(--input-border, rgba(148,163,184,0.2));
-            border-radius: 16px;
-            padding: 12px 18px;
-            margin: 6px 0 16px 0;
-        }
-        .pm-theme-switch-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 800;
-            font-size: 14px;
-            color: var(--text-main, #f8fafc);
-        }
-        .pm-theme-switch-label i {
-            color: #f59e0b;
-            font-size: 16px;
-        }
-        .pm-switch-btn {
-            position: relative;
-            width: 58px;
-            height: 30px;
-            background: #cbd5e1;
-            border-radius: 30px;
-            border: none;
-            cursor: pointer;
-            padding: 3px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            outline: none;
-        }
-        .pm-switch-circle {
-            width: 24px;
-            height: 24px;
-            background: #ffffff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #f59e0b;
-            font-size: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: translateX(0);
-        }
-        body[data-theme="dark"] .pm-switch-btn {
-            background: linear-gradient(135deg, #3b82f6, #6366f1);
-        }
-        body[data-theme="dark"] .pm-switch-circle {
-            transform: translateX(-28px);
-            color: #6366f1;
-        }
-
-        /* ---------- زرار وشات ماجي ---------- */
-        .floating-ai-btn {
-            position: fixed !important;
-            bottom: 85px !important;
-            right: 20px !important;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899) !important;
-            color: white !important;
-            padding: 12px 22px !important;
-            border-radius: 35px !important;
-            cursor: pointer !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 10px !important;
-            z-index: 9980 !important;
-            box-shadow: 0 10px 25px rgba(124,58,237,0.45) !important;
-            font-weight: 800 !important;
-            font-family: 'Cairo' !important;
-            transition: all 0.3s ease !important;
-        }
-        .floating-ai-btn:hover { transform: scale(1.06) translateY(-3px) !important; }
-        .floating-ai-btn img { width: 26px !important; height: 26px !important; }
-
-        body.drawer-opened .floating-ai-btn {
-            opacity: 0 !important;
-            pointer-events: none !important;
-            transform: scale(0.8) !important;
-        }
-
-        .side-drawer { z-index: 100001 !important; }
-        .drawer-overlay { z-index: 100000 !important; }
-
-        .ai-chat-modal {
-            position: fixed; bottom: 140px; right: 20px; width: 380px; max-width: 92vw;
-            background: linear-gradient(180deg, #17213a 0%, #101827 100%);
-            border-radius: 22px; border: 1px solid rgba(148,163,184,.15);
-            display: flex; flex-direction: column; overflow: hidden; z-index: 9999;
-            opacity: 0; visibility: hidden; transform: translateY(24px) scale(.98);
-            transition: all .35s cubic-bezier(.2,.8,.2,1);
-            box-shadow: 0 25px 60px rgba(0,0,0,.55);
-        }
-        .ai-chat-modal.active { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
-        .ai-chat-header {
-            background: linear-gradient(120deg, #1e3a8a, #6b21a8);
-            padding: 16px 18px; display: flex; justify-content: space-between; align-items: center;
-        }
-        .ai-chat-header h3 { margin: 0; color: #f8fafc; font-size: 16px; display: flex; align-items: center; gap: 10px; font-weight: 900; }
-        .ai-chat-header img { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.15); padding: 4px; }
-        .ai-close-btn { background: rgba(255,255,255,.1); border: none; color: #e2e8f0; font-size: 15px; width: 32px; height: 32px; border-radius: 10px; cursor: pointer; }
-        .ai-close-btn:hover { color: #fff; background: #ef4444; }
-        .ai-chat-body { padding: 16px; height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .ai-msg { background: #263349; color: #f1f5f9; padding: 12px 14px; border-radius: 16px 16px 16px 4px; font-size: 14px; }
-        .user-msg { background: linear-gradient(135deg, var(--pm-blue), #2563eb); color: #fff; padding: 12px 14px; border-radius: 16px 16px 4px 16px; font-size: 14px; align-self: flex-end; }
-        .maggie-options button {
-            background: rgba(59,130,246,.08); color: #f1f5f9; border: 1px solid rgba(59,130,246,.35);
-            padding: 13px 14px; border-radius: 13px; font-family: 'Cairo'; font-weight: 700; cursor: pointer;
-            text-align: right; transition: .25s; display: flex; align-items: center; gap: 12px; font-size: 14px;
-        }
-        .maggie-options button:hover { background: rgba(59,130,246,.18); border-color: var(--pm-blue); }
-
-        .live-counter-floating {
-            position: fixed; bottom: 20px; left: 20px;
-            background: linear-gradient(135deg, rgba(15,23,42,.92), rgba(30,41,59,.88));
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(59,130,246,.35); border-radius: 20px; padding: 10px 18px 10px 10px;
-            display: flex; align-items: center; gap: 12px; z-index: 9970; color: #fff;
-        }
-        .live-counter-info span { font-size: 11px; color: #94a3b8; font-weight: 700; }
-        .live-counter-info strong { font-size: 22px; font-weight: 900; color: var(--pm-green); font-family: monospace; }
+        .btn-follow-modern:hover { border-color: var(--pm-purple) !important; color: #fff !important; }
 
         @media (max-width: 992px) {
-            .hero-flex-container { flex-direction: column-reverse; align-items: center; text-align: center; }
-            .hero-content { max-width: 100%; padding-bottom: 10px; }
-            .hero-image { width: 100%; height: 380px; }
-            .hero-teacher-img { max-height: 350px !important; }
-            .hero-teacher-name-txt { font-size: 19px; }
-        }
-
-        @media (max-width: 768px) {
-            .floating-ai-btn { bottom: 70px !important; right: 15px !important; padding: 10px 18px !important; font-size: 13px !important; }
-            .live-counter-floating { bottom: 10px; left: 10px; padding: 6px 12px; }
-            .primee-teacher-card { width: 235px !important; height: 440px !important; }
+            .hero-flex-container { flex-direction: column; text-align: center; }
+            .hero-content { max-width: 100%; }
+            .hero-image { display: none; }
+            .hero-wrapper { padding: 30px 15px; }
         }
     </style>
 </head>
@@ -395,154 +204,38 @@
 
     <div class="pm-aurora" aria-hidden="true"><span></span><span></span><span></span></div>
 
-    <div class="live-counter-floating">
-        <lottie-player src="https://assets10.lottiefiles.com/packages/lf20_1dlxeb.json" background="transparent" speed="1" style="width: 35px; height: 35px;" loop autoplay></lottie-player>
-        <div class="live-counter-info">
-            <span>عدد الطلاب حتي الان</span>
-            <strong id="liveStudentsCounter">0</strong>
-        </div>
-    </div>
+    <div id="parentModal" class="custom-modal-overlay">...</div>
+    <div id="teacherCoursesModal" class="custom-modal-overlay">...</div>
+    <div id="allTeachersModal" class="custom-modal-overlay">...</div>
+    <div id="stageSelectionModal" class="custom-modal-overlay">...</div>
+    <div id="pmNotifyModal" class="custom-modal-overlay">...</div>
+    <div id="confirmBuyModal" class="custom-modal-overlay">...</div>
+    <div id="searchTeacherModal" class="custom-modal-overlay">...</div>
 
-    <!-- النوافذ المنبثقة -->
-    <div id="parentModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: var(--primary-color);"><i class="fas fa-user-shield"></i></div><h3>بوابة ولي الأمر 👨‍👩‍👧</h3><p>أدخل رقم هاتف الطالب لمتابعة مستواه ودرجاته.</p><input type="text" id="parentStudentPhone" placeholder="رقم هاتف الطالب (مثال: 010...)" style="margin-bottom: 20px; width: 100%;"><div class="modal-actions"><button class="btn-confirm" id="btnParentLogin">دخول للمتابعة</button><button class="btn-cancel" onclick="document.getElementById('parentModal').classList.remove('active')">إلغاء</button></div></div></div>
-    
-    <div id="teacherCoursesModal" class="custom-modal-overlay"><div class="custom-modal-content" style="max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto; background: var(--bg-body); border: 1px solid var(--input-border); text-align: right;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--input-border); padding-bottom: 15px; margin-bottom: 20px;"><h3 id="modalTeacherName" style="margin: 0; color: var(--text-main); font-size: 24px; font-weight: 900;">حصص الأستاذ</h3><button onclick="document.getElementById('teacherCoursesModal').classList.remove('active')" style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 40px; height: 40px; border-radius: 10px; font-size: 18px; cursor: pointer;"><i class="fas fa-times"></i></button></div><div id="modalCoursesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;"></div></div></div>
-
-    <div id="allTeachersModal" class="custom-modal-overlay">
-        <div class="custom-modal-content" style="max-width: 1100px; width: 95%; max-height: 90vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; margin-bottom: 25px; border-bottom: 2px solid var(--input-border);">
-                <h3 style="margin: 0; font-size: 26px; font-weight: 900; color: var(--text-main); font-family: 'Baloo Bhaijaan 2', 'Cairo', sans-serif;"><i class="fas fa-chalkboard-user"></i> نخبة المعلمين</h3>
-                <button onclick="document.getElementById('allTeachersModal').classList.remove('active')" style="background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 42px; height: 42px; border-radius: 12px; font-size: 18px; cursor: pointer;"><i class="fas fa-times"></i></button>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px;" id="allTeachersGrid"></div>
-        </div>
-    </div>
-
-    <div id="stageSelectionModal" class="custom-modal-overlay"><div class="custom-modal-content" style="max-width: 600px;"><h3 style="color: var(--primary-color); font-size: 24px; margin-bottom: 10px;">اختر المرحلة الدراسية 📚</h3><p style="color: var(--text-muted); margin-bottom: 25px;">علشان نعرضلك حصص الأستاذ المناسبة ليك</p><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px;"><button onclick="selectStageAndLoadCourses('ابتدائي')" style="background: var(--input-bg); color: #3b82f6; border: 2px solid #3b82f6; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer;"><i class="fas fa-child" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>ابتدائي</button><button onclick="selectStageAndLoadCourses('إعدادي')" style="background: var(--input-bg); color: #10b981; border: 2px solid #10b981; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer;"><i class="fas fa-book-reader" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>إعدادي</button><button onclick="selectStageAndLoadCourses('ثانوي')" style="background: var(--input-bg); color: #f59e0b; border: 2px solid #f59e0b; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer;"><i class="fas fa-graduation-cap" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>ثانوي</button><button onclick="selectStageAndLoadCourses('بكالوريا')" style="background: var(--input-bg); color: #d946ef; border: 2px solid #d946ef; padding: 15px; border-radius: 15px; font-size: 16px; font-weight: 800; cursor: pointer;"><i class="fas fa-university" style="display:block; font-size: 24px; margin-bottom: 5px;"></i>بكالوريا</button></div><button onclick="document.getElementById('stageSelectionModal').classList.remove('active')" style="margin-top: 25px; background: rgba(239,68,68,0.1); color: #ef4444; border: none; padding: 10px 30px; border-radius: 10px; font-weight: bold; cursor: pointer;">إلغاء</button></div></div>
-
-    <div id="pmNotifyModal" class="custom-modal-overlay">
-        <div class="custom-modal-content" style="max-width: 450px;">
-            <div class="modal-icon" id="pmNotifyIcon" style="color: #10b981;"><i class="fas fa-check-circle"></i></div>
-            <h3 id="pmNotifyTitle" style="color: var(--text-main); font-size: 22px; margin: 15px 0 10px; font-weight: 900;"></h3>
-            <p id="pmNotifyMessage" style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px; font-weight: 600; line-height: 1.6;"></p>
-            <button id="pmNotifyBtn" onclick="document.getElementById('pmNotifyModal').classList.remove('active')" style="background: var(--primary-color); color: white; border: none; padding: 12px 35px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer;">تمام</button>
-        </div>
-    </div>
-
-    <div id="confirmBuyModal" class="custom-modal-overlay">
-        <div class="custom-modal-content">
-            <div class="modal-icon" style="color: #10b981;"><i class="fas fa-shopping-cart"></i></div>
-            <h3>تأكيد الاشتراك</h3>
-            <p id="confirmBuyText" style="margin-bottom: 15px; font-size: 16px; line-height: 1.6;"></p>
-            <div id="promoCodeContainer" style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <input type="text" id="promoCodeInput" placeholder="أدخل كود الخصم (إن وجد)" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-main); font-family: 'Cairo'; text-transform: uppercase;">
-                <button id="btnApplyPromo" style="background: #3b82f6; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: 800; cursor: pointer; font-family: 'Cairo';">تطبيق</button>
-            </div>
-            <p id="promoStatusMsg" style="margin-bottom: 20px; font-size: 14px; font-weight: bold;"></p>
-            <div class="modal-actions">
-                <button class="btn-confirm" id="btnExecuteBuy" style="background: #10b981;">نعم، اشترك الآن</button>
-                <button class="btn-cancel" onclick="document.getElementById('confirmBuyModal').classList.remove('active')">إلغاء</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="searchTeacherModal" class="custom-modal-overlay"><div class="custom-modal-content"><div class="modal-icon" style="color: #3b82f6;"><i class="fas fa-search"></i></div><h3>ابحث عن مدرسك</h3><input type="text" id="searchTeacherInput" placeholder="اكتب اسم المدرس هنا..." style="width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--input-border); background: var(--input-bg); color: var(--text-main); margin-bottom: 20px;"><div class="modal-actions"><button class="btn-confirm" id="btnExecuteSearchTeacher" style="background: #3b82f6;">بحث</button><button class="btn-cancel" onclick="document.getElementById('searchTeacherModal').classList.remove('active')">إغلاق</button></div></div></div>
-
-    <!-- القائمة الجانبية للموبايل -->
-    <div id="stagesDrawer" class="side-drawer">
-        <div class="drawer-header">
-            <div class="nav-brand" style="font-size: 24px;">Primee<span>.</span></div>
-            <button id="closeDrawer" class="btn-close-drawer"><i class="fas fa-times"></i></button>
-        </div>
-
-        <div class="pm-theme-switch-row">
-            <div class="pm-theme-switch-label">
-                <i class="fas fa-circle-half-stroke"></i>
-                <span>الوضع الليلي / النهاري</span>
-            </div>
-            <button id="themeToggleBtnMobile" class="pm-switch-btn" title="تغيير المظهر" aria-label="تغيير المظهر">
-                <div class="pm-switch-circle"><i class="fas fa-sun"></i></div>
-            </button>
-        </div>
-
-        <div id="mobileAuthSection" class="mobile-auth-wrapper">
-            <a href="login.html" class="btn-primary-mobile">تسجيل الدخول</a>
-            <a href="register.html" class="btn-secondary-mobile">إنشاء حساب</a>
-        </div>
-        <ul class="drawer-links">
-            <li><a href="index.html"><i class="fas fa-home"></i> الرئيسية</a></li>
-            <li><a href="#" onclick="document.getElementById('parentModal').classList.add('active'); closeDrawer();"><i class="fas fa-user-shield"></i> متابعة ولي الأمر</a></li>
-            <li id="mobileMyCoursesLink" style="display: none;"><a href="student-dashboard.html"><i class="fas fa-laptop-code"></i> كورساتي</a></li>
-            <div class="drawer-divider"></div>
-            <span class="drawer-subtitle">تواصل مع الدعم الفني:</span>
-            <li><a href="https://wa.me/201042728734" target="_blank" style="color: #25d366; font-weight: 900;"><i class="fab fa-whatsapp"></i> 01042728734</a></li>
-            <li><a href="https://wa.me/201042650344" target="_blank" style="color: #25d366; font-weight: 900;"><i class="fab fa-whatsapp"></i> 01042650344</a></li>
-        </ul>
-    </div>
+    <div id="stagesDrawer" class="side-drawer">...</div>
     <div id="drawerOverlay" class="drawer-overlay"></div>
 
-    <!-- الشريط العلوي -->
-    <nav class="main-navbar" style="position: relative; z-index: 100;">
-        <div class="nav-right-side">
-            <div class="nav-brand">Primee<span>.</span></div>
-            <button id="openDrawer" class="btn-hamburger"><i class="fas fa-bars-staggered"></i> القائمة</button>
-            <button class="theme-toggle" id="themeToggleBtn" title="تغيير المظهر"><i class="fas fa-moon"></i></button>
-            
-            <div class="nav-bell-wrapper" id="navBellBtn" onclick="document.getElementById('navDropdown').classList.toggle('active')">
-                <i class="fas fa-bell"></i>
-                <span class="badge"></span>
-                <div class="notifications-dropdown" id="navDropdown" onclick="event.stopPropagation()">
-                    <h4>آخر الإشعارات</h4>
-                    <div id="notificationsListContent">
-                        <div style="text-align:center; color:#94a3b8; padding: 10px;">لا توجد إشعارات حالياً</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <ul class="nav-links">
-            <li><a href="index.html" class="active">الرئيسية</a></li>
-            <li><a href="#teachersSection">المدرسين</a></li>
-            <li><a href="#" onclick="document.getElementById('parentModal').classList.add('active')">متابعة ولي الأمر</a></li>
-            <li id="myCoursesLink" style="display: none;"><a href="student-dashboard.html">كورساتي</a></li>
-        </ul>
-        <div class="nav-left-side" id="navAuthSection">
-            <a href="login.html" class="btn-nav-login">تسجيل الدخول</a>
-            <a href="register.html" class="btn-nav-signup">إنشاء حساب</a>
-        </div>
-    </nav>
+    <nav class="main-navbar" style="position: relative; z-index: 100;">...</nav>
 
-    <!-- القسم الرئيسي (الهيرو) -->
-    <div class="hero-wrapper" style="position: relative; overflow: hidden; border-radius: 30px; margin: 20px auto; max-width: 1350px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); background: var(--bg-card);">
-        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;">
-            <video id="heroVideoBg" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover; position: absolute; left: 0; top: 0;"></video>
-        </div>
-        <div id="heroOverlayColor" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; transition: 0.5s; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(2px);"></div>
-
-        <header class="hero-section" style="position: relative; z-index: 2; margin: 0 auto; padding: 30px 20px;">
+    <div class="hero-wrapper">
+        <header class="hero-section">
             <div class="hero-flex-container">
                 <div class="hero-content">
                     <span class="hero-badge">👋 مرحباً بك في Primee Academy</span>
                     <h1 id="heroTitle">تعلّم بذكاء،<br><span>في شاشة واحدة.</span></h1>
-                    <p>المنصة التعليمية الأقوى التي تجمع لك أفضل المعلمين. تجربة تعليمية تفاعلية ومميزة في أي وقت ومن أي مكان.</p>
+                    <p>المنصة التعليمية الأقوى التي تجمع لك أفضل المعلمين لتقديم تجربة تعليمية تفاعلية ومميزة.</p>
                     <div class="hero-buttons">
                         <a href="#teachersSection" onclick="document.getElementById('viewAllTeachersBtn').click();" class="btn-primary-hero">تصفح المدرسين <i class="fas fa-arrow-left"></i></a>
-                        <a href="#" onclick="document.getElementById('searchTeacherModal').classList.add('active')" class="btn-secondary-hero"><i class="fas fa-search"></i> بحث عن مدرس</a>
                     </div>
                 </div>
                 <div class="hero-image">
-                    <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" class="flying-logo">
-                    <div class="swiper hero-fade-slider" style="width: 100%; height: 100%;">
-                        <div class="swiper-wrapper" id="heroTeachersFadeGrid">
-                            <div style="text-align:center; padding: 50px; color:var(--text-main); font-weight: bold;">جاري تحميل الأبطال...</div>
-                        </div>
-                    </div>
+                    <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee Academy" class="hero-teacher-img">
                 </div>
             </div>
         </header>
     </div>
 
-    <!-- قسم المدرسين -->
-    <section id="teachersSection" class="teachers-section" style="position: relative; overflow: hidden; padding: 40px 20px; border-radius: 24px; background: var(--bg-card); box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
+    <section id="teachersSection" class="teachers-section" style="position: relative; overflow: hidden; padding: 40px 20px; border-radius: 20px; background: var(--bg-card); box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
         <div style="position: relative; z-index: 1;">
             <div class="section-header">
                 <h2>نخبة المعلمين</h2>
@@ -567,104 +260,17 @@
         </div>
     </section>
 
-    <!-- أحدث الحصص -->
-    <section style="max-width: 1200px; margin: 60px auto; padding: 0 20px;">
-        <div class="section-header"><h2>أحدث الحصص المضافة 🌟</h2></div>
-        <div class="swiper latest-courses-slider" style="padding-bottom: 40px; overflow: hidden;">
-            <div class="swiper-wrapper" id="latestCoursesGrid"></div>
-            <div class="swiper-pagination"></div>
-        </div>
-    </section>
+    <section>...</section>
+    <section>...</section>
+    <section>...</section>
+    <section>...</section>
 
-    <!-- الأكثر مشاهدة -->
-    <section style="max-width: 1200px; margin: 60px auto; padding: 0 20px;">
-        <div class="section-header"><h2>الحصص الأكثر مشاهدة 🔥</h2></div>
-        <div class="swiper top-courses-slider" style="padding-bottom: 40px; overflow: hidden;">
-            <div class="swiper-wrapper" id="topCoursesGrid"></div>
-            <div class="swiper-pagination"></div>
-        </div>
-    </section>
+    <div class="modern-footer-container">...</div>
 
-    <!-- قسم الباقات الشاملة -->
-    <section class="packages-section" style="max-width: 1200px; margin: 80px auto; padding: 0 20px; overflow: hidden;">
-        <div class="section-header" style="text-align: center; justify-content: center; flex-direction: column; gap: 10px;">
-            <h2>الباقات الشاملة <span style="color: #f59e0b;"><i class="fas fa-crown"></i></span></h2>
-            <p style="color: var(--text-muted); font-weight: 600;">وفر فلوسك واشترك في باقات مجمعة لأقوى المدرسين</p>
-        </div>
-        <div class="packages-filters-container" id="packagesMainFilters">
-            <button class="modern-filter-btn active" data-filter="all">الكل</button>
-            <button class="modern-filter-btn" data-filter="ابتدائي">ابتدائي</button>
-            <button class="modern-filter-btn" data-filter="إعدادي">إعدادي</button>
-            <button class="modern-filter-btn" data-filter="ثانوي">ثانوي</button>
-            <button class="modern-filter-btn" data-filter="بكالوريا">بكالوريا</button>
-        </div>
-        <div class="sub-filters-container" id="packagesSubFilters"></div>
-        <div class="swiper packages-slider" style="padding-bottom: 40px;">
-            <div class="swiper-wrapper" id="packagesGridContainer"></div>
-            <div class="swiper-pagination"></div>
-        </div>
-    </section>
-
-    <!-- قسم النصائح -->
-    <section class="creative-tips-section">
-        <div class="section-header" style="text-align: center; margin-bottom: 40px;">
-            <h2 style="font-size: 32px; font-weight: 900;">دليلك للنجاح مع <span style="color: var(--primary-color);">Primee</span> 🚀</h2>
-        </div>
-        <div class="creative-tips-container">
-            <div class="creative-tip-card style-1"><div class="creative-tip-content"><span class="creative-tip-number">1</span><h3>اختار كورسك</h3><p>تصفح نخبة من أفضل المدرسين في كل المواد وتقدر تختار اللي يناسبك.</p></div><div class="creative-tip-image"><img src="https://cdn-icons-png.flaticon.com/512/3413/3413535.png" alt="اختر كورس"></div></div>
-            <div class="creative-tip-card style-2 reverse"><div class="creative-tip-content"><span class="creative-tip-number">2</span><h3>اشترك وابدأ فوراً</h3><p>بضغطة زرار واحدة تقدر تشترك في الكورس من محفظتك وتبدأ دراستك.</p></div><div class="creative-tip-image"><img src="https://cdn-icons-png.flaticon.com/512/2436/2436874.png" alt="اشترك"></div></div>
-            <div class="creative-tip-card style-3"><div class="creative-tip-content"><span class="creative-tip-number">3</span><h3>ذاكر واتمرن</h3><p>اتفرج على الفيديوهات وحل الامتحانات وراجع في أي وقت.</p></div><div class="creative-tip-image"><img src="https://cdn-icons-png.flaticon.com/512/3308/3308395.png" alt="ذاكر"></div></div>
-            <div class="creative-tip-card style-4 reverse"><div class="creative-tip-content"><span class="creative-tip-number">4</span><h3>تابع مستواك</h3><p>تقارير ذكية لولي الأمر ومتابعة مستمرة لضمان تفوقك الدائم.</p></div><div class="creative-tip-image"><img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="نافس"></div></div>
-        </div>
-    </section>
-
-    <!-- الفوتر -->
-    <div class="modern-footer-container">
-        <div class="footer-card">
-            <div class="footer-logo">
-                <img src="https://www.primeeacademy.com/logo%20prime.png" alt="Primee">
-                <h3>Primee Academy</h3>
-            </div>
-            <p class="footer-desc">المنصة التعليمية الأقوى التي تجمع لك أفضل المعلمين لتجربة تفاعلية مميزة.</p>
-            <div class="footer-contact-info">
-                <div class="contact-item"><i class="fas fa-location-dot"></i> الإسكندرية، مصر</div>
-                <div class="contact-item"><i class="fas fa-phone"></i> +20 109 313 9047</div>
-                <div class="contact-item"><i class="fas fa-envelope"></i> primeeacademy.com@gmail.com</div>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>جميع الحقوق محفوظة &copy; 2026 Primee Academy.</p>
-            <div class="footer-links-inline">
-                <a href="#">الشروط والأحكام</a>
-            </div>
-            <p class="dev-credit-premium">Developed with <i class="fas fa-heart" style="color: #ef4444;"></i> by <a href="https://wa.me/201093139047" target="_blank">Abdulrahman Adel</a></p>
-        </div>
-    </div>
-
-    <!-- زرار ماجي العائم -->
-    <div class="floating-ai-btn" id="openMaggieBtn">
-        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Maggie AI"> تواصل مع ماجي
-    </div>
-
-    <!-- نافذة شات ماجي -->
-    <div class="ai-chat-modal" id="maggieChatModal">
-        <div class="ai-chat-header">
-            <h3><img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Maggie"> المساعدة ماجي</h3>
-            <button class="ai-close-btn" id="closeMaggieBtn"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="ai-chat-body" id="maggieChatBody">
-            <div class="ai-msg">أهلاً بيك في Primee Academy 👋 أنا ماجي، أقدر أساعدك إزاي النهاردة؟ اختار من القائمة:</div>
-            <div class="maggie-options" id="mainMaggieOptions">
-                <button id="optTransfer"><i class="fas fa-mobile-alt"></i> نقل الحساب لجهاز آخر</button>
-                <button id="optWallet"><i class="fas fa-wallet"></i> مشكلة في شحن المحفظة</button>
-                <button id="optLesson"><i class="fas fa-video"></i> مشكلة في تشغيل الحصة</button>
-                <button id="optLive"><i class="fas fa-headset"></i> تواصل مباشر مع الدعم</button>
-            </div>
-        </div>
-        <div class="ai-chat-input" id="maggieInputArea" style="display: none;"></div>
-    </div>
+    <div class="floating-ai-btn" id="openMaggieBtn">...</div>
+    <div class="ai-chat-modal" id="maggieChatModal">...</div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" defer></script>
-    <script type="module" src="index-script.js?v=140" defer></script>
+    <script type="module" src="index-script.js?v=141" defer></script>
 </body>
 </html>
