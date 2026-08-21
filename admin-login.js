@@ -1,54 +1,107 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const WORKER_AUTH_URL = "https://ai.adelabdulrahman026.workers.dev";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAI4YyzFKOYRyceGI1h-sMOt84AFS7L1Do",
-    authDomain: "academy-444b6.firebaseapp.com",
-    projectId: "academy-444b6",
-    storageBucket: "academy-444b6.firebasestorage.app",
-    messagingSenderId: "1079254330731",
-    appId: "1:1079254330731:web:5dec7df57b4d3dcca2f02e"
-};
+let activeSessionId = "";
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const credentialsForm = document.getElementById('adminCredentialsForm');
+const otpForm = document.getElementById('adminOtpForm');
+const subtitleEl = document.getElementById('adminCardSubtitle');
+const btnSendOtp = document.getElementById('btnSendAdminOtp');
+const btnVerifyOtp = document.getElementById('btnVerifyAdminOtp');
+const btnBack = document.getElementById('btnBackToStep1');
 
-document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+// 1. إرسال الهاتف وكلمة المرور لطلب كود الـ OTP
+credentialsForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn = document.getElementById('btnAdminSubmit');
-    const user = document.getElementById('adminUsername').value.trim();
-    const pass = document.getElementById('adminPassword').value.trim();
+    
+    const phone = document.getElementById('adminPhoneInput').value.trim();
+    const password = document.getElementById('adminPasswordInput').value.trim();
 
-    btn.innerHTML = "جاري التحقق... ⏳"; btn.disabled = true;
+    if (!phone || !password) {
+        return showAlert('تنبيه', 'يرجى إدخال رقم الهاتف وكلمة المرور.');
+    }
+
+    btnSendOtp.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+    btnSendOtp.disabled = true;
 
     try {
-        // دخول السوبر أدمن (أنت)
-        if (user === "superadmin" && pass === "primee@2026") {
-            localStorage.setItem('adminLoggedIn', 'true');
-            localStorage.setItem('role', 'superadmin');
-            localStorage.setItem('astName', 'المدير العام');
-            window.location.replace('admin-dashboard.html');
-            return;
+        const response = await fetch(WORKER_AUTH_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "admin_request_otp",
+                phone: phone,
+                password: password
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            activeSessionId = data.sessionId;
+            credentialsForm.style.display = 'none';
+            otpForm.style.display = 'block';
+            subtitleEl.innerHTML = `تم إرسال كود التحقق (OTP) في رسالة واتساب للرقم <strong style="color:#f59e0b">${phone}</strong>.`;
+            document.getElementById('adminOtpInput').focus();
+        } else {
+            showAlert('فشل الدخول', data.error || 'بيانات الدخول غير صحيحة.');
         }
+    } catch (err) {
+        showAlert('خطأ في الاتصال', 'تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً.');
+    } finally {
+        btnSendOtp.innerHTML = 'إرسال رمز الدخول 🚀';
+        btnSendOtp.disabled = false;
+    }
+});
 
-        // دخول المساعدين
-        const q = query(collection(db, "assistants"), where("username", "==", user), where("password", "==", pass));
-        const querySnapshot = await getDocs(q);
+// 2. التحقق من كود الـ OTP وحفظ بيانات الجلسة
+otpForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const otp = document.getElementById('adminOtpInput').value.trim();
+    if (otp.length < 6) {
+        return showAlert('تنبيه', 'رمز التحقق يجب أن يتكون من 6 أرقام.');
+    }
 
-        if (!querySnapshot.empty) {
-            const astData = querySnapshot.docs[0].data();
+    btnVerifyOtp.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+    btnVerifyOtp.disabled = true;
+
+    try {
+        const response = await fetch(WORKER_AUTH_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "admin_verify_otp",
+                sessionId: activeSessionId,
+                otp: otp
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // حفظ بيانات الجلسة المشفرة والصلاحيات
             localStorage.setItem('adminLoggedIn', 'true');
-            localStorage.setItem('role', 'assistant');
-            localStorage.setItem('astName', astData.name);
-            localStorage.setItem('astTeacher', astData.targetTeacher || '');
-            localStorage.setItem('astPerms', JSON.stringify(astData.permissions || []));
+            localStorage.setItem('role', data.role); // 'superadmin' أو 'assistant'
+            localStorage.setItem('astName', data.name);
+            localStorage.setItem('astTeacher', data.targetTeacher || '');
+            localStorage.setItem('astPerms', JSON.stringify(data.permissions || []));
+            sessionStorage.setItem('primee_admin_auth', data.adminToken);
+
             window.location.replace('admin-dashboard.html');
         } else {
-            showAlert('مرفوض', 'اسم المستخدم أو كلمة المرور غير صحيحة.');
+            showAlert('رمز غير صحيح', data.error || 'رمز الـ OTP غير صحيح أو انتهت صلاحيته.');
         }
-    } catch (error) {
-        showAlert('خطأ', 'حدث خطأ في الاتصال بقاعدة البيانات.');
+    } catch (err) {
+        showAlert('خطأ', 'حدث خطأ أثناء التحقق من الرمز.');
     } finally {
-        btn.innerHTML = "تسجيل الدخول"; btn.disabled = false;
+        btnVerifyOtp.innerHTML = 'تأكيد الدخول للنظام ✔️';
+        btnVerifyOtp.disabled = false;
     }
+});
+
+btnBack.addEventListener('click', () => {
+    otpForm.style.display = 'none';
+    credentialsForm.style.display = 'block';
+    subtitleEl.innerText = 'الوصول مصرح للمديرين فقط';
+    document.getElementById('adminOtpInput').value = '';
 });
