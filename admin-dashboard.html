@@ -17,7 +17,6 @@
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3.4.0/dist/tus.min.js"></script>
-    <!-- مكتبة تصوير التقارير بدقة كصور PNG -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> 
 
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -43,8 +42,8 @@
         .admin-header h2 { margin: 0; font-size: 22px; font-weight: 800; color: #f8fafc; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-        .stat-card { background: #1e293b; padding: 25px; border-radius: 20px; border: 1px solid #334155; display: flex; align-items: center; gap: 20px; }
-        .stat-icon { width: 60px; height: 60px; border-radius: 15px; font-size: 26px; display: flex; justify-content: center; align-items: center;}
+        .stat-card { background: #1e293b; padding: 22px; border-radius: 20px; border: 1px solid #334155; display: flex; align-items: center; gap: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .stat-icon { width: 55px; height: 55px; border-radius: 15px; font-size: 24px; display: flex; justify-content: center; align-items: center;}
 
         .admin-table-container { background: #1e293b; border-radius: 20px; border: 1px solid #334155; padding: 25px; overflow-x: auto; }
         .admin-table-container h3 { margin: 0 0 20px 0; font-size: 20px; color: #f8fafc; font-weight: 800; border-bottom: 1px solid #334155; padding-bottom: 15px;}
@@ -67,7 +66,6 @@
         .admin-section { display: none; }
         .admin-section.active-section { display: flex; flex-direction: column; gap: 30px; }
 
-        /* 🚨 حاوية التقارير الصورية المصممة للتحميل المباشر 🚨 */
         .report-image-box { 
             position: fixed; 
             top: 0; 
@@ -89,6 +87,9 @@
         .admin-modal-btn { padding: 10px 25px; border-radius: 10px; border: none; font-family: 'Cairo'; font-weight: 800; cursor: pointer; font-size: 16px; transition: 0.3s; }
         
         .danger-box { background: rgba(239, 68, 68, 0.08); border: 2px dashed #ef4444; border-radius: 16px; padding: 25px; text-align: right; }
+        .wipe-options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 15px 0; }
+        .wipe-option-label { display: flex; align-items: center; gap: 10px; background: #0f172a; padding: 12px; border-radius: 10px; border: 1px solid #334155; cursor: pointer; font-weight: 700; }
+        .wipe-option-label input { accent-color: #ef4444; transform: scale(1.3); }
     </style>
 </head>
 <body>
@@ -115,7 +116,7 @@
             <li><a id="navAssistants" onclick="switchTab('assistantsSection', this)"><i class="fas fa-user-shield"></i> إدارة المساعدين</a></li>
             <hr style="border-color: #334155; width: 90%; margin: 10px auto;">
             <li><a id="navClearCache"><i class="fas fa-broom"></i> مسح كاش المنصة</a></li>
-            <li><a id="navResetPlatform" onclick="switchTab('resetPlatformSection', this)" style="color: #ef4444;"><i class="fas fa-trash-alt"></i> تصفير المنصة (حذف شامل)</a></li>
+            <li><a id="navResetPlatform" onclick="switchTab('resetPlatformSection', this)" style="color: #ef4444;"><i class="fas fa-trash-alt"></i> تصفير المنصة (تحديد الحذف)</a></li>
         </ul>
         <button class="btn-logout" id="adminLogoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
     </aside>
@@ -136,21 +137,35 @@
             </div>
         </div>
 
-        <!-- 1. لوحة القيادة والإحصائيات -->
+        <!-- 1. لوحة القيادة وتفصيل الأرباح والإحصائيات -->
         <div id="dashboardSection" class="admin-section active-section">
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;"><i class="fas fa-users"></i></div>
                     <div class="stat-info">
-                        <h3 id="totalStudentsCount" style="margin:0; font-size:28px; font-weight:900; color:#3b82f6;">0</h3>
+                        <h3 id="totalStudentsCount" style="margin:0; font-size:26px; font-weight:900; color:#3b82f6;">0</h3>
                         <p style="margin:0; color:#94a3b8; font-weight:700;">إجمالي الطلاب المسجلين</p>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="fas fa-money-bill-wave"></i></div>
+                    <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="fas fa-wallet"></i></div>
                     <div class="stat-info">
-                        <h3 id="totalRevenue" style="margin:0; font-size:28px; font-weight:900; color:#10b981;">0 ج.م</h3>
-                        <p style="margin:0; color:#94a3b8; font-weight:700;">إجمالي الأرباح والتحصيلات</p>
+                        <h3 id="walletRevenueCount" style="margin:0; font-size:26px; font-weight:900; color:#10b981;">0 ج.م</h3>
+                        <p style="margin:0; color:#94a3b8; font-weight:700;">أرباح المحفظة والتحويلات</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;"><i class="fas fa-qrcode"></i></div>
+                    <div class="stat-info">
+                        <h3 id="codesRevenueCount" style="margin:0; font-size:26px; font-weight:900; color:#f59e0b;">0 ج.م</h3>
+                        <p style="margin:0; color:#94a3b8; font-weight:700;">أرباح الأكواد (<span id="usedCodesCountBadge">0</span> مستخدم)</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(124, 58, 237, 0.15); color: #a855f7;"><i class="fas fa-sack-dollar"></i></div>
+                    <div class="stat-info">
+                        <h3 id="totalRevenue" style="margin:0; font-size:26px; font-weight:900; color:#c084fc;">0 ج.م</h3>
+                        <p style="margin:0; color:#94a3b8; font-weight:700;">الإجمالي الكلي للأرباح</p>
                     </div>
                 </div>
             </div>
@@ -342,7 +357,7 @@
             </div>
         </div>
 
-        <!-- 8. إدارة المدرسين -->
+        <!-- 8. إدارة المدرسين ومتابعيهم -->
         <div id="teachersSection" class="admin-section">
             <div class="admin-table-container">
                 <h3><i class="fas fa-chalkboard-teacher" style="color: #3b82f6;"></i> إضافة مدرس جديد للسلايدر والمنصة</h3>
@@ -362,7 +377,7 @@
             </div>
             <div class="admin-table-container" style="margin-top: 20px;">
                 <h3>المدرسين المسجلين بالمنصة</h3>
-                <table><thead><tr><th>المدرس</th><th>المادة</th><th>المراحل</th><th>إجراءات</th></tr></thead><tbody id="adminTeachersTable"></tbody></table>
+                <table><thead><tr><th>المدرس</th><th>المادة</th><th>المراحل</th><th>الطلاب المتابعين</th><th>إجراءات</th></tr></thead><tbody id="adminTeachersTable"></tbody></table>
             </div>
         </div>
 
@@ -374,7 +389,7 @@
             </div>
         </div>
         
-        <!-- 10. تقارير المدرسين (تحميل كصورة PNG فوراً) -->
+        <!-- 10. تقارير المدرسين -->
         <div id="teacherReportSection" class="admin-section">
             <div class="admin-table-container">
                 <h3 style="color: #f59e0b;"><i class="fas fa-file-invoice-dollar"></i> التقرير المالي والإحصائي للمدرس</h3>
@@ -392,36 +407,40 @@
         <div id="codesSection" class="admin-section"><div class="admin-table-container"><h3><i class="fas fa-qrcode" style="color: #10b981;"></i> مصنع الأكواد</h3><form id="generateCodesForm"><div class="form-grid"><div class="form-group-admin"><label>عدد الأكواد</label><input type="number" id="codesCount" min="1" max="500" required></div><div class="form-group-admin"><label>قيمة الكود (ج.م)</label><input type="number" id="codePrice" min="1" required></div><div class="form-group-admin"><label>المندوب</label><input type="text" id="codeDelegate" required></div></div><button type="submit" id="btnGenerateCodes" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-cogs"></i> توليد وتحميل إكسيل</button></form></div><div class="admin-table-container" style="margin-top: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 15px;"><h3 style="margin: 0; border: none; padding: 0;">سجل الأكواد</h3><button id="btnExportAllCodes" style="background: #3b82f6; color: #fff; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 800; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-file-excel"></i> تحميل كـ Excel</button></div><div style="margin-bottom: 15px; display: flex; gap: 10px;"><input type="text" id="searchCodeInput" placeholder="ابحث بكود أو مندوب..." style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';"><select id="filterCodeStatus" style="padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-family: 'Cairo';"><option value="all">كل الأكواد</option><option value="unused">لم تُستخدم بعد</option><option value="used">تم الشحن (مُستخدمة)</option></select></div><table><thead><tr><th>الكود</th><th>القيمة</th><th>المندوب</th><th>الحالة / الطالب</th><th>تاريخ التوليد</th><th>إجراءات</th></tr></thead><tbody id="adminCodesTable"><tr><td colspan="6" style="text-align: center; color: #94a3b8;">جاري جلب الأكواد...</td></tr></tbody></table></div></div>
         
         <!-- 12. برومو كود -->
-        <div id="promoCodesSection" class="admin-section"><div class="admin-table-container"><h3 style="color: #d946ef;"><i class="fas fa-tags"></i> توليد برومو كود</h3><form id="addPromoCodeForm"><div class="form-grid"><div class="form-group-admin"><label>الكلمة</label><input type="text" id="promoCodeString" style="text-transform: uppercase;" required></div><div class="form-group-admin"><label>نسبة الخصم (%)</label><input type="number" id="promoCodeDiscount" min="1" max="100" required></div><div class="form-group-admin"><label>تاريخ الانتهاء</label><input type="date" id="promoCodeExpiry" required></div></div><button type="submit" id="btnSavePromoCode" style="background: #d946ef; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">إنشاء</button></form></div><div class="admin-table-container" style="margin-top:20px;"><table><thead><tr><th>الكود</th><th>الخصم</th><th>الانتهاء</th><th>إجراءات</th></tr></thead><tbody id="adminPromoCodesTable"></tbody></table></div></div>
+        <div id="promoCodesSection" class="admin-section"><div class="admin-table-container"><h3 style="color: #d946ef;"><i class="fas fa-tags"></i> توليد برومو كود</h3><form id="addPromoCodeForm"><div class="form-grid"><div class="form-group-admin"><label>الكلمة (الكود)</label><input type="text" id="promoCodeString" style="text-transform: uppercase;" required></div><div class="form-group-admin"><label>نسبة الخصم (%)</label><input type="number" id="promoCodeDiscount" min="1" max="100" required></div><div class="form-group-admin"><label>تاريخ الانتهاء</label><input type="date" id="promoCodeExpiry" required></div></div><button type="submit" id="btnSavePromoCode" style="background: #d946ef; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">إنشاء البرومو كود</button></form></div><div class="admin-table-container" style="margin-top:20px;"><table><thead><tr><th>الكود</th><th>الخصم</th><th>الانتهاء</th><th>إجراءات</th></tr></thead><tbody id="adminPromoCodesTable"></tbody></table></div></div>
         
         <!-- 13. إدارة الباقات -->
-        <div id="packagesSection" class="admin-section"><div class="admin-table-container"><h3><i class="fas fa-boxes" style="color: #3b82f6;"></i> إدارة الباقات</h3><form id="addPackageForm"><input type="hidden" id="editingPkgId" value=""><div class="form-grid"><div class="form-group-admin"><label>اسم الباقة</label><input type="text" id="pkgName" required></div><div class="form-group-admin"><label>المرحلة</label><input type="text" id="pkgGrade" required></div><div class="form-group-admin"><label>السعر القديم</label><input type="number" id="pkgOldPrice" required></div><div class="form-group-admin"><label>السعر الجديد</label><input type="number" id="pkgNewPrice" required></div><div class="form-group-admin"><label>التفاصيل (مفصولة بفاصلة)</label><input type="text" id="pkgFeatures" required></div><div class="form-group-admin"><label>أقصى مشاهدات</label><input type="number" id="pkgMaxViews" min="0" value="0" required></div><div class="form-group-admin"><label>صورة الغلاف</label><input type="file" id="pkgImage" accept="image/*"></div><div class="form-group-admin" style="grid-column: 1 / -1; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px dashed #3b82f6;"><label style="font-size: 18px; color: #3b82f6; margin-bottom: 10px;">إضافة محتوى الباقة 🎥</label><div id="packageVideosContainer"></div><button type="button" onclick="addPackageVideoRow()" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px dashed #3b82f6; padding: 12px; border-radius: 8px; width: 100%; font-family: 'Cairo'; font-weight: 800; cursor: pointer; margin-top: 15px;"><i class="fas fa-plus"></i> إضافة مقطع جديد</button></div></div><div style="display: flex; gap: 15px;"><button type="submit" id="btnSavePackage" style="flex: 1; background: #f59e0b; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">حفظ ونشر</button><button type="button" id="btnCancelPkgEdit" style="display: none; background: #334155; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; cursor: pointer;">إلغاء</button></div></form></div><div class="admin-table-container" style="margin-top: 20px;"><table><thead><tr><th>الباقة</th><th>المرحلة</th><th>الطلاب</th><th>السعر</th><th>إجراءات</th></tr></thead><tbody id="adminPackagesTable"></tbody></table></div></div>
+        <div id="packagesSection" class="admin-section"><div class="admin-table-container"><h3><i class="fas fa-boxes" style="color: #3b82f6;"></i> إدارة الباقات</h3><form id="addPackageForm"><input type="hidden" id="editingPkgId" value=""><div class="form-grid"><div class="form-group-admin"><label>اسم الباقة</label><input type="text" id="pkgName" required></div><div class="form-group-admin"><label>المرحلة</label><input type="text" id="pkgGrade" required></div><div class="form-group-admin"><label>السعر القديم</label><input type="number" id="pkgOldPrice" required></div><div class="form-group-admin"><label>السعر الجديد</label><input type="number" id="pkgNewPrice" required></div><div class="form-group-admin"><label>التفاصيل (مفصولة بفاصلة)</label><input type="text" id="pkgFeatures" required></div><div class="form-group-admin"><label>أقصى مشاهدات</label><input type="number" id="pkgMaxViews" min="0" value="0" required></div><div class="form-group-admin"><label>صورة الغلاف</label><input type="file" id="pkgImage" accept="image/*"></div><div class="form-group-admin" style="grid-column: 1 / -1; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px dashed #3b82f6;"><label style="font-size: 18px; color: #3b82f6; margin-bottom: 10px;">إضافة محتوى الباقة 🎥</label><div id="packageVideosContainer"></div><button type="button" onclick="addPackageVideoRow()" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border: 1px dashed #3b82f6; padding: 12px; border-radius: 8px; width: 100%; font-family: 'Cairo'; font-weight: 800; cursor: pointer; margin-top: 15px;"><i class="fas fa-plus"></i> إضافة مقطع جديد للباقة</button></div></div><div style="display: flex; gap: 15px;"><button type="submit" id="btnSavePackage" style="flex: 1; background: #f59e0b; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;">حفظ ونشر الباقة</button><button type="button" id="btnCancelPkgEdit" style="display: none; background: #334155; color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; cursor: pointer;">إلغاء</button></div></form></div><div class="admin-table-container" style="margin-top: 20px;"><table><thead><tr><th>الباقة</th><th>المرحلة</th><th>الطلاب المشتركين</th><th>السعر</th><th>إجراءات</th></tr></thead><tbody id="adminPackagesTable"></tbody></table></div></div>
 
         <!-- 14. إدارة المساعدين -->
-        <div id="assistantsSection" class="admin-section"><div class="admin-table-container"><h3>إدارة المساعدين</h3><form id="addAssistantForm"><input type="hidden" id="editingAssistantId" value=""><div class="form-grid"><div class="form-group-admin"><label>الاسم</label><input type="text" id="astName" required></div><div class="form-group-admin"><label>المستخدم</label><input type="text" id="astUsername" required></div><div class="form-group-admin"><label>المرور</label><input type="text" id="astPassword" required></div><div class="form-group-admin"><label>للمدرس</label><select id="astTeacher" required></select></div><div class="form-group-admin" style="grid-column: 1 / -1;"><label>الصلاحيات</label><div style="display:flex; gap:15px; flex-wrap:wrap; background:#0f172a; padding:15px; border-radius:12px;"><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="students"> الطلاب</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="courses"> الكورسات</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="exams"> الامتحانات</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="grading"> المشاهدات</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="codes"> الأكواد</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="wallet"> المحفظة</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="teacherReport"> التقارير</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="liveChat"> الدعم الفني</label></div></div></div><button type="submit" id="btnSaveAssistant" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; width: 100%; cursor: pointer;">حفظ</button></form></div><div class="admin-table-container" style="margin-top:20px;"><table><thead><tr><th>المساعد</th><th>المستخدم</th><th>للمدرس</th><th>إجراءات</th></tr></thead><tbody id="adminAssistantsTable"></tbody></table></div></div>
+        <div id="assistantsSection" class="admin-section"><div class="admin-table-container"><h3>إدارة المساعدين</h3><form id="addAssistantForm"><input type="hidden" id="editingAssistantId" value=""><div class="form-grid"><div class="form-group-admin"><label>الاسم</label><input type="text" id="astName" required></div><div class="form-group-admin"><label>المستخدم (رقم الهاتف)</label><input type="text" id="astUsername" required></div><div class="form-group-admin"><label>المرور</label><input type="text" id="astPassword" required></div><div class="form-group-admin"><label>للمدرس</label><select id="astTeacher" required></select></div><div class="form-group-admin" style="grid-column: 1 / -1;"><label>الصلاحيات</label><div style="display:flex; gap:15px; flex-wrap:wrap; background:#0f172a; padding:15px; border-radius:12px;"><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="students"> الطلاب</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="courses"> الكورسات</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="exams"> الامتحانات</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="grading"> المشاهدات</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="codes"> الأكواد</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="wallet"> المحفظة</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="teacherReport"> التقارير</label><label style="color:#cbd5e1;"><input type="checkbox" class="ast-perm" value="liveChat"> الدعم الفني</label></div></div></div><button type="submit" id="btnSaveAssistant" style="background: #10b981; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; width: 100%; cursor: pointer;">حفظ</button></form></div><div class="admin-table-container" style="margin-top:20px;"><table><thead><tr><th>المساعد</th><th>المستخدم</th><th>للمدرس</th><th>إجراءات</th></tr></thead><tbody id="adminAssistantsTable"></tbody></table></div></div>
 
-        <!-- 🚨 15. تصفير المنصة بالكامل (منطقة الخطر مع OTP) 🚨 -->
+        <!-- 🚨 15. تصفير المنصة (تحديد الحذف بدقة) 🚨 -->
         <div id="resetPlatformSection" class="admin-section">
             <div class="admin-table-container">
-                <h3 style="color: #ef4444;"><i class="fas fa-radiation-alt"></i> تصفير المنصة وحذف الحسابات الشامل</h3>
+                <h3 style="color: #ef4444;"><i class="fas fa-radiation-alt"></i> تصفير المنصة وحذف البيانات المحددة</h3>
                 <div class="danger-box">
-                    <h4 style="color: #ef4444; margin-top: 0; font-size: 20px;">⚠️ تحذير شديد الأهمية:</h4>
-                    <p style="color: #cbd5e1; font-size: 15px; line-height: 1.8;">
-                        هذا الإجراء سيقوم بحذف <strong>جميع الطلاب المسجلين بالكامل</strong> وحذف حساباتهم نهائياً من <strong>Firebase Authentication</strong>، ومسح سجلات الطلاب، المحافظ، الاشتراكات، ومسح جميع أكواد الشحن من النظام.<br>
-                        <strong style="color: #f59e0b;">لا يمكن التراجع عن هذه الخطوة بعد تنفيذها.</strong>
-                    </p>
+                    <h4 style="color: #ef4444; margin-top: 0; font-size: 20px;">⚠️ حدد الجداول التي ترغب في مسحها وتصفيرها:</h4>
                     
+                    <div class="wipe-options-grid">
+                        <label class="wipe-option-label"><input type="checkbox" class="wipe-col-cb" value="users" checked> حسابات وبيانات الطلاب</label>
+                        <label class="wipe-option-label"><input type="checkbox" class="wipe-col-cb" value="charge_codes" checked> أكواد الشحن (المصنع)</label>
+                        <label class="wipe-option-label"><input type="checkbox" class="wipe-col-cb" value="received_transfers" checked> سجلات شحن المحفظة</label>
+                        <label class="wipe-option-label"><input type="checkbox" class="wipe-col-cb" value="exam_submissions" checked> نتائج واختبارات الطلاب</label>
+                        <label class="wipe-option-label"><input type="checkbox" class="wipe-col-cb" value="live_chats" checked> سجلات الشات المباشر</label>
+                    </div>
+
                     <div id="wipeInitialBox" style="margin-top: 20px;">
                         <button id="btnRequestWipeOtp" style="background: #ef4444; color: #fff; border: none; padding: 14px 28px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-key"></i> إرسال كود تأكيد OTP لتصفير المنصة
+                            <i class="fas fa-key"></i> إرسال كود OTP لتأكيد الحذف المختار
                         </button>
                     </div>
 
                     <div id="wipeOtpBox" style="display: none; margin-top: 20px; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid #ef4444;">
-                        <p style="color: #f8fafc; font-weight: bold; margin-bottom: 12px;">تم إرسال كود OTP على واتساب المدير. أدخل الكود لتأكيد المسح النهائي:</p>
+                        <p style="color: #f8fafc; font-weight: bold; margin-bottom: 12px;">تم إرسال كود OTP على واتساب المدير. أدخل الكود لتأكيد المسح:</p>
                         <div style="display: flex; gap: 10px; max-width: 400px;">
                             <input type="text" id="wipeOtpInput" placeholder="أدخل 6 أرقام" maxlength="6" style="padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 18px; text-align: center; letter-spacing: 5px; flex: 1;">
-                            <button id="btnExecuteFinalWipe" style="background: #ef4444; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 900; cursor: pointer;">تأكيد ومسح الكل</button>
+                            <button id="btnExecuteFinalWipe" style="background: #ef4444; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 900; cursor: pointer;">تأكيد ومسح المحدد</button>
                         </div>
                     </div>
                 </div>
@@ -608,6 +627,6 @@
             document.getElementById(`qModelAnswer_${id}`).style.display = isChecked ? 'block' : 'none';
         }
     </script>
-    <script type="module" src="admin-dashboard.js?v=1100"></script>
+    <script type="module" src="admin-dashboard.js?v=1200"></script>
 </body>
 </html>
