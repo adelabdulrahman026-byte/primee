@@ -12,6 +12,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const WORKER_URL = "https://ai.adelabdulrahman026.workers.dev";
 
 // 🌗 إدارة المظهر الليلي والنهاري
 function setTheme(isDark) {
@@ -27,43 +28,15 @@ function toggleTheme() {
 document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
 setTheme(localStorage.getItem('theme') === 'dark');
 
-async function getSecureApiKeys() {
-    try {
-        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
-        if (docSnap.exists()) return docSnap.data();
-        return null;
-    } catch (error) { return null; }
-}
-
-async function sendWhatsAppToParent(parentPhone, msgText) {
-    if(!parentPhone || parentPhone === "غير متوفر" || parentPhone.length < 10) return;
-    const keys = await getSecureApiKeys();
-    if (!keys || !keys.wapilot_instance || !keys.wapilot_token) return;
-
-    let cleanPhone = parentPhone.replace(/\D/g, '');
-    let formattedPhone = cleanPhone.startsWith('0') ? '2' + cleanPhone : cleanPhone;
-    let chatId = formattedPhone + "@c.us";
-    let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
-    
-    try {
-        await fetch(url, {
-            method: "POST",
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.token || keys.wapilot_token}` },
-            body: JSON.stringify({ chat_id: chatId, text: msgText })
-        });
-    } catch(err) {}
-}
-
 let courseDataG = null;
 let studentDataG = null;
 let currentStudentId = null;
 let courseIdG = null;
 let currentVideoIndex = 0;
-let plyrInstance = null;
 let lastTrackedSeconds = 0;
 let videoDurationSeconds = 0;
+let vimeoPlayerInstance = null;
 
-// تنسيق الثواني لصيغة (دقيقة وثانية)
 function formatTimeAr(seconds) {
     let s = Math.floor(seconds || 0);
     let m = Math.floor(s / 60);
@@ -71,37 +44,41 @@ function formatTimeAr(seconds) {
     return `${m} دقيقة و ${remS} ثانية`;
 }
 
-// 🚨 إرسال إشعار الخروج لولي الأمر فور إغلاق الصفحة أو التنقل 🚨
-function handleStudentExit() {
+// 🚨 إرسال إشعار الخروج لولي الأمر فور مغادرة الصفحة
+function sendExitNotification() {
     if (!studentDataG || !studentDataG.parentPhone || videoDurationSeconds === 0) return;
     
     let stoppedAt = lastTrackedSeconds;
     let remaining = Math.max(0, videoDurationSeconds - stoppedAt);
-    
-    // إذا كان خرج بعد مشاهدة 15 ثانية على الأقل
+
+    // يتم الإرسال إذا شاهد الطالب 15 ثانية على الأقل وكان متبقي أكثر من 30 ثانية
     if (stoppedAt >= 15 && remaining > 30) {
-        let stoppedStr = formatTimeAr(stoppedAt);
-        let remStr = formatTimeAr(remaining);
-        let cName = courseDataG.title || courseDataG.name || "الحصة";
-        
-        let msg = `🔔 إشعار متابعة من Primee Academy:\n\nولي أمر الطالب/ة: *${studentDataG.fullName}*\nنحيطكم علماً بأن الطالب قد خرج من حصة (*${cName}*).\n⏱️ توقف عند الدقيقة: *${stoppedStr}*\n⏳ الوقت المتبقي لإنهاء الحصة: *${remStr}*.`;
-        
-        // إرسال عبر sendBeacon لضمان الخروج بدون انقطاع
-        getSecureApiKeys().then(keys => {
-            if(keys && keys.wapilot_instance) {
-                let cleanPhone = studentDataG.parentPhone.replace(/\D/g, '');
-                let formatted = cleanPhone.startsWith('0') ? '2' + cleanPhone : cleanPhone;
-                let payload = JSON.stringify({ chat_id: formatted + "@c.us", text: msg });
-                
-                let blob = new Blob([payload], { type: 'application/json' });
-                navigator.sendBeacon(`https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message?token=${keys.wapilot_token}`, blob);
-            }
-        });
+        const payload = {
+            action: "send_exit_report",
+            parentPhone: studentDataG.parentPhone,
+            studentName: studentDataG.fullName || "الطالب",
+            courseName: courseDataG?.title || courseDataG?.name || "الحصة",
+            stoppedAtStr: formatTimeAr(stoppedAt),
+            remainingStr: formatTimeAr(remaining)
+        };
+
+        // استخدام fetch مع keepalive يضمن إتمام الطلب في الخلفية حتى بعد غلق الصفحة
+        fetch(WORKER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            keepalive: true
+        }).catch(() => {});
     }
 }
 
-window.addEventListener('beforeunload', handleStudentExit);
-window.addEventListener('pagehide', handleStudentExit);
+window.addEventListener('beforeunload', sendExitNotification);
+window.addEventListener('pagehide', sendExitNotification);
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        sendExitNotification();
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -259,7 +236,6 @@ function setupRating() {
     });
 }
 
-// 📋 عرض قائمة الفيديوهات بالأسماء الحقيقية المكتوبة في الداش بورد
 function renderPlaylist(videos) {
     const container = document.getElementById('playlistContainer');
     const badge = document.getElementById('playlistCountBadge');
@@ -271,8 +247,6 @@ function renderPlaylist(videos) {
     videos.forEach((vid, i) => {
         let examIdCheck = vid.requiredExamId || courseDataG.requiredExamId;
         let icon = examIdCheck ? '<i class="fas fa-lock" style="color:var(--accent-gold);" title="مربوط بامتحان"></i>' : '<i class="fas fa-play-circle" style="color:var(--primary);"></i>';
-        
-        // عرض اسم المقطع المخصص من الداش بورد
         let displayName = vid.title && vid.title.trim() !== "" ? vid.title : `مقطع شرح ${i + 1}`;
 
         html += `
@@ -437,14 +411,27 @@ async function submitExam(examData, examId, submissionId) {
         submittedAt: new Date().toISOString()
     });
 
-    let waMsg = `🔔 تقرير امتحان من Primee Academy:\n\nولي أمر الطالب/ـة: *${studentDataG.fullName}*\nأنهى الطالب اختبار (*${examData.title}*) الخاص بحصة (*${courseDataG.title || courseDataG.name}*).\n`;
-    if(finalStatus === 'passed') waMsg += `النتيجة: *ناجح بتفوق ✅*\nالدرجة: *${score} من ${totalQs}*\nتم فتح مقطع الحصة للطالب بنجاح.`;
-    else if(finalStatus === 'failed') waMsg += `النتيجة: *راسب ❌*\nالدرجة: *${score} من ${totalQs}*\nتم إغلاق المقطع للمراجعة مع الإدارة.`;
-    else waMsg += `النتيجة: *قيد التصحيح ⏳*\nيحتوي الاختبار على أسئلة مقالية جاري مراجعتها.`;
-    
-    await sendWhatsAppToParent(studentDataG.parentPhone, waMsg);
+    // إرسال تقرير النتيجة للواتساب
+    if (studentDataG.parentPhone) {
+        let waMsg = `🔔 تقرير امتحان من Primee Academy:\n\nولي أمر الطالب/ـة: *${studentDataG.fullName}*\nأنهى الطالب اختبار (*${examData.title}*) الخاص بحصة (*${courseDataG.title || courseDataG.name}*).\n`;
+        if(finalStatus === 'passed') waMsg += `النتيجة: *ناجح بتفوق ✅*\nالدرجة: *${score} من ${totalQs}*\nتم فتح مقطع الحصة للطالب بنجاح.`;
+        else if(finalStatus === 'failed') waMsg += `النتيجة: *راسب ❌*\nالدرجة: *${score} من ${totalQs}*\nتم إغلاق المقطع للمراجعة مع الإدارة.`;
+        else waMsg += `النتيجة: *قيد التصحيح ⏳*\nيحتوي الاختبار على أسئلة مقالية جاري مراجعتها.`;
+        
+        fetch(WORKER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "send_exit_report",
+                parentPhone: studentDataG.parentPhone,
+                studentName: studentDataG.fullName,
+                courseName: courseDataG.title || courseDataG.name,
+                stoppedAtStr: `درجة الامتحان ${score}/${totalQs}`,
+                remainingStr: finalStatus === 'passed' ? 'تم اجتياز الامتحان بنجاح' : 'لم يجتز الامتحان'
+            })
+        }).catch(() => {});
+    }
 
-    // 🏆 لو جاب الدرجة النهائية 100% يظهر له كارت الشهادة الملكي الفاخر
     if(score === totalQs && !hasEssay) {
         document.getElementById('examFullscreenOverlay').style.display = 'none';
         document.getElementById('certStudentName').innerText = studentDataG.fullName;
@@ -459,7 +446,7 @@ async function submitExam(examData, examId, submissionId) {
     }
 }
 
-// 🎬 تشغيل الفيديو مع دعم اختيار الجودة (Automatic & Manual) وكارت الاستكمال
+// 🎬 تشغيل الفيديو مع دعم تبديل الجودات الكامل (Vimeo Native Controls & Quality)
 async function playVideoAndRecordView(videoUrl) {
     const vidContainer = document.getElementById('videoContainer');
     const vimeoID = extractVimeoID(videoUrl);
@@ -469,83 +456,74 @@ async function playVideoAndRecordView(videoUrl) {
         vidContainer.style.width = '100%';
         vidContainer.style.height = '100%';
         
+        // تضمين المشغل مع معلمات تفعيل قائمة الجودة (Auto, 1080p, 720p, 540p, 360p) والسرعات الكاملة
         vidContainer.innerHTML = `
-            <div class="plyr__video-embed" id="player">
-                <iframe src="https://player.vimeo.com/video/${vimeoID}?loop=false&amp;byline=false&amp;portrait=false&amp;title=false&amp;speed=true&amp;transparent=0&amp;gesture=media&amp;quality=auto" allowfullscreen allowtransparency allow="autoplay"></iframe>
-            </div>
-            <div id="resumeCard" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(9,13,22,0.92); z-index:100; justify-content:center; align-items:center; flex-direction:column; backdrop-filter:blur(8px); border-radius:var(--player-radius);">
+            <iframe id="vimeoPlayerIframe" 
+                src="https://player.vimeo.com/video/${vimeoID}?autoplay=1&badge=0&autopause=0&player_id=0&app_id=58479&controls=1&quality_selector=1&speed=1" 
+                style="width:100%; height:100%; border:none; position:absolute; top:0; left:0;" 
+                allow="autoplay; fullscreen; picture-in-picture" 
+                allowfullscreen>
+            </iframe>
+            
+            <div id="resumeCard" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(9,13,22,0.94); z-index:100; justify-content:center; align-items:center; flex-direction:column; backdrop-filter:blur(8px); border-radius:var(--player-radius);">
                 <i class="fas fa-history" style="font-size:55px; color:var(--primary); margin-bottom:15px;"></i>
                 <h3 style="color:#fff; font-size:22px; margin:0 0 8px 0; font-weight:900;">استكمال المشاهدة</h3>
                 <p style="color:#94a3b8; margin-bottom:20px; font-weight:600;">توقفت هنا في زيارتك السابقة، هل ترغب في الاستكمال؟</p>
                 <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
-                    <button id="btnResumeVid" style="background:#10b981; color:#fff; border:none; padding:12px 26px; border-radius:12px; font-weight:900; font-size:15px; cursor:pointer;"><i class="fas fa-play"></i> نعم، استكمال الحصة</button>
+                    <button id="btnResumeVid" style="background:#10b981; color:#fff; border:none; padding:12px 26px; border-radius:12px; font-weight:900; font-size:15px; cursor:pointer;"><i class="fas fa-play"></i> استكمال الحصة</button>
                     <button id="btnRestartVid" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid #ef4444; padding:12px 26px; border-radius:12px; font-weight:900; font-size:15px; cursor:pointer;"><i class="fas fa-redo"></i> البدء من الأول</button>
                 </div>
             </div>
         `;
 
-        setTimeout(() => { 
-            // تهيئة Plyr مع دعم اختيار الجودة والسرعات والتحكم الكامل
-            plyrInstance = new Plyr('#player', {
-                controls: [
-                    'play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'
-                ],
-                settings: ['quality', 'speed', 'loop'],
-                speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-                quality: {
-                    default: 'auto',
-                    options: ['auto', 1080, 720, 540, 360],
-                    forced: true,
-                    onChange: (quality) => {
-                        console.log("Quality switched to: " + quality);
-                    }
-                }
-            }); 
-            
-            const savedTimeKey = `vidTime_${currentStudentId}_${vimeoID}`;
-            const savedTime = parseFloat(localStorage.getItem(savedTimeKey)) || 0;
-            let isFirstPlay = true;
-
-            plyrInstance.on('ready', () => {
-                // التقاط إجمالي مدة الفيديو
-                videoDurationSeconds = plyrInstance.duration || 0;
-
-                if (savedTime > 15 && isFirstPlay) {
-                    const resumeCard = document.getElementById('resumeCard');
-                    if (resumeCard) resumeCard.style.display = 'flex';
-
-                    document.getElementById('btnResumeVid').onclick = () => {
-                        plyrInstance.currentTime = savedTime;
-                        plyrInstance.play();
-                        resumeCard.style.display = 'none';
-                        isFirstPlay = false;
-                    };
-
-                    document.getElementById('btnRestartVid').onclick = () => {
-                        plyrInstance.currentTime = 0;
-                        plyrInstance.play();
-                        resumeCard.style.display = 'none';
-                        isFirstPlay = false;
-                    };
-                }
-            });
-
-            plyrInstance.on('timeupdate', () => {
-                lastTrackedSeconds = plyrInstance.currentTime;
-                videoDurationSeconds = plyrInstance.duration || videoDurationSeconds;
-                
-                if(!isFirstPlay || savedTime <= 15) {
-                    localStorage.setItem(savedTimeKey, plyrInstance.currentTime);
-                }
-            });
-
-            plyrInstance.on('ended', () => {
-                localStorage.removeItem(savedTimeKey);
-                lastTrackedSeconds = 0;
-            });
-
-        }, 150);
+        const iframe = document.getElementById('vimeoPlayerIframe');
+        vimeoPlayerInstance = new Vimeo.Player(iframe);
         
+        const savedTimeKey = `vidTime_${currentStudentId}_${vimeoID}`;
+        const savedTime = parseFloat(localStorage.getItem(savedTimeKey)) || 0;
+        let isFirstPlay = true;
+
+        vimeoPlayerInstance.getDuration().then(duration => {
+            videoDurationSeconds = duration || 0;
+        });
+
+        vimeoPlayerInstance.on('loaded', () => {
+            if (savedTime > 15 && isFirstPlay) {
+                vimeoPlayerInstance.pause();
+                const resumeCard = document.getElementById('resumeCard');
+                if (resumeCard) resumeCard.style.display = 'flex';
+
+                document.getElementById('btnResumeVid').onclick = () => {
+                    vimeoPlayerInstance.setCurrentTime(savedTime);
+                    vimeoPlayerInstance.play();
+                    resumeCard.style.display = 'none';
+                    isFirstPlay = false;
+                };
+
+                document.getElementById('btnRestartVid').onclick = () => {
+                    vimeoPlayerInstance.setCurrentTime(0);
+                    vimeoPlayerInstance.play();
+                    resumeCard.style.display = 'none';
+                    isFirstPlay = false;
+                };
+            }
+        });
+
+        vimeoPlayerInstance.on('timeupdate', (data) => {
+            lastTrackedSeconds = data.seconds;
+            videoDurationSeconds = data.duration || videoDurationSeconds;
+            
+            if(!isFirstPlay || savedTime <= 15) {
+                localStorage.setItem(savedTimeKey, data.seconds);
+            }
+        });
+
+        vimeoPlayerInstance.on('ended', () => {
+            localStorage.removeItem(savedTimeKey);
+            lastTrackedSeconds = 0;
+        });
+        
+        // تسجيل مشاهدة
         let viewsMap = studentDataG.courseViews || {};
         viewsMap[courseIdG] = (viewsMap[courseIdG] || 0) + 1;
         await updateDoc(doc(db, "users", currentStudentId), { courseViews: viewsMap });
