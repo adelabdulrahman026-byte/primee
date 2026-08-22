@@ -5,24 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Primee Academy - المنصة التعليمية الأولى</title>
 
-    <!-- الخطوط -->
+    <!-- الخطوط الرسمية -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Baloo+Bhaijaan+2:wght@600;700;800;900&display=swap" rel="stylesheet">
 
-    <!-- المكتبات -->
+    <!-- المكتبات الخارجية -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
     <style>
         /* ==========================================================
-           🎨 متغيرات التصميم والألوان (LIGHT & DARK MODE)
+           🎨 المتغيرات والألوان الرئيسية (LIGHT & DARK MODE)
            ========================================================== */
         :root {
             --pm-primary: #3b82f6;
             --pm-primary-dark: #1d4ed8;
             --pm-secondary: #7c3aed;
             --pm-secondary-dark: #5b21b6;
+            --pm-indigo: #6366f1;
             --pm-green: #10b981;
             --pm-amber: #f59e0b;
             --pm-pink: #ec4899;
@@ -62,14 +63,14 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
-        h1, h2, h3, h4, .nav-brand, .section-title, .hero-title {
+        h1, h2, h3, h4, .nav-brand, .hero-title {
             font-family: 'Baloo Bhaijaan 2', 'Cairo', sans-serif !important;
         }
 
         a { text-decoration: none; color: inherit; }
         button { font-family: inherit; }
 
-        /* خلفية الأورورا */
+        /* خلفية الأورورا الناعمة */
         .pm-aurora { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
         .pm-aurora span { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.14; animation: pmFloat 18s ease-in-out infinite; }
         .pm-aurora span:nth-child(1) { width: 500px; height: 500px; background: var(--pm-primary); top: -150px; right: -100px; }
@@ -84,7 +85,8 @@
             top: 0;
             width: 100%;
             background: var(--pm-nav-bg);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border-bottom: 1px solid var(--pm-border);
             z-index: 999;
             padding: 12px 20px;
@@ -144,7 +146,7 @@
             align-items: center;
             gap: 12px;
         }
-        .theme-toggle, .btn-hamburger, .nav-bell-btn {
+        .theme-toggle, .nav-bell-btn {
             background: var(--pm-bg-card);
             border: 1px solid var(--pm-border);
             color: var(--pm-text-main);
@@ -158,12 +160,11 @@
             font-size: 16px;
             transition: 0.25s;
         }
-        .theme-toggle:hover, .btn-hamburger:hover, .nav-bell-btn:hover {
+        .theme-toggle:hover, .nav-bell-btn:hover {
             border-color: var(--pm-primary);
             color: var(--pm-primary);
             transform: translateY(-2px);
         }
-        .btn-hamburger { display: none; }
 
         .btn-nav-login {
             background: rgba(59, 130, 246, 0.1);
@@ -219,56 +220,11 @@
         .notif-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; background: rgba(148, 163, 184, 0.06); font-size: 13px; }
 
         /* ==========================================================
-           📱 2. القائمة الجانبية للموبايل (DRAWER)
-           ========================================================== */
-        .side-drawer {
-            position: fixed; top: 0; right: -320px; width: 300px; max-width: 85vw; height: 100vh;
-            background: var(--pm-bg-card); border-left: 1px solid var(--pm-border);
-            z-index: 100001; transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex; flex-direction: column; padding: 20px; overflow-y: auto;
-        }
-        .side-drawer.open { right: 0; }
-        .drawer-overlay {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
-            z-index: 100000; opacity: 0; visibility: hidden; transition: 0.3s;
-        }
-        .drawer-overlay.active { opacity: 1; visibility: visible; }
-        .drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .btn-close-drawer { width: 38px; height: 38px; border-radius: 10px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; font-size: 18px; cursor: pointer; }
-        
-        .pm-theme-switch-row {
-            display: flex; align-items: center; justify-content: space-between;
-            background: rgba(148, 163, 184, 0.08); padding: 12px 16px; border-radius: 14px; margin-bottom: 18px;
-            font-size: 14px; font-weight: 700;
-        }
-        .pm-switch-btn {
-            width: 52px; height: 28px; background: #cbd5e1; border-radius: 30px; border: none; cursor: pointer; position: relative; padding: 2px;
-        }
-        .pm-switch-circle {
-            width: 24px; height: 24px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--pm-amber); transition: 0.3s;
-        }
-        body[data-theme="dark"] .pm-switch-btn { background: var(--pm-primary); }
-        body[data-theme="dark"] .pm-switch-circle { transform: translateX(-24px); color: var(--pm-primary); }
-
-        .mobile-auth-wrapper { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-        .btn-primary-mobile { background: linear-gradient(135deg, var(--pm-primary), var(--pm-secondary)); color: #fff; padding: 12px; border-radius: 12px; font-weight: 800; text-align: center; }
-        .btn-secondary-mobile { background: rgba(59, 130, 246, 0.1); color: var(--pm-primary); border: 1px solid rgba(59, 130, 246, 0.3); padding: 12px; border-radius: 12px; font-weight: 800; text-align: center; }
-        .mobile-user-profile-card { background: rgba(59, 130, 246, 0.08); border: 1px solid var(--pm-border); border-radius: 16px; padding: 15px; text-align: center; margin-bottom: 20px; }
-        .m-avatar { width: 50px; height: 50px; border-radius: 50%; margin: 0 auto 10px; background: var(--pm-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; overflow: hidden; }
-        .btn-logout-premium { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 16px; border-radius: 10px; font-weight: 800; cursor: pointer; margin-top: 10px; width: 100%; }
-
-        .drawer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-        .drawer-links li a { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; font-weight: 800; color: var(--pm-text-main); transition: 0.25s; }
-        .drawer-links li a:hover, .drawer-links li a.active { background: rgba(59, 130, 246, 0.1); color: var(--pm-primary); }
-        .drawer-divider { height: 1px; background: var(--pm-border); margin: 12px 0; }
-        .drawer-subtitle { font-size: 12px; color: var(--pm-text-muted); font-weight: 800; text-transform: uppercase; margin-bottom: 6px; }
-
-        /* ==========================================================
-           🚀 3. سكشن الهيرو (BASTAHALK CLEAN STYLE)
+           🚀 2. سكشن الهيرو والروابط السريعة (HERO SECTION)
            ========================================================== */
         .modern-hero-section {
             text-align: center;
-            padding: 70px 20px 50px;
+            padding: 70px 20px 45px;
             max-width: 900px;
             margin: 0 auto;
             position: relative;
@@ -303,7 +259,7 @@
             color: var(--pm-text-muted);
             font-weight: 600;
             max-width: 680px;
-            margin: 0 auto 35px;
+            margin: 0 auto 30px;
         }
         .hero-action-buttons {
             display: flex;
@@ -327,6 +283,7 @@
             gap: 8px;
         }
         .btn-hero-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(59, 130, 246, 0.45); }
+        
         .btn-hero-secondary {
             background: var(--pm-bg-card);
             color: var(--pm-text-main);
@@ -343,74 +300,40 @@
         }
         .btn-hero-secondary:hover { border-color: var(--pm-primary); color: var(--pm-primary); transform: translateY(-2px); }
 
-        /* ==========================================================
-           🌟 4. سكشن النصائح والإرشادات (مع الـ 3 صور)
-           ========================================================== */
-        .feature-banners-section {
-            max-width: 1250px;
-            margin: 20px auto 60px;
-            padding: 0 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-        .feature-banner-card {
-            background: var(--pm-bg-card);
-            border: 1px solid var(--pm-border);
-            border-radius: 28px;
-            padding: 30px 40px;
-            box-shadow: var(--pm-card-shadow);
+        /* أزرار الوصول السريع تحت الهيرو */
+        .hero-quick-links {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 40px;
-            transition: transform 0.35s, box-shadow 0.35s;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 25px;
         }
-        .feature-banner-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 18px 40px rgba(59, 130, 246, 0.12);
-            border-color: rgba(59, 130, 246, 0.3);
-        }
-        .feature-banner-card.reverse {
-            flex-direction: row-reverse;
-        }
-        .feature-banner-content {
-            flex: 1;
-            text-align: right;
-        }
-        .feature-banner-content h3 {
-            font-size: 32px;
-            font-weight: 900;
+        .quick-link-chip {
+            background: var(--pm-bg-card);
+            border: 1.5px solid var(--pm-border);
+            padding: 9px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 800;
             color: var(--pm-text-main);
-            margin-bottom: 12px;
-            line-height: 1.3;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+            transition: all 0.25s ease;
+            cursor: pointer;
         }
-        .feature-banner-content p {
-            font-size: 17px;
-            color: var(--pm-text-muted);
-            font-weight: 600;
-            line-height: 1.7;
-        }
-        .feature-banner-image {
-            flex: 0 0 340px;
-            max-width: 340px;
-            height: 220px;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-        }
-        .feature-banner-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.4s ease;
-        }
-        .feature-banner-card:hover .feature-banner-image img {
-            transform: scale(1.05);
+        .quick-link-chip i { font-size: 15px; color: var(--pm-primary); }
+        .quick-link-chip:hover {
+            transform: translateY(-3px);
+            border-color: var(--pm-primary);
+            color: var(--pm-primary);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
         }
 
         /* ==========================================================
-           👨‍🏫 5. كروت نخبة المعلمين (DESIGN REDESIGNED)
+           👨‍🏫 3. سكشن نخبة المعلمين (GREEN BANNER)
            ========================================================== */
         .teachers-section-wrapper {
             background: linear-gradient(135deg, #10b981, #059669);
@@ -488,7 +411,7 @@
             justify-content: center;
         }
 
-        /* كارت المدرس المربع والشيك */
+        /* كارت المدرس المربع */
         .primee-teacher-box-card {
             width: 290px;
             background: var(--pm-bg-card);
@@ -624,7 +547,7 @@
         .swiper-nav-next { left: -15px; }
 
         /* ==========================================================
-           📚 6. سكشن الحصص والمحاضرات (LATEST COURSES)
+           📚 4. سكشن الحصص والمحاضرات (LATEST COURSES)
            ========================================================== */
         .section-container {
             max-width: 1250px;
@@ -677,17 +600,35 @@
         .btn-bought-course { background: rgba(16, 185, 129, 0.1); color: var(--pm-green); border: 1px solid var(--pm-green); padding: 8px 14px; border-radius: 10px; font-weight: 800; cursor: pointer; }
 
         /* ==========================================================
-           🎁 7. سكشن الباقات الشاملة (PREMIUM REDESIGNED)
+           🎁 5. سكشن الباقات الشاملة (ROYAL PURPLE BANNER)
            ========================================================== */
+        .packages-section-wrapper {
+            background: linear-gradient(135deg, var(--pm-secondary), #4f46e5);
+            border-radius: 36px;
+            padding: 50px 20px;
+            margin: 40px auto 70px;
+            max-width: 1250px;
+            box-shadow: 0 20px 45px rgba(124, 58, 237, 0.28);
+            position: relative;
+        }
+        [data-theme="dark"] .packages-section-wrapper {
+            background: linear-gradient(135deg, #2e1065, #0d1527);
+        }
+        .packages-slider-container {
+            position: relative;
+            padding: 10px 0;
+        }
         .packages-slider .swiper-slide {
-            width: 320px !important;
+            width: 310px !important;
+            display: flex;
+            justify-content: center;
         }
         .premium-package-box {
+            width: 310px;
             background: var(--pm-bg-card);
-            border: 2px solid var(--pm-border);
-            border-radius: 26px;
-            padding: 24px;
-            box-shadow: var(--pm-card-shadow);
+            border-radius: 24px;
+            padding: 22px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
             position: relative;
@@ -695,45 +636,110 @@
         }
         .premium-package-box:hover {
             transform: translateY(-8px);
-            border-color: var(--pm-secondary);
-            box-shadow: 0 20px 45px rgba(124, 58, 237, 0.18);
+            box-shadow: 0 22px 45px rgba(0, 0, 0, 0.35);
         }
         .pkg-badge-discount {
             position: absolute;
             top: -12px;
-            right: 24px;
+            right: 20px;
             background: linear-gradient(135deg, #ef4444, #dc2626);
             color: #fff;
             padding: 4px 14px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 900;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
         }
         .pkg-image-wrapper {
             width: 100%;
-            height: 160px;
+            height: 150px;
             border-radius: 16px;
             overflow: hidden;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
         .pkg-image-wrapper img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .premium-package-box h3 { font-size: 22px; font-weight: 900; margin-bottom: 4px; color: var(--pm-text-main); }
-        .premium-package-box .pkg-grade { font-size: 13px; color: var(--pm-text-muted); margin-bottom: 15px; font-weight: 700; }
-        .pkg-features-list { list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--pm-text-muted); margin-bottom: 22px; flex-grow: 1; text-align: right; }
+        .premium-package-box h3 { font-size: 21px; font-weight: 900; margin-bottom: 3px; color: var(--pm-text-main); }
+        .premium-package-box .pkg-grade { font-size: 13px; color: var(--pm-text-muted); margin-bottom: 14px; font-weight: 700; }
+        .pkg-features-list { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--pm-text-muted); margin-bottom: 20px; flex-grow: 1; text-align: right; }
         .pkg-features-list li { display: flex; align-items: center; gap: 8px; }
-        .pkg-pricing-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--pm-border); padding-top: 16px; margin-bottom: 16px; }
+        .pkg-pricing-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--pm-border); padding-top: 15px; margin-bottom: 15px; }
         .pkg-old-price { text-decoration: line-through; color: #ef4444; font-weight: 700; font-size: 15px; }
         .pkg-new-price { font-size: 26px; font-weight: 900; color: var(--pm-green); }
-        .btn-subscribe-pkg { width: 100%; background: linear-gradient(135deg, var(--pm-secondary), var(--pm-primary)); color: #fff; border: none; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 16px; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3); }
+        .btn-subscribe-pkg { width: 100%; background: linear-gradient(135deg, var(--pm-secondary), var(--pm-primary)); color: #fff; border: none; padding: 13px; border-radius: 14px; font-weight: 900; font-size: 15px; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3); }
         .btn-subscribe-pkg:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(124, 58, 237, 0.4); }
 
         /* ==========================================================
-           💡 8. خطوات العمل (HOW IT WORKS)
+           🌟 6. سكشن النصائح والإرشادات (بعد الباقات)
+           ========================================================== */
+        .feature-banners-section {
+            max-width: 1250px;
+            margin: 20px auto 70px;
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .feature-banner-card {
+            background: var(--pm-bg-card);
+            border: 1px solid var(--pm-border);
+            border-radius: 28px;
+            padding: 30px 40px;
+            box-shadow: var(--pm-card-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            transition: transform 0.35s, box-shadow 0.35s;
+        }
+        .feature-banner-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 18px 40px rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        .feature-banner-card.reverse {
+            flex-direction: row-reverse;
+        }
+        .feature-banner-content {
+            flex: 1;
+            text-align: right;
+        }
+        .feature-banner-content h3 {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--pm-text-main);
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+        .feature-banner-content p {
+            font-size: 17px;
+            color: var(--pm-text-muted);
+            font-weight: 600;
+            line-height: 1.7;
+        }
+        .feature-banner-image {
+            flex: 0 0 340px;
+            max-width: 340px;
+            height: 220px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+        .feature-banner-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+        .feature-banner-card:hover .feature-banner-image img {
+            transform: scale(1.05);
+        }
+
+        /* ==========================================================
+           💡 7. خطوات العمل (HOW IT WORKS)
            ========================================================== */
         .primee-steps-grid {
             display: grid;
@@ -766,7 +772,7 @@
         .step-card p { font-size: 14px; color: var(--pm-text-muted); line-height: 1.6; }
 
         /* ==========================================================
-           🦶 9. الفوتر (FOOTER)
+           🦶 8. الفوتر (FOOTER)
            ========================================================== */
         .modern-footer {
             background: var(--pm-bg-card);
@@ -802,7 +808,7 @@
         }
 
         /* ==========================================================
-           🤖 10. زرار وشات ماجي (AI CHAT)
+           🤖 9. زرار وشات ماجي (AI CHAT)
            ========================================================== */
         .floating-ai-btn {
             position: fixed !important;
@@ -851,7 +857,7 @@
         .maggie-options button:hover { background: rgba(59, 130, 246, 0.2); border-color: var(--pm-primary); }
 
         /* ==========================================================
-           🪟 11. النوافذ المنبثقة (MODALS)
+           🪟 10. النوافذ المنبثقة (MODALS)
            ========================================================== */
         .custom-modal-overlay {
             position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
@@ -876,8 +882,6 @@
            📱 RESPONSIVE DESIGN (MOBILE FIXES)
            ========================================================== */
         @media (max-width: 992px) {
-            .nav-links { display: none; }
-            .btn-hamburger { display: flex; }
             .hero-title { font-size: 38px; }
             .feature-banner-card, .feature-banner-card.reverse {
                 flex-direction: column;
@@ -887,15 +891,19 @@
             }
             .feature-banner-content { text-align: center; }
             .feature-banner-image { width: 100%; max-width: 100%; height: 200px; }
-            .teachers-section-wrapper { border-radius: 28px; padding: 40px 15px; }
+            .teachers-section-wrapper, .packages-section-wrapper { border-radius: 28px; padding: 40px 15px; }
             .swiper-nav-btn { display: none; }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .nav-container { justify-content: space-between; }
             .hero-title { font-size: 30px; }
             .hero-desc { font-size: 15px; }
             .hero-action-buttons { flex-direction: column; width: 100%; }
             .btn-hero-primary, .btn-hero-secondary { width: 100%; justify-content: center; }
+            .hero-quick-links { gap: 8px; }
+            .quick-link-chip { padding: 8px 14px; font-size: 13px; }
             .feature-banner-content h3 { font-size: 24px; }
             .feature-banner-content p { font-size: 14px; }
             .section-header-white h2 { font-size: 28px; }
@@ -910,7 +918,7 @@
     <!-- خلفية الأورورا -->
     <div class="pm-aurora" aria-hidden="true"><span></span><span></span></div>
 
-    <!-- الشريط العلوي -->
+    <!-- الشريط العلوي (بدون زرار هامبرجر) -->
     <nav class="main-navbar">
         <div class="nav-container">
             <div class="nav-right-side">
@@ -938,52 +946,98 @@
             <div class="nav-left-side" id="navAuthSection">
                 <a href="login.html" class="btn-nav-login">تسجيل الدخول</a>
                 <a href="register.html" class="btn-nav-signup">إنشاء حساب</a>
-                <button id="openDrawer" class="btn-hamburger"><i class="fas fa-bars-staggered"></i></button>
             </div>
         </div>
     </nav>
 
-    <!-- القائمة الجانبية للموبايل (ظاهر فيها كل الروابط) -->
-    <div id="stagesDrawer" class="side-drawer">
-        <div class="drawer-header">
-            <div class="nav-brand">Primee<span>.</span></div>
-            <button id="closeDrawer" class="btn-close-drawer"><i class="fas fa-times"></i></button>
-        </div>
-        
-        <div class="pm-theme-switch-row">
-            <span>الوضع الليلي / النهاري</span>
-            <button id="themeToggleBtnMobile" class="pm-switch-btn"><div class="pm-switch-circle"><i class="fas fa-sun"></i></div></button>
-        </div>
-
-        <div id="mobileAuthSection" class="mobile-auth-wrapper">
-            <a href="login.html" class="btn-primary-mobile">تسجيل الدخول</a>
-            <a href="register.html" class="btn-secondary-mobile">إنشاء حساب</a>
-        </div>
-
-        <ul class="drawer-links">
-            <li><a href="index.html" class="active"><i class="fas fa-home"></i> الرئيسية</a></li>
-            <li><a href="#teachersSection" onclick="closeDrawerFunc()"><i class="fas fa-chalkboard-user"></i> المدرسين</a></li>
-            <li><a href="#" onclick="document.getElementById('parentModal').classList.add('active'); closeDrawerFunc();"><i class="fas fa-user-shield"></i> ولي الأمر</a></li>
-            <li id="mobileMyCoursesLink" style="display: none;"><a href="student-dashboard.html"><i class="fas fa-laptop-code"></i> كورساتي</a></li>
-            <div class="drawer-divider"></div>
-            <span class="drawer-subtitle">الدعم الفني:</span>
-            <li><a href="https://wa.me/201042728734" target="_blank" style="color: #25d366;"><i class="fab fa-whatsapp"></i> 01042728734</a></li>
-        </ul>
-    </div>
-    <div id="drawerOverlay" class="drawer-overlay"></div>
-
-    <!-- 1. الهيرو النظيف المتمركز -->
+    <!-- 1. الهيرو النظيف المتمركز مع الروابط السريعة -->
     <header class="modern-hero-section">
         <div class="modern-hero-badge">👋 المنصة التعليمية الأولى - Primee Academy</div>
         <h1 class="hero-title">منصة متكاملة بها<br>كل ما يحتاجه <span>الطالب ليتفوق.</span></h1>
         <p class="hero-desc">تجمع لك أفضل المعلمين مع شروحات متميزة، امتحانات تفاعلية ومتابعة مستمرة في مكان واحد.</p>
+        
+        <!-- أزرار الهيرو الأساسية -->
         <div class="hero-action-buttons">
             <a href="#teachersSection" class="btn-hero-primary">تصفح المعلمين <i class="fas fa-arrow-left"></i></a>
             <a href="#" onclick="document.getElementById('searchTeacherModal').classList.add('active')" class="btn-hero-secondary"><i class="fas fa-search"></i> بحث عن مدرس</a>
         </div>
+
+        <!-- 🚀 روابط الوصول السريع تحت الهيرو (المدرسين - ولي الأمر - كورساتي) -->
+        <div class="hero-quick-links">
+            <a href="#teachersSection" class="quick-link-chip"><i class="fas fa-chalkboard-user"></i> المدرسين</a>
+            <a href="#" onclick="document.getElementById('parentModal').classList.add('active')" class="quick-link-chip"><i class="fas fa-user-shield"></i> ولي الأمر</a>
+            <a href="student-dashboard.html" class="quick-link-chip"><i class="fas fa-laptop-code"></i> كورساتي</a>
+        </div>
     </header>
 
-    <!-- 2. سكشن النصائح والإرشادات الحصري (بالصور الثلاث من R2) -->
+    <!-- 2. سكشن نخبة المعلمين (كروت مربعة منظمة بالبيانات الكاملة) -->
+    <section id="teachersSection" class="teachers-section-wrapper">
+        <div class="section-header-white">
+            <h2>نخبة المعلمين عندنا</h2>
+            <p>اخترنا لك نخبة من أفضل مدرسي مصر بطريقة شرح سهلة وممتعة.</p>
+        </div>
+
+        <!-- فلاتر المراحل -->
+        <div class="packages-filters-container" id="teachersMainFilters">
+            <button class="modern-filter-btn active" data-filter="all">الكل</button>
+            <button class="modern-filter-btn" data-filter="ابتدائي">ابتدائي</button>
+            <button class="modern-filter-btn" data-filter="إعدادي">إعدادي</button>
+            <button class="modern-filter-btn" data-filter="ثانوي">ثانوي</button>
+            <button class="modern-filter-btn" data-filter="بكالوريا">بكالوريا</button>
+        </div>
+        <div class="sub-filters-container" id="teachersSubFilters"></div>
+
+        <!-- سلايدر المعلمين -->
+        <div class="teachers-slider-container">
+            <div class="swiper teachers-slider">
+                <div class="swiper-wrapper" id="teachersGrid">
+                    <div style="text-align: center; width: 100%; color: rgba(255,255,255,0.7); padding: 50px;">جاري تحميل نخبة المعلمين...</div>
+                </div>
+            </div>
+            <button class="swiper-nav-btn swiper-nav-prev" id="teacherPrevBtn"><i class="fas fa-chevron-right"></i></button>
+            <button class="swiper-nav-btn swiper-nav-next" id="teacherNextBtn"><i class="fas fa-chevron-left"></i></button>
+        </div>
+    </section>
+
+    <!-- 3. أحدث المحاضرات والحصص -->
+    <section class="section-container">
+        <div class="section-header-clean">
+            <h2>أحدث الحصص المضافة 🔥</h2>
+            <p>تابع جديد الحصص والمذكرات والمراجعات أولاً بأول</p>
+        </div>
+        <div class="swiper latest-courses-slider">
+            <div class="swiper-wrapper" id="latestCoursesGrid"></div>
+        </div>
+    </section>
+
+    <!-- 4. سكشن الباقات الشاملة (تصميم بنفسجي ملكي مثل سكشن المدرسين) -->
+    <section class="packages-section-wrapper">
+        <div class="section-header-white">
+            <h2>الباقات الشاملة والاشتراكات <span style="color: var(--pm-amber);"><i class="fas fa-crown"></i></span></h2>
+            <p>وفر فلوسك واشترك في باقات مجمعة لأقوى مدرسي المنصة</p>
+        </div>
+
+        <!-- فلاتر الباقات -->
+        <div class="packages-filters-container" id="packagesMainFilters">
+            <button class="modern-filter-btn active" data-filter="all">الكل</button>
+            <button class="modern-filter-btn" data-filter="ثانوي">ثانوي</button>
+            <button class="modern-filter-btn" data-filter="إعدادي">إعدادي</button>
+        </div>
+        <div class="sub-filters-container" id="packagesSubFilters"></div>
+
+        <!-- سلايدر الباقات -->
+        <div class="packages-slider-container">
+            <div class="swiper packages-slider">
+                <div class="swiper-wrapper" id="packagesGridContainer">
+                    <div style="text-align: center; width: 100%; color: rgba(255,255,255,0.7); padding: 50px;">جاري تحميل الباقات...</div>
+                </div>
+            </div>
+            <button class="swiper-nav-btn swiper-nav-prev" id="pkgPrevBtn"><i class="fas fa-chevron-right"></i></button>
+            <button class="swiper-nav-btn swiper-nav-next" id="pkgNextBtn"><i class="fas fa-chevron-left"></i></button>
+        </div>
+    </section>
+
+    <!-- 5. سكشن النصائح والإرشادات (بعد الباقات مع الصور الـ 3) -->
     <section class="feature-banners-section">
         <!-- النصيحة 1 -->
         <div class="feature-banner-card">
@@ -1016,63 +1070,6 @@
             <div class="feature-banner-image">
                 <img src="https://pub-ccaed99c36df41e19efe5f7fcecc9803.r2.dev/468bc883dda769afbd066f44d5aa8b8a.jpg" alt="نخبة المعلمين" loading="lazy">
             </div>
-        </div>
-    </section>
-
-    <!-- 3. سكشن نخبة المعلمين (كروت مربعة منظمة بالبيانات الكاملة) -->
-    <section id="teachersSection" class="teachers-section-wrapper">
-        <div class="section-header-white">
-            <h2>نخبة المعلمين عندنا</h2>
-            <p>اخترنا لك نخبة من أفضل مدرسي مصر بطريقة شرح سهلة وممتعة.</p>
-        </div>
-
-        <!-- فلاتر المراحل -->
-        <div class="packages-filters-container" id="teachersMainFilters">
-            <button class="modern-filter-btn active" data-filter="all">الكل</button>
-            <button class="modern-filter-btn" data-filter="ابتدائي">ابتدائي</button>
-            <button class="modern-filter-btn" data-filter="إعدادي">إعدادي</button>
-            <button class="modern-filter-btn" data-filter="ثانوي">ثانوي</button>
-            <button class="modern-filter-btn" data-filter="بكالوريا">بكالوريا</button>
-        </div>
-        <div class="sub-filters-container" id="teachersSubFilters"></div>
-
-        <!-- سلايدر المعلمين -->
-        <div class="teachers-slider-container">
-            <div class="swiper teachers-slider">
-                <div class="swiper-wrapper" id="teachersGrid">
-                    <div style="text-align: center; width: 100%; color: rgba(255,255,255,0.7); padding: 50px;">جاري تحميل نخبة المعلمين...</div>
-                </div>
-            </div>
-            <button class="swiper-nav-btn swiper-nav-prev" id="teacherPrevBtn"><i class="fas fa-chevron-right"></i></button>
-            <button class="swiper-nav-btn swiper-nav-next" id="teacherNextBtn"><i class="fas fa-chevron-left"></i></button>
-        </div>
-    </section>
-
-    <!-- 4. أحدث المحاضرات والحصص -->
-    <section class="section-container">
-        <div class="section-header-clean">
-            <h2>أحدث الحصص المضافة 🔥</h2>
-            <p>تابع جديد الحصص والمذكرات والمراجعات أولاً بأول</p>
-        </div>
-        <div class="swiper latest-courses-slider">
-            <div class="swiper-wrapper" id="latestCoursesGrid"></div>
-        </div>
-    </section>
-
-    <!-- 5. الباقات الشاملة (تصميم فخم وأنيق ومميز) -->
-    <section class="section-container">
-        <div class="section-header-clean">
-            <h2>الباقات الشاملة <span style="color: var(--pm-amber);"><i class="fas fa-crown"></i></span></h2>
-            <p>وفر فلوسك واشترك في باقات مجمعة لأقوى مدرسي المنصة</p>
-        </div>
-        <div class="packages-filters-container" id="packagesMainFilters">
-            <button class="modern-filter-btn active" data-filter="all">الكل</button>
-            <button class="modern-filter-btn" data-filter="ثانوي">ثانوي</button>
-            <button class="modern-filter-btn" data-filter="إعدادي">إعدادي</button>
-        </div>
-        <div class="sub-filters-container" id="packagesSubFilters"></div>
-        <div class="swiper packages-slider">
-            <div class="swiper-wrapper" id="packagesGridContainer"></div>
         </div>
     </section>
 
@@ -1165,6 +1162,6 @@
 
     <!-- السكريبتات -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script type="module" src="index-script.js?v=170"></script>
+    <script type="module" src="index-script.js?v=180"></script>
 </body>
 </html>
