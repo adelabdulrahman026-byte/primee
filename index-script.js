@@ -77,7 +77,6 @@ const loggedInPhone = localStorage.getItem('studentPhone');
 let globalUserData = null;
 if (loggedInPhone) {
     const myC = document.getElementById('myCoursesLink'); if (myC) myC.style.display = 'block';
-    const mobMyC = document.getElementById('mobileMyCoursesLink'); if (mobMyC) mobMyC.style.display = 'block';
     fetchStudentNavData(loggedInPhone);
 }
 
@@ -114,20 +113,6 @@ async function fetchStudentNavData(phone) {
                         </div>
                         <div class="badge-avatar">${avatarHtml}</div>
                     </div>
-                    <button id="openDrawer" class="btn-hamburger"><i class="fas fa-bars-staggered"></i></button>
-                `;
-                document.getElementById('openDrawer')?.addEventListener('click', openDrawerFunc);
-            }
-
-            const mobAuth = document.getElementById('mobileAuthSection');
-            if (mobAuth) {
-                mobAuth.innerHTML = `
-                    <div class="mobile-user-profile-card">
-                        <div class="m-avatar">${avatarHtml}</div>
-                        <h4>أهلاً، ${firstName}</h4>
-                        <span style="color:#10b981; font-weight:900;">رصيدك: ${balance} ج.م</span>
-                        <button class="btn-logout-premium" onclick="localStorage.removeItem('studentPhone'); window.location.reload();"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
-                    </div>
                 `;
             }
 
@@ -149,25 +134,6 @@ async function fetchStudentNavData(phone) {
     } catch (e) {}
 }
 
-// ==========================================
-// 📱 التحكم في القائمة الجانبية
-// ==========================================
-function openDrawerFunc() {
-    document.getElementById('stagesDrawer').classList.add('open');
-    document.getElementById('drawerOverlay').classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-function closeDrawerFunc() {
-    document.getElementById('stagesDrawer').classList.remove('open');
-    document.getElementById('drawerOverlay').classList.remove('active');
-    document.body.style.overflow = '';
-}
-window.closeDrawerFunc = closeDrawerFunc;
-
-document.getElementById('openDrawer')?.addEventListener('click', openDrawerFunc);
-document.getElementById('closeDrawer')?.addEventListener('click', closeDrawerFunc);
-document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawerFunc);
-
 // تسجيل دخول ولي الأمر
 document.getElementById('btnParentLogin')?.addEventListener('click', () => { 
     const p = document.getElementById('parentStudentPhone').value.trim(); 
@@ -186,15 +152,12 @@ function setTheme(isDark) {
 function syncThemeIcons(isDark) {
     const desktopIcon = document.querySelector('#themeToggleBtn i');
     if (desktopIcon) desktopIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-    const mobIcon = document.querySelector('#themeToggleBtnMobile i');
-    if (mobIcon) mobIcon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
 }
 function toggleTheme() {
     const currentlyDark = document.body.getAttribute('data-theme') === 'dark';
     setTheme(!currentlyDark);
 }
 document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
-document.getElementById('themeToggleBtnMobile')?.addEventListener('click', toggleTheme);
 setTheme(localStorage.getItem('theme') === 'dark');
 
 // ==========================================
@@ -260,7 +223,6 @@ function renderTeachers(filterText) {
             ? `<button class="btn-t-follow" style="color:#10b981; border-color:#10b981;" onclick="event.stopPropagation();">متابع ✔️</button>`
             : `<button class="btn-t-follow" onclick="event.stopPropagation(); followTeacher('${t.name}')">متابعة الأستاذ <i class="fas fa-heart" style="color:#ef4444;"></i></button>`;
 
-        // استخراج وتنسيق مراحل المدرس
         let stagesList = t.stages ? t.stages.split(',').map(s => s.trim()).filter(Boolean) : [];
         let stagesHtml = stagesList.map(s => `<span class="t-stage-chip">${s}</span>`).join('');
 
@@ -296,7 +258,7 @@ function renderTeachers(filterText) {
 
 fetchTeachers();
 
-// فلاتر المراحل المتداخلة
+// فلاتر المراحل
 const subStagesMap = {
     'ابتدائي': ['الأول الابتدائي', 'الثاني الابتدائي', 'الثالث الابتدائي', 'الرابع الابتدائي', 'الخامس الابتدائي', 'السادس الابتدائي'],
     'إعدادي': ['الأول الإعدادي', 'الثاني الإعدادي', 'الثالث الإعدادي'],
@@ -397,6 +359,8 @@ fetchCoursesSliders();
 
 // الباقات الشاملة
 let allPackagesData = [];
+let packagesSwiperInstance = null;
+
 async function fetchPackages() {
     try {
         const snap = await getDocs(collection(db, "packages"));
@@ -410,7 +374,7 @@ function renderPackages(filterText) {
     const grid = document.getElementById('packagesGridContainer');
     const filtered = allPackagesData.filter(p => filterText === 'all' ? true : p.grade && p.grade.includes(filterText));
     if(filtered.length === 0) { 
-        grid.innerHTML = '<div style="text-align:center; width:100%; color:var(--pm-text-muted); padding:30px;">لا يوجد باقات في هذا القسم حالياً.</div>'; 
+        grid.innerHTML = '<div style="text-align:center; width:100%; color:rgba(255,255,255,0.7); padding:30px;">لا يوجد باقات في هذا القسم حالياً.</div>'; 
         return; 
     }
 
@@ -425,7 +389,7 @@ function renderPackages(filterText) {
             <div class="premium-package-box">
                 <span class="pkg-badge-discount">🔥 خصم حصري</span>
                 <div class="pkg-image-wrapper">
-                    <img src="${pkg.imageUrl}" alt="${pkg.name}">
+                    <img src="${pkg.imageUrl}" alt="${pkg.name}" loading="lazy">
                 </div>
                 <h3>${pkg.name}</h3>
                 <p class="pkg-grade">${pkg.grade}</p>
@@ -439,7 +403,14 @@ function renderPackages(filterText) {
         </div>`;
     });
     grid.innerHTML = html;
-    new Swiper('.packages-slider', { slidesPerView: 'auto', spaceBetween: 20, autoplay: { delay: 3800 } });
+
+    if(packagesSwiperInstance) packagesSwiperInstance.destroy(true, true);
+    packagesSwiperInstance = new Swiper('.packages-slider', {
+        slidesPerView: 'auto',
+        spaceBetween: 20,
+        autoplay: { delay: 3800 },
+        navigation: { nextEl: '#pkgNextBtn', prevEl: '#pkgPrevBtn' }
+    });
 }
 fetchPackages();
 setupNestedFilters('packagesMainFilters', 'packagesSubFilters', renderPackages);
