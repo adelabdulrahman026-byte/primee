@@ -17,9 +17,10 @@
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3.4.0/dist/tus.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> 
+    <!-- مكتبة تصوير التقارير بدقة كصور PNG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> 
 
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 
@@ -66,8 +67,20 @@
         .admin-section { display: none; }
         .admin-section.active-section { display: flex; flex-direction: column; gap: 30px; }
 
-        /* 🚨 تقارير الـ PDF - يتم وضعها خارج الشاشة دون إخفاء عرضها 🚨 */
-        .pdf-render-box { position: fixed; top: -9999px; left: -9999px; width: 850px; background: #ffffff !important; color: #000000 !important; padding: 40px; direction: rtl; font-family: 'Cairo'; box-sizing: border-box; }
+        /* 🚨 حاوية التقارير الصورية المصممة للتحميل المباشر 🚨 */
+        .report-image-box { 
+            position: fixed; 
+            top: 0; 
+            left: -9999px; 
+            width: 850px; 
+            background: #ffffff !important; 
+            color: #0f172a !important; 
+            padding: 35px; 
+            direction: rtl; 
+            font-family: 'Cairo', sans-serif; 
+            border-radius: 16px;
+            box-sizing: border-box; 
+        }
         
         .chat-container { display: flex; height: 600px; background: #0f172a; border-radius: 15px; border: 1px solid #334155; overflow: hidden; }
         .chat-sidebar { width: 300px; background: #1e293b; border-left: 1px solid #334155; display: flex; flex-direction: column; }
@@ -128,11 +141,17 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;"><i class="fas fa-users"></i></div>
-                    <div class="stat-info"><h3 id="totalStudentsCount" style="margin:0; font-size:26px; font-weight:900;">0</h3><p style="margin:0; color:#94a3b8;">إجمالي الطلاب</p></div>
+                    <div class="stat-info">
+                        <h3 id="totalStudentsCount" style="margin:0; font-size:28px; font-weight:900; color:#3b82f6;">0</h3>
+                        <p style="margin:0; color:#94a3b8; font-weight:700;">إجمالي الطلاب المسجلين</p>
+                    </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;"><i class="fas fa-money-bill-wave"></i></div>
-                    <div class="stat-info"><h3 id="totalRevenue" style="margin:0; font-size:26px; font-weight:900; color:#10b981;">0 ج.م</h3><p style="margin:0; color:#94a3b8;">إجمالي الأرباح والتحصيلات</p></div>
+                    <div class="stat-info">
+                        <h3 id="totalRevenue" style="margin:0; font-size:28px; font-weight:900; color:#10b981;">0 ج.م</h3>
+                        <p style="margin:0; color:#94a3b8; font-weight:700;">إجمالي الأرباح والتحصيلات</p>
+                    </div>
                 </div>
             </div>
             <div class="admin-table-container">
@@ -347,7 +366,7 @@
             </div>
         </div>
 
-        <!-- 9. المحفظة والعمليات (مع إمكانية تعديل المبالغ) -->
+        <!-- 9. المحفظة والعمليات -->
         <div id="walletSection" class="admin-section">
             <div class="admin-table-container">
                 <h3 style="color: #10b981;"><i class="fas fa-wallet"></i> سجل الشحن وعمليات الدفع (بوابة الدفع والتحويلات)</h3>
@@ -355,7 +374,7 @@
             </div>
         </div>
         
-        <!-- 10. تقارير المدرسين -->
+        <!-- 10. تقارير المدرسين (تحميل كصورة PNG فوراً) -->
         <div id="teacherReportSection" class="admin-section">
             <div class="admin-table-container">
                 <h3 style="color: #f59e0b;"><i class="fas fa-file-invoice-dollar"></i> التقرير المالي والإحصائي للمدرس</h3>
@@ -363,7 +382,9 @@
                     <div class="form-group-admin"><label>اختر المدرس</label><select id="reportTeacherSelect"><option value="" disabled selected>اختر المدرس</option></select></div>
                     <div class="form-group-admin"><label>الفترة الزمنية</label><select id="reportPeriodSelect"><option value="all">كل الأوقات</option><option value="current_month">الشهر الحالي</option><option value="last_month">الشهر السابق</option></select></div>
                 </div>
-                <button id="btnGenerateReport" style="background: #3b82f6; color: #fff; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer;"><i class="fas fa-print"></i> استخراج التقرير (PDF)</button>
+                <button id="btnGenerateReport" style="background: #3b82f6; color: #fff; border: none; padding: 14px 28px; border-radius: 12px; font-weight: 900; font-family: 'Cairo'; cursor: pointer; font-size: 16px;">
+                    <i class="fas fa-file-image"></i> استخراج التقرير كصورة فائقة الدقة (PNG)
+                </button>
             </div>
         </div>
 
@@ -386,7 +407,7 @@
                 <div class="danger-box">
                     <h4 style="color: #ef4444; margin-top: 0; font-size: 20px;">⚠️ تحذير شديد الأهمية:</h4>
                     <p style="color: #cbd5e1; font-size: 15px; line-height: 1.8;">
-                        هذا الإجراء سيقوم بحذف <strong>جميع الطلاب المسجلين بالكامل</strong> وحذف حساباتهم نهائياً من <strong>Firebase Authentication</strong>، بالإضافة إلى مسح سجلات الطلاب، المحافظ، الاشتراكات، ومسح جميع أكواد الشحن من النظام.<br>
+                        هذا الإجراء سيقوم بحذف <strong>جميع الطلاب المسجلين بالكامل</strong> وحذف حساباتهم نهائياً من <strong>Firebase Authentication</strong>، ومسح سجلات الطلاب، المحافظ، الاشتراكات، ومسح جميع أكواد الشحن من النظام.<br>
                         <strong style="color: #f59e0b;">لا يمكن التراجع عن هذه الخطوة بعد تنفيذها.</strong>
                     </p>
                     
@@ -449,8 +470,8 @@
         </div>
     </div>
 
-    <!-- 🚨 قوالب تقارير الـ PDF الجاهزة للتصدير بدقة عالية 🚨 -->
-    <div id="pdfReportContent" class="pdf-render-box">
+    <!-- 🚨 قوالب تصوير التقارير كصور فائقة الجودة (PNG) 🚨 -->
+    <div id="pdfReportContent" class="report-image-box">
         <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #5b21b6; padding-bottom: 15px;">
             <img src="https://www.primeeacademy.com/logo%20prime.png" style="width: 110px;">
             <h1 style="color: #5b21b6; margin: 8px 0; font-size: 26px;">Primee Academy</h1>
@@ -491,8 +512,8 @@
         </div>
     </div>
 
-    <!-- تقرير نتيجة الامتحان PDF -->
-    <div id="examPdfReportContent" class="pdf-render-box">
+    <!-- تقرير نتيجة الامتحان PNG -->
+    <div id="examPdfReportContent" class="report-image-box">
         <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #5b21b6; padding-bottom: 15px;">
             <img src="https://www.primeeacademy.com/logo%20prime.png" style="width: 110px;">
             <h1 style="color: #5b21b6; margin: 8px 0; font-size: 26px;">Primee Academy</h1>
@@ -587,6 +608,6 @@
             document.getElementById(`qModelAnswer_${id}`).style.display = isChecked ? 'block' : 'none';
         }
     </script>
-    <script type="module" src="admin-dashboard.js?v=1050"></script>
+    <script type="module" src="admin-dashboard.js?v=1100"></script>
 </body>
 </html>
