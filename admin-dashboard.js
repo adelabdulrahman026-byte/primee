@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, setDoc, arrayUnion, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import * as tus from "https://cdn.skypack.dev/tus-js-client";
 
 const firebaseConfig = {
@@ -71,6 +71,77 @@ window.adminConfirm = function(msg) {
         document.getElementById('btnConfirmNo').onclick = () => { modal.classList.remove('active'); resolve(false); };
     });
 };
+
+document.getElementById('enableSoundBtn')?.addEventListener('click', () => {
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission().then(perm => {
+            if(perm === "granted") adminAlert("تم", "تم تفعيل الإشعارات بنجاح", "success");
+        });
+    } else {
+        adminAlert("معلومة", "الإشعارات مفعلة بالفعل لديك", "success");
+    }
+});
+
+// مسح الكاش
+document.getElementById('navClearCache')?.addEventListener('click', async () => {
+    if(await adminConfirm("هل أنت متأكد من مسح كاش جميع أجهزة الطلاب؟ (سيقوم النظام بتحديث نفسه عندهم)")) {
+        try {
+            await setDoc(doc(db, "settings", "system"), { cacheVersion: Date.now() }, {merge: true});
+            adminAlert("تم", "تم إرسال أمر التحديث ومسح الكاش لجميع الطلاب بنجاح.", "success");
+        } catch(e) { adminAlert("خطأ", "فشل الاتصال", "error"); }
+    }
+});
+
+async function sendWhatsAppMessage(phone, msg) {
+    if (!phone) return false;
+    try {
+        const docSnap = await getDoc(doc(db, "settings", "api_keys"));
+        if (!docSnap.exists()) return false;
+        const keys = docSnap.data();
+        let formattedPhone = phone.toString().trim();
+        if (formattedPhone.startsWith('0')) formattedPhone = '2' + formattedPhone;
+        let chatId = formattedPhone + "@c.us";
+        let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
+        await fetch(url, { method: "POST", headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` }, body: JSON.stringify({ chat_id: chatId, text: msg }) });
+        return true;
+    } catch (e) { return false; }
+}
+
+async function uploadImageToR2(file) {
+    const formData = new FormData(); formData.append("image", file);
+    try {
+        const response = await fetch("https://primee-api.adelabdulrahman026.workers.dev/upload-image", { method: "POST", body: formData });
+        const data = await response.json();
+        if (data.success) return data.url; throw new Error(data.error);
+    } catch (error) { throw new Error("فشل الرفع"); }
+}
+
+async function uploadToVimeo(file, progressCallback) {
+    const docSnap = await getDoc(doc(db, "settings", "api_keys"));
+    const keys = docSnap.exists() ? docSnap.data() : null;
+    if (!keys || !keys.vimeo_token) throw new Error("مفتاح Vimeo غير موجود");
+
+    const createResponse = await fetch("https://api.vimeo.com/me/videos", {
+        method: "POST", headers: { Authorization: `Bearer ${keys.vimeo_token}`, "Content-Type": "application/json", Accept: "application/vnd.vimeo.*+json;version=3.4" },
+        body: JSON.stringify({ upload: { approach: "tus", size: file.size.toString() } })
+    });
+    if (!createResponse.ok) throw new Error(await createResponse.text());
+    const video = await createResponse.json();
+
+    return new Promise((resolve, reject) => {
+        const upload = new tus.Upload(file, {
+            uploadUrl: video.upload.upload_link, retryDelays: [0,3000,5000,10000], headers: { Authorization: `Bearer ${keys.vimeo_token}` },
+            metadata: { filename: file.name, filetype: file.type },
+            onError(error){ reject(error); },
+            onProgress(bytesUploaded, bytesTotal){ progressCallback(((bytesUploaded / bytesTotal) * 100).toFixed(2)); },
+            async onSuccess(){
+                await fetch(video.uri,{ method:"PATCH", headers:{ Authorization:`Bearer ${keys.vimeo_token}`, "Content-Type":"application/json" }, body:JSON.stringify({ privacy:{ view:"disable" } }) });
+                resolve("https://player.vimeo.com/video/" + video.uri.split("/").pop());
+            }
+        });
+        upload.start();
+    });
+}
 
 // ==========================================
 // 🔴 1. تصليح زرار الدعم الفني Live وتغيير حالته
@@ -209,7 +280,7 @@ window.endStudentChat = async function(chatId) {
 };
 
 // ==========================================
-// 📊 2. مراقبة الطلاب والأرباح وحل مشكلة العداد
+// 📊 2. مراقبة الطلاب والأرباح والإحصائيات
 // ==========================================
 let allStudentsData = [];
 let allCoursesData = []; 
@@ -231,7 +302,6 @@ function renderDashboardStats() {
     const totalCountEl = document.getElementById('totalStudentsCount');
     if (totalCountEl) totalCountEl.textContent = filteredStudents.length;
 
-    // حساب إجمالي التحصيلات والأرباح من العمليات الناجحة
     let totalRev = 0;
     allTransactions.forEach(t => {
         if(t.status === 'success' && t.amount) {
@@ -493,7 +563,7 @@ window.approveTransfer = async function(id, studentId, amount) {
 };
 
 // ==========================================
-// 🖼️ 5. استخراج التقارير كصور فائقة الجودة (بديل الـ PDF)
+// 🖼️ 5. استخراج التقارير كصور فائقة الجودة (PNG)
 // ==========================================
 document.getElementById('btnGenerateReport')?.addEventListener('click', async () => {
     const teacher = document.getElementById('reportTeacherSelect').value;
@@ -625,7 +695,7 @@ window.exportExamPDF = async function(examId, examTitle) {
 };
 
 // ==========================================
-// 🚨 6. تصفير المنصة (معالجة مشكلة تعذر الاتصال)
+// 🚨 6. تصفير المنصة بالكامل (باستخدام Firebase SDK المباشر بعد OTP)
 // ==========================================
 let currentWipeSessionId = null;
 
@@ -653,49 +723,82 @@ document.getElementById('btnRequestWipeOtp')?.addEventListener('click', async ()
             adminAlert("خطأ", data.error || "فشل إرسال كود الـ OTP", "error");
         }
     } catch(err) {
-        adminAlert("خطأ", "تعذر الاتصال بالخادم، تأكد من اتصال الإنترنت أو إعدادات السيرفر.", "error");
+        adminAlert("خطأ", "تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً.", "error");
     } finally {
         btn.innerHTML = '<i class="fas fa-key"></i> إرسال كود تأكيد OTP لتصفير المنصة';
         btn.disabled = false;
     }
 });
 
+// دالة تفريغ المجموعات باستخدام WriteBatch
+async function deleteCollectionDirectly(collectionName) {
+    const snapshot = await getDocs(collection(db, collectionName));
+    if (snapshot.empty) return;
+    
+    // فايربيز تسمح بـ 500 عملية في الـ Batch الواحد
+    let batch = writeBatch(db);
+    let count = 0;
+
+    for (const docSnapshot of snapshot.docs) {
+        batch.delete(docSnapshot.ref);
+        count++;
+        if (count >= 450) {
+            await batch.commit();
+            batch = writeBatch(db);
+            count = 0;
+        }
+    }
+    if (count > 0) {
+        await batch.commit();
+    }
+}
+
 document.getElementById('btnExecuteFinalWipe')?.addEventListener('click', async () => {
     const otp = document.getElementById('wipeOtpInput').value.trim();
     if (otp.length < 6) return adminAlert("تنبيه", "أدخل كود الـ OTP المكون من 6 أرقام.", "error");
 
     const btn = document.getElementById('btnExecuteFinalWipe');
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التصفير والحذف...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق وتصفير البيانات...';
     btn.disabled = true;
 
     try {
+        // 1. التحقق من صحة كود OTP أولاً عبر السيرفر
         const res = await fetch(WORKER_AUTH_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                action: "admin_execute_wipe",
+                action: "admin_verify_wipe_otp",
                 sessionId: currentWipeSessionId,
                 otp: otp
             })
         });
         const data = await res.json();
 
-        if (data.success) {
-            adminAlert("تم بنجاح", "تم تصفير المنصة وحذف جميع حسابات الطلاب وقواعد البيانات بالكامل! 🎉", "success");
-            setTimeout(() => window.location.reload(), 2500);
-        } else {
+        if (!data.success) {
             adminAlert("فشل الإجراء", data.error || "رمز OTP غير صحيح أو انتهت صلاحيته.", "error");
             btn.innerHTML = "تأكيد ومسح الكل";
             btn.disabled = false;
+            return;
         }
+
+        // 2. مسح كافة الجداول مباشرة باستخدام الـ SDK المباشر
+        const collectionsToWipe = ["users", "charge_codes", "exam_submissions", "received_transfers", "live_chats"];
+        
+        for (const col of collectionsToWipe) {
+            await deleteCollectionDirectly(col);
+        }
+
+        adminAlert("تم التصفير بنجاح", "تم تصفير المنصة وحذف جميع الطلاب وسجلات العمليات والأكواد بالكامل! 🎉", "success");
+        setTimeout(() => window.location.reload(), 2500);
+
     } catch(err) {
-        adminAlert("خطأ", "حدث خطأ أثناء تنفيذ التصفير.", "error");
+        adminAlert("خطأ", "حدث خطأ أثناء التصفير: " + err.message, "error");
         btn.innerHTML = "تأكيد ومسح الكل";
         btn.disabled = false;
     }
 });
 
-// باقي أكواد إدارة المدرسين، الكورسات، الامتحانات، الباقات، والمساعدين
+// إدارة المدرسين
 const teachersRef = collection(db, "teachers");
 let editingTeacherId = null;
 
