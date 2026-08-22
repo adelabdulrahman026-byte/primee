@@ -584,7 +584,7 @@ document.getElementById('btnExecuteBuy')?.addEventListener('click', async () => 
 });
 
 // ==========================================
-// 🤖 المساعدة الذكية ماجي
+// 🤖 المساعدة الذكية ماجي (نسخة محصنة ضد أخطاء الاتصال)
 // ==========================================
 const WORKER_URL = "https://ai.adelabdulrahman026.workers.dev";
 window.liveChatInterval = null;
@@ -609,13 +609,14 @@ window.appendAiMsg = function(text) {
     if(!chatBody) return;
     chatBody.innerHTML += `<div class="ai-msg">${text}</div>`;
     chatBody.scrollTop = chatBody.scrollHeight;
-}
+};
+
 window.appendUserMsg = function(text) {
     const chatBody = document.getElementById('maggieChatBody');
     if(!chatBody) return;
     chatBody.innerHTML += `<div class="user-msg">${text}</div>`;
     chatBody.scrollTop = chatBody.scrollHeight;
-}
+};
 
 window.resetMaggieChat = function() {
     const chatBody = document.getElementById('maggieChatBody');
@@ -641,29 +642,41 @@ window.resetMaggieChat = function() {
             liveBtn.onclick = async () => {
                 document.getElementById('mainMaggieOptions').style.display = 'none';
                 window.appendUserMsg("تواصل مباشر مع الدعم");
-                window.appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري التحقق من حالة خدمة العملاء...");
+
+                // 1. التأكد من تسجيل الدخول أولاً قبل أي استعلام
+                if (!loggedInPhone) {
+                    window.appendAiMsg("يرجى تسجيل الدخول أولاً للتمكن من فتح شات الدعم الفني المباشر، أو تواصل معنا عبر الواتساب.");
+                    inputArea.innerHTML = `
+                        <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                            <a href="https://wa.me/201042728734" target="_blank" style="background:#25d366; color:#fff; padding:10px; border-radius:10px; text-align:center; font-weight:bold;"><i class="fab fa-whatsapp"></i> واتساب الدعم الفني</a>
+                            <button onclick="window.resetMaggieChat()" style="background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>
+                        </div>
+                    `;
+                    inputArea.style.display = 'block';
+                    return;
+                }
+
+                window.appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري التحقق من خدمة العملاء...");
 
                 try {
-                    const supportSnap = await getDoc(doc(db, "settings", "support"));
-                    const isLive = supportSnap.exists() ? supportSnap.data().isLive : false;
+                    let isLive = false;
+                    try {
+                        const supportSnap = await getDoc(doc(db, "settings", "support"));
+                        isLive = supportSnap.exists() ? (supportSnap.data().isLive === true) : false;
+                    } catch (e) {
+                        console.warn("تعذر جلب حالة الدعم من Firestore، جاري التحويل للدعم البديل:", e);
+                    }
 
                     if (isLive) {
-                        if (!loggedInPhone) {
-                            window.appendAiMsg("يرجى تسجيل الدخول أولاً للتواصل مع الدعم.");
-                            inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
-                            inputArea.style.display = 'block';
-                            return;
-                        }
-
                         window.appendAiMsg(`
-                            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px;">
-                                ⚠️ <b>تنبيه:</b> جميع الرسائل تختفي بعد الجلسة.
+                            <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px;">
+                                ⚠️ <b>تنبيه:</b> المحادثة مباشرة وسيتم إغلاقها فور انتهاء الجلسة.
                             </div>
-                            جاري توجيهك لخدمة العملاء... ⏳
+                            جاري توجيهك للموظف المتاح... ⏳
                         `);
                         
                         inputArea.innerHTML = `
-                            <label class="file-upload-btn" style="cursor:pointer; color:#fff; border-radius:10px; background:#334155; padding:10px;">
+                            <label class="file-upload-btn" style="cursor:pointer; color:#fff; border-radius:10px; background:#334155; padding:10px; display:flex; align-items:center;">
                                 <i class="fas fa-image"></i>
                                 <input type="file" id="chatImageInput" accept="image/*" style="display:none;">
                             </label>
@@ -672,13 +685,15 @@ window.resetMaggieChat = function() {
                         `;
                         inputArea.style.display = 'flex';
 
-                        const userQ = query(collection(db, "users"), where("studentPhone", "==", loggedInPhone));
-                        const userSnap = await getDocs(userQ);
-                        const sName = userSnap.empty ? "طالب" : (userSnap.docs[0].data().fullName || "طالب");
-
+                        const sName = (globalUserData && globalUserData.fullName) ? globalUserData.fullName : "طالب";
                         const chatRef = doc(db, "live_chats", loggedInPhone);
                         
-                        await setDoc(chatRef, { studentPhone: loggedInPhone, studentName: sName, adminJoined: false, lastUpdated: new Date().toISOString() }, { merge: true });
+                        await setDoc(chatRef, { 
+                            studentPhone: loggedInPhone, 
+                            studentName: sName, 
+                            adminJoined: false, 
+                            lastUpdated: new Date().toISOString() 
+                        }, { merge: true });
 
                         let isWaiting = true;
                         window.lastMsgCount = 0;
@@ -690,8 +705,7 @@ window.resetMaggieChat = function() {
                                 if (data.adminJoined && isWaiting) {
                                     isWaiting = false;
                                     if (window.liveChatInterval) clearInterval(window.liveChatInterval);
-                                    document.querySelectorAll('.fa-spinner').forEach(el => { if(el.parentElement) el.parentElement.remove(); }); 
-                                    window.appendAiMsg("تم انضمام ممثل خدمة العملاء للمحادثة، يمكنك التحدث الآن. 🎧");
+                                    window.appendAiMsg("تم انضمام ممثل خدمة العملاء للمحادثة، يمكنك التحدث الآن 🎧");
                                 }
                                 const msgs = data.messages || [];
                                 if (msgs.length > window.lastMsgCount) {
@@ -710,53 +724,43 @@ window.resetMaggieChat = function() {
                             }
                         });
 
-                        document.getElementById('chatImageInput').onchange = async (event) => {
-                            const file = event.target.files[0];
-                            if (file) {
-                                const reader = new FileReader();
-                                reader.onload = function(e) { window.appendUserMsg(`<img src="${e.target.result}" style="max-width:100%; border-radius:8px; border:2px solid #3b82f6;">`); }
-                                reader.readAsDataURL(file);
-                                window.appendAiMsg("⚠️ جاري رفع الصورة...");
-                                try {
-                                    const formData = new FormData(); formData.append("image", file);
-                                    const res = await fetch("https://primee-api.adelabdulrahman026.workers.dev/upload-image", { method: "POST", body: formData });
-                                    const uploadData = await res.json();
-                                    if(uploadData.success) {
-                                        await updateDoc(chatRef, { messages: arrayUnion({ sender: 'student', text: `<img src="${uploadData.url}" style="max-width:100%; border-radius:8px;">`, time: new Date().toISOString() }) });
-                                        window.lastMsgCount++; 
-                                    }
-                                } catch(err) { window.appendAiMsg("فشل رفع الصورة."); }
-                            }
-                        };
-
                         document.getElementById('btnSendLiveChat').onclick = async () => {
                             const inp = document.getElementById('liveChatInput');
                             const msg = inp.value.trim();
                             if(msg) { 
-                                window.appendUserMsg(msg); inp.value = ''; 
+                                window.appendUserMsg(msg); 
+                                inp.value = ''; 
                                 await updateDoc(chatRef, { messages: arrayUnion({ sender: 'student', text: msg, time: new Date().toISOString() }) });
                                 window.lastMsgCount++;
                             }
                         };
 
-                        window.liveChatInterval = setInterval(() => {
-                            if (isWaiting) window.appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جميع ممثلي خدمة العملاء مشغولون الآن، برجاء الانتظار...");
-                        }, 5000);
-
                     } else {
-                        window.appendAiMsg("خدمة العملاء الآن خارج أوقات العمل 😴<br>برجاء المحاولة في وقت آخر.");
-                        inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
+                        // لو الدعم أوفلاين أو غير مفعل
+                        window.appendAiMsg("خدمة العملاء المباشرة غير متصلة الآن 😴<br>يمكنك التواصل فوراً مع الدعم عبر الواتساب:");
+                        inputArea.innerHTML = `
+                            <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                                <a href="https://wa.me/201042728734" target="_blank" style="background:#25d366; color:#fff; padding:10px; border-radius:10px; text-align:center; font-weight:bold; text-decoration:none;"><i class="fab fa-whatsapp"></i> تواصل عبر الواتساب</a>
+                                <button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>
+                            </div>
+                        `;
                         inputArea.style.display = 'block';
                     }
                 } catch(e) {
-                    window.appendAiMsg("حدث خطأ في الاتصال، يرجى المحاولة لاحقاً.");
-                    inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
+                    console.error("Live chat error:", e);
+                    window.appendAiMsg("تعذر فتح الشات المباشر حالياً. يمكنك التواصل معنا مباشرة على الواتساب:");
+                    inputArea.innerHTML = `
+                        <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                            <a href="https://wa.me/201042728734" target="_blank" style="background:#25d366; color:#fff; padding:10px; border-radius:10px; text-align:center; font-weight:bold; text-decoration:none;"><i class="fab fa-whatsapp"></i> واتساب الدعم الفني</a>
+                            <button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>
+                        </div>
+                    `;
                     inputArea.style.display = 'block';
                 }
             };
         }
     }, 100);
-}
+};
 
 window.handleMaggieOption = async function(option) {
     const inputArea = document.getElementById('maggieInputArea');
@@ -775,12 +779,12 @@ window.handleMaggieOption = async function(option) {
     else if (option === 'wallet_fail') {
         document.getElementById('mainMaggieOptions').style.display = 'none';
         window.appendUserMsg("مشكلة في شحن المحفظة");
-        window.appendAiMsg(`علشان تشحن من المحفظة، لازم تتأكد 100% من <b>الرقم اللي اتحول منه المبلغ</b>.<br><br>لو متأكد إنك عملت العملية ومفيش رصيد، المحاولة بتتم آلياً. لو فيه مشكلة مستمرة تقدر تتواصل مع الدعم التقني للمدفوعات:
-            <div class="support-contact-links">
-                <a href="tel:01093139047" class="btn-call"><i class="fas fa-phone-alt"></i> اتصال</a>
-                <a href="https://wa.me/201093139047" class="btn-wa" target="_blank"><i class="fab fa-whatsapp"></i> واتساب</a>
+        window.appendAiMsg(`علشان تشحن من المحفظة، لازم تتأكد 100% من <b>الرقم اللي اتحول منه المبلغ</b>.<br><br>لو متأكد إنك عملت العملية ومفيش رصيد، تقدر تتواصل مباشرة مع الدعم الفني:
+            <div class="support-contact-links" style="display:flex; gap:10px; margin-top:10px;">
+                <a href="tel:01093139047" class="btn-call" style="background:#3b82f6; color:#fff; padding:8px 15px; border-radius:8px; text-decoration:none;"><i class="fas fa-phone-alt"></i> اتصال</a>
+                <a href="https://wa.me/201093139047" class="btn-wa" target="_blank" style="background:#25d366; color:#fff; padding:8px 15px; border-radius:8px; text-decoration:none;"><i class="fab fa-whatsapp"></i> واتساب</a>
             </div>`);
-        inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
+        inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer; margin-top:10px;">الرجوع للقائمة</button>`;
         inputArea.style.display = 'block';
     }
     else if (option === 'lesson_prob') {
