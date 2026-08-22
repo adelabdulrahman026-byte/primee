@@ -587,109 +587,254 @@ document.getElementById('btnExecuteBuy')?.addEventListener('click', async () => 
 // 🤖 المساعدة الذكية ماجي
 // ==========================================
 const WORKER_URL = "https://ai.adelabdulrahman026.workers.dev";
+window.liveChatInterval = null;
+window.liveChatUnsubscribe = null;
+let currentTransferDocId = null;
+let currentTransferAttempts = null;
+let currentOldDeviceId = null;
 
 document.getElementById('openMaggieBtn')?.addEventListener('click', () => {
     document.getElementById('maggieChatModal').classList.add('active');
-    document.getElementById('maggieInputArea').style.display = 'none';
+    if(typeof window.resetMaggieChat === 'function') window.resetMaggieChat();
 });
+
 document.getElementById('closeMaggieBtn')?.addEventListener('click', () => {
     document.getElementById('maggieChatModal').classList.remove('active');
+    if(window.liveChatInterval) clearInterval(window.liveChatInterval);
+    if(window.liveChatUnsubscribe) window.liveChatUnsubscribe();
 });
 
-window.appendAiMsg = (text) => {
-    const chat = document.getElementById('maggieChatBody');
-    if(chat) { chat.innerHTML += `<div class="ai-msg">${text}</div>`; chat.scrollTop = chat.scrollHeight; }
-};
-window.appendUserMsg = (text) => {
-    const chat = document.getElementById('maggieChatBody');
-    if(chat) { chat.innerHTML += `<div class="user-msg">${text}</div>`; chat.scrollTop = chat.scrollHeight; }
-};
-
-document.getElementById('mainMaggieOptions')?.addEventListener('click', (e) => {
-    const btn = e.target.closest('button');
-    if(!btn) return;
-    document.getElementById('mainMaggieOptions').style.display = 'none';
-
-    if(btn.id === 'optTransfer') {
-        window.appendUserMsg("نقل الحساب لجهاز آخر");
-        window.appendAiMsg("⚠️ <b>تنبيه هام:</b> الحفاظ على سرية حسابك مسؤوليتك. لك <b>3 محاولات فقط</b> لنقل الحساب لجهاز آخر.<br><br>هل أنت متأكد من رغبتك في النقل؟");
-        const area = document.getElementById('maggieInputArea');
-        area.innerHTML = `
-            <button onclick="startTransferProcess()" style="background:#10b981; color:#fff; width:100%; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; margin-bottom:5px;">موافق، أريد النقل</button>
-            <button onclick="resetMaggieChat()" style="background:rgba(239,68,68,0.2); color:#ef4444; width:100%; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">إلغاء</button>
-        `;
-        area.style.display = 'block';
-    } else if(btn.id === 'optWallet') {
-        window.appendUserMsg("مشكلة في شحن المحفظة");
-        window.appendAiMsg("إذا قمت بالتحويل ولم يتم الشحن، يرجى التأكد من كتابة الرقم المحول منه بدقة.<br><br>تواصل مع الدعم الفني: 01093139047 📞");
-        const area = document.getElementById('maggieInputArea');
-        area.innerHTML = `<button onclick="resetMaggieChat()" style="background:#3b82f6; width:100%; color:#fff; border:none; padding:10px; border-radius:8px; cursor:pointer;">الرجوع</button>`;
-        area.style.display = 'block';
-    } else if(btn.id === 'optLesson') {
-        window.appendUserMsg("مشكلة في تشغيل الحصة");
-        window.appendAiMsg("اكتب المشكلة التي تواجهك وسيتم تحويلك لدعم الواتساب مباشرة.");
-        const area = document.getElementById('maggieInputArea');
-        area.innerHTML = `
-            <div style="display:flex; gap:6px;">
-                <input type="text" id="lessonProblemInput" placeholder="اكتب المشكلة هنا..." style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid #334155; background:#0b0f19; color:#fff;">
-                <button onclick="sendLessonProblem()" style="background:#10b981; color:#fff; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
-            </div>
-        `;
-        area.style.display = 'block';
-    } else if(btn.id === 'optLive') {
-        window.appendUserMsg("تواصل مباشر مع الدعم");
-        window.open(`https://wa.me/201042728734?text=${encodeURIComponent("أهلاً، أحتاج لمساعدة فنية بخصوص حسابي.")}`, '_blank');
-        window.appendAiMsg("تم تحويلك لواتساب الدعم الفني، شكراً لك!");
-        resetMaggieChat();
-    }
-});
+window.appendAiMsg = function(text) {
+    const chatBody = document.getElementById('maggieChatBody');
+    if(!chatBody) return;
+    chatBody.innerHTML += `<div class="ai-msg">${text}</div>`;
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+window.appendUserMsg = function(text) {
+    const chatBody = document.getElementById('maggieChatBody');
+    if(!chatBody) return;
+    chatBody.innerHTML += `<div class="user-msg">${text}</div>`;
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
 
 window.resetMaggieChat = function() {
-    document.getElementById('mainMaggieOptions').style.display = 'block';
-    document.getElementById('maggieInputArea').style.display = 'none';
+    const chatBody = document.getElementById('maggieChatBody');
+    const inputArea = document.getElementById('maggieInputArea');
+    if(!chatBody || !inputArea) return;
+
+    chatBody.innerHTML = `
+        <div class="ai-msg">أهلاً بيك في Primee Academy 👋 أنا ماجي، أقدر أساعدك إزاي النهاردة؟</div>
+        <div class="maggie-options" id="mainMaggieOptions">
+            <button onclick="window.handleMaggieOption('transfer')"><i class="fas fa-mobile-alt"></i> نقل الحساب لجهاز آخر</button>
+            <button onclick="window.handleMaggieOption('wallet_fail')"><i class="fas fa-wallet"></i> مشكلة في شحن المحفظة</button>
+            <button onclick="window.handleMaggieOption('lesson_prob')"><i class="fas fa-video"></i> مشكلة في تشغيل الحصة</button>
+            <button id="btnOptLiveBtn"><i class="fas fa-headset"></i> تواصل مباشر مع الدعم</button>
+        </div>
+    `;
+    inputArea.style.display = 'none';
+    if(window.liveChatInterval) clearInterval(window.liveChatInterval);
+    if(window.liveChatUnsubscribe) window.liveChatUnsubscribe();
+
+    setTimeout(() => {
+        const liveBtn = document.getElementById('btnOptLiveBtn');
+        if(liveBtn) {
+            liveBtn.onclick = async () => {
+                document.getElementById('mainMaggieOptions').style.display = 'none';
+                window.appendUserMsg("تواصل مباشر مع الدعم");
+                window.appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري التحقق من حالة خدمة العملاء...");
+
+                try {
+                    const supportSnap = await getDoc(doc(db, "settings", "support"));
+                    const isLive = supportSnap.exists() ? supportSnap.data().isLive : false;
+
+                    if (isLive) {
+                        if (!loggedInPhone) {
+                            window.appendAiMsg("يرجى تسجيل الدخول أولاً للتواصل مع الدعم.");
+                            inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
+                            inputArea.style.display = 'block';
+                            return;
+                        }
+
+                        window.appendAiMsg(`
+                            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 10px;">
+                                ⚠️ <b>تنبيه:</b> جميع الرسائل تختفي بعد الجلسة.
+                            </div>
+                            جاري توجيهك لخدمة العملاء... ⏳
+                        `);
+                        
+                        inputArea.innerHTML = `
+                            <label class="file-upload-btn" style="cursor:pointer; color:#fff; border-radius:10px; background:#334155; padding:10px;">
+                                <i class="fas fa-image"></i>
+                                <input type="file" id="chatImageInput" accept="image/*" style="display:none;">
+                            </label>
+                            <input type="text" id="liveChatInput" placeholder="اكتب رسالتك للموظف..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff; font-family:'Cairo'; outline:none;">
+                            <button id="btnSendLiveChat" style="background:#10b981; color:#fff; border:none; padding:10px 15px; border-radius:10px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+                        `;
+                        inputArea.style.display = 'flex';
+
+                        const userQ = query(collection(db, "users"), where("studentPhone", "==", loggedInPhone));
+                        const userSnap = await getDocs(userQ);
+                        const sName = userSnap.empty ? "طالب" : (userSnap.docs[0].data().fullName || "طالب");
+
+                        const chatRef = doc(db, "live_chats", loggedInPhone);
+                        
+                        await setDoc(chatRef, { studentPhone: loggedInPhone, studentName: sName, adminJoined: false, lastUpdated: new Date().toISOString() }, { merge: true });
+
+                        let isWaiting = true;
+                        window.lastMsgCount = 0;
+
+                        if(window.liveChatUnsubscribe) window.liveChatUnsubscribe();
+                        window.liveChatUnsubscribe = onSnapshot(chatRef, (docSnap) => {
+                            if (docSnap.exists()) {
+                                const data = docSnap.data();
+                                if (data.adminJoined && isWaiting) {
+                                    isWaiting = false;
+                                    if (window.liveChatInterval) clearInterval(window.liveChatInterval);
+                                    document.querySelectorAll('.fa-spinner').forEach(el => { if(el.parentElement) el.parentElement.remove(); }); 
+                                    window.appendAiMsg("تم انضمام ممثل خدمة العملاء للمحادثة، يمكنك التحدث الآن. 🎧");
+                                }
+                                const msgs = data.messages || [];
+                                if (msgs.length > window.lastMsgCount) {
+                                    for(let i = window.lastMsgCount; i < msgs.length; i++) {
+                                        const m = msgs[i];
+                                        if (m.sender === 'admin') window.appendAiMsg(m.text);
+                                    }
+                                    window.lastMsgCount = msgs.length;
+                                }
+                            } else {
+                                window.appendAiMsg("تم إنهاء المحادثة من قبل الدعم الفني.");
+                                inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
+                                inputArea.style.display = 'block';
+                                if(window.liveChatInterval) clearInterval(window.liveChatInterval);
+                                if(window.liveChatUnsubscribe) window.liveChatUnsubscribe();
+                            }
+                        });
+
+                        document.getElementById('chatImageInput').onchange = async (event) => {
+                            const file = event.target.files[0];
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = function(e) { window.appendUserMsg(`<img src="${e.target.result}" style="max-width:100%; border-radius:8px; border:2px solid #3b82f6;">`); }
+                                reader.readAsDataURL(file);
+                                window.appendAiMsg("⚠️ جاري رفع الصورة...");
+                                try {
+                                    const formData = new FormData(); formData.append("image", file);
+                                    const res = await fetch("https://primee-api.adelabdulrahman026.workers.dev/upload-image", { method: "POST", body: formData });
+                                    const uploadData = await res.json();
+                                    if(uploadData.success) {
+                                        await updateDoc(chatRef, { messages: arrayUnion({ sender: 'student', text: `<img src="${uploadData.url}" style="max-width:100%; border-radius:8px;">`, time: new Date().toISOString() }) });
+                                        window.lastMsgCount++; 
+                                    }
+                                } catch(err) { window.appendAiMsg("فشل رفع الصورة."); }
+                            }
+                        };
+
+                        document.getElementById('btnSendLiveChat').onclick = async () => {
+                            const inp = document.getElementById('liveChatInput');
+                            const msg = inp.value.trim();
+                            if(msg) { 
+                                window.appendUserMsg(msg); inp.value = ''; 
+                                await updateDoc(chatRef, { messages: arrayUnion({ sender: 'student', text: msg, time: new Date().toISOString() }) });
+                                window.lastMsgCount++;
+                            }
+                        };
+
+                        window.liveChatInterval = setInterval(() => {
+                            if (isWaiting) window.appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جميع ممثلي خدمة العملاء مشغولون الآن، برجاء الانتظار...");
+                        }, 5000);
+
+                    } else {
+                        window.appendAiMsg("خدمة العملاء الآن خارج أوقات العمل 😴<br>برجاء المحاولة في وقت آخر.");
+                        inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
+                        inputArea.style.display = 'block';
+                    }
+                } catch(e) {
+                    window.appendAiMsg("حدث خطأ في الاتصال، يرجى المحاولة لاحقاً.");
+                    inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
+                    inputArea.style.display = 'block';
+                }
+            };
+        }
+    }, 100);
+}
+
+window.handleMaggieOption = async function(option) {
+    const inputArea = document.getElementById('maggieInputArea');
+
+    if (option === 'transfer') {
+        document.getElementById('mainMaggieOptions').style.display = 'none';
+        window.appendUserMsg("نقل الحساب لجهاز آخر");
+        window.appendAiMsg("⚠️ <b>تنبيه هام:</b> حفاظاً على سرية بياناتك، غير مسموح بفتح الحساب من أكثر من جهاز. <br><br>لك <b>3 محاولات فقط</b> لنقل الحساب لجهاز جديد. وإذا قمت بفتح الحساب من الجهاز القديم سيتم حظره.<br><br>هل أنت متأكد من رغبتك في النقل؟");
+        
+        inputArea.innerHTML = `
+            <button onclick="startTransferProcess()" style="background:#10b981; width:100%; border:none; padding:12px; color:#fff; border-radius:10px; font-weight:bold; cursor:pointer;">موافق، أريد النقل</button>
+            <button onclick="window.resetMaggieChat()" style="background:#ef4444; width:100%; border:none; padding:12px; color:#fff; border-radius:10px; font-weight:bold; cursor:pointer; margin-top:5px;">إلغاء</button>
+        `;
+        inputArea.style.display = 'block';
+    } 
+    else if (option === 'wallet_fail') {
+        document.getElementById('mainMaggieOptions').style.display = 'none';
+        window.appendUserMsg("مشكلة في شحن المحفظة");
+        window.appendAiMsg(`علشان تشحن من المحفظة، لازم تتأكد 100% من <b>الرقم اللي اتحول منه المبلغ</b>.<br><br>لو متأكد إنك عملت العملية ومفيش رصيد، المحاولة بتتم آلياً. لو فيه مشكلة مستمرة تقدر تتواصل مع الدعم التقني للمدفوعات:
+            <div class="support-contact-links">
+                <a href="tel:01093139047" class="btn-call"><i class="fas fa-phone-alt"></i> اتصال</a>
+                <a href="https://wa.me/201093139047" class="btn-wa" target="_blank"><i class="fab fa-whatsapp"></i> واتساب</a>
+            </div>`);
+        inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">الرجوع للقائمة</button>`;
+        inputArea.style.display = 'block';
+    }
+    else if (option === 'lesson_prob') {
+        document.getElementById('mainMaggieOptions').style.display = 'none';
+        window.appendUserMsg("مشكلة في تشغيل الحصة");
+        window.appendAiMsg("اكتب المشكلة اللي بتواجهك بالتفصيل، وسيتم تحويلك لدعم الواتساب الفني.");
+        
+        inputArea.innerHTML = `
+            <input type="text" id="lessonProblemInput" placeholder="اكتب المشكلة هنا..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff; font-family:'Cairo'; outline:none;">
+            <button onclick="sendLessonProblem()" style="background:#10b981; color:#fff; border:none; padding:10px 15px; border-radius:10px; cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+        `;
+        inputArea.style.display = 'flex';
+    }
 };
 
-window.sendLessonProblem = function() {
-    const prob = document.getElementById('lessonProblemInput').value.trim();
-    if(!prob) return;
-    window.appendUserMsg(prob);
-    window.open(`https://wa.me/201042728734?text=${encodeURIComponent("عندي مشكلة في الحصة:\n" + prob)}`, '_blank');
-    window.appendAiMsg("تم توجيهك للواتساب، شكراً لك!");
-    resetMaggieChat();
-};
-
-// نقل الحساب وOTP
-window.transferSessionData = {};
 window.startTransferProcess = async function() {
-    if(!loggedInPhone) return window.appendAiMsg("يرجى تسجيل الدخول أولاً.");
-    const area = document.getElementById('maggieInputArea');
-    area.style.display = 'none';
+    const studentPhone = localStorage.getItem('studentPhone');
+    if(!studentPhone) return window.appendAiMsg("يرجى تسجيل الدخول أولاً.");
+    
+    const inputArea = document.getElementById('maggieInputArea');
     window.appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري فحص حسابك والتواصل مع السيرفر...");
+    inputArea.style.display = 'none';
 
     try {
         const res = await fetch(WORKER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'request_transfer', phone: loggedInPhone })
+            body: JSON.stringify({ action: 'request_transfer', phone: studentPhone })
         });
         const data = await res.json();
+
         if(!data.success) {
             window.appendAiMsg(`❌ ${data.error}`);
-            resetMaggieChat();
-        } else {
-            window.transferSessionData = { docId: data.docId, attempts: data.attempts, oldDeviceId: data.oldDeviceId };
-            window.appendAiMsg(`تم إرسال كود OTP في رسالة واتساب للرقم ${loggedInPhone}.<br>متبقي لك <b>${data.attempts} محاولات</b>.<br>أدخل الكود:`);
-            area.innerHTML = `
-                <div style="display:flex; gap:6px;">
-                    <input type="text" id="otpInput" placeholder="أدخل الكود..." style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid #334155; background:#0b0f19; color:#fff;">
-                    <button onclick="verifyTransferOTP()" style="background:#10b981; color:#fff; border:none; padding:8px 14px; border-radius:8px; cursor:pointer;"><i class="fas fa-check"></i></button>
-                </div>
-            `;
-            area.style.display = 'block';
+            inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; font-weight:bold; cursor:pointer;">الرجوع للقائمة</button>`;
+            inputArea.style.display = 'block';
+            return;
         }
-    } catch(e) {
-        window.appendAiMsg("❌ حدث خطأ في الاتصال بالسيرفر.");
-        resetMaggieChat();
+
+        currentTransferDocId = data.docId;
+        currentTransferAttempts = data.attempts;
+        currentOldDeviceId = data.oldDeviceId;
+
+        window.appendAiMsg(`تم إرسال كود (OTP) في رسالة واتساب للرقم ${studentPhone}.<br>متبقي لك <b>${data.attempts} محاولات</b>.<br>يرجى إدخال الكود هنا:`);
+        
+        inputArea.innerHTML = `
+            <input type="text" id="otpInput" placeholder="أدخل الكود (4 أرقام)..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#fff; font-family:'Cairo'; outline:none;">
+            <button onclick="verifyTransferOTP()" style="background:#10b981; color:#fff; border:none; padding:10px 15px; border-radius:10px; cursor:pointer;"><i class="fas fa-check"></i> تأكيد</button>
+        `;
+        inputArea.style.display = 'flex';
+
+    } catch (err) {
+        window.appendAiMsg("❌ حدث خطأ في الاتصال بالخادم.");
+        inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; font-weight:bold; cursor:pointer;">الرجوع للقائمة</button>`;
+        inputArea.style.display = 'block';
     }
 };
 
@@ -697,30 +842,41 @@ window.verifyTransferOTP = async function() {
     const otp = document.getElementById('otpInput').value.trim();
     if(!otp) return;
     window.appendUserMsg(otp);
-    window.appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري التحقق وتأكيد نقل الجهاز...");
-    document.getElementById('maggieInputArea').style.display = 'none';
+    window.appendAiMsg("<i class='fas fa-spinner fa-spin'></i> جاري التحقق...");
+    const inputArea = document.getElementById('maggieInputArea');
+
+    let newDeviceId = localStorage.getItem('deviceId');
+    if (!newDeviceId) {
+        newDeviceId = 'DEV-' + Date.now() + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('deviceId', newDeviceId);
+    }
 
     try {
-        const res = await fetch(WORKER_URL, {
+        const vRes = await fetch(WORKER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'verify_transfer',
-                docId: window.transferSessionData.docId,
-                otp: otp,
-                oldDeviceId: window.transferSessionData.oldDeviceId,
-                attemptsLeft: window.transferSessionData.attempts
+            body: JSON.stringify({ 
+                action: 'verify_transfer', docId: currentTransferDocId, otp: otp, 
+                newDeviceId: newDeviceId, oldDeviceId: currentOldDeviceId, attemptsLeft: currentTransferAttempts 
             })
         });
-        const data = await res.json();
-        if(data.success) {
-            window.appendAiMsg(`✅ تم نقل الحساب وتفعيله على هذا الجهاز بنجاح!<br>متبقي لك <b>${data.newAttempts} محاولات</b>.`);
+        const vData = await vRes.json();
+
+        if(vData.success) {
+            window.appendAiMsg(`✅ تم نقل الحساب بنجاح!<br>متبقي لك <b>${vData.newAttempts} محاولات</b>.<br>تذكر: الجهاز القديم أصبح محظوراً.`);
+            inputArea.innerHTML = `<button onclick="window.resetMaggieChat()" style="width:100%; background:#3b82f6; border:none; padding:10px; color:#fff; border-radius:10px; cursor:pointer;">إنهاء</button>`;
+            inputArea.style.display = 'block';
         } else {
-            window.appendAiMsg(`❌ ${data.error}`);
+            window.appendAiMsg(`❌ ${vData.error}`);
         }
-        resetMaggieChat();
-    } catch(e) {
-        window.appendAiMsg("❌ حدث خطأ في الاتصال.");
-        resetMaggieChat();
-    }
+    } catch(e) { window.appendAiMsg("❌ حدث خطأ أثناء التفعيل."); }
+};
+
+window.sendLessonProblem = function() {
+    const prob = document.getElementById('lessonProblemInput').value.trim();
+    if(!prob) return;
+    window.appendUserMsg(prob);
+    window.open(`https://wa.me/201042728734?text=${encodeURIComponent("عندي مشكلة في الحصة:\n" + prob)}`, '_blank');
+    window.appendAiMsg("تم توجيهك للواتساب للتواصل مع الدعم الفني، شكراً لك!");
+    document.getElementById('lessonProblemInput').value = '';
 };
