@@ -13,16 +13,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let courseDataG = null;
-let studentDataG = null;
-let currentStudentId = null;
-let courseIdG = null;
-let currentVideoIndex = 0;
-let plyrInstance = null;
-let currentVideoDuration = 0;
-let currentVideoCurrentTime = 0;
-let isExitNoticeSent = false;
-let currentVideoTitleGlobal = "";
+// 🌗 إدارة المظهر الليلي والنهاري
+function setTheme(isDark) {
+    if (isDark) { document.body.setAttribute('data-theme', 'dark'); localStorage.setItem('theme', 'dark'); }
+    else { document.body.removeAttribute('data-theme'); localStorage.setItem('theme', 'light'); }
+    const icon = document.querySelector('#themeToggleBtn i');
+    if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+}
+function toggleTheme() {
+    const isDark = document.body.getAttribute('data-theme') === 'dark';
+    setTheme(!isDark);
+}
+document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
+setTheme(localStorage.getItem('theme') === 'dark');
 
 async function getSecureApiKeys() {
     try {
@@ -33,63 +36,72 @@ async function getSecureApiKeys() {
 }
 
 async function sendWhatsAppToParent(parentPhone, msgText) {
-    if (!parentPhone || parentPhone === "غير متوفر" || parentPhone === "-") return;
+    if(!parentPhone || parentPhone === "غير متوفر" || parentPhone.length < 10) return;
     const keys = await getSecureApiKeys();
     if (!keys || !keys.wapilot_instance || !keys.wapilot_token) return;
 
     let cleanPhone = parentPhone.replace(/\D/g, '');
-    if (cleanPhone.startsWith('0')) cleanPhone = '2' + cleanPhone;
-    let chatId = cleanPhone + "@c.us";
+    let formattedPhone = cleanPhone.startsWith('0') ? '2' + cleanPhone : cleanPhone;
+    let chatId = formattedPhone + "@c.us";
     let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
     
     try {
         await fetch(url, {
             method: "POST",
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.token || keys.wapilot_token}` },
             body: JSON.stringify({ chat_id: chatId, text: msgText })
         });
     } catch(err) {}
 }
 
-function formatSecondsToTime(seconds) {
-    seconds = Math.max(0, Math.floor(seconds || 0));
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins} دقيقة و ${secs} ثانية`;
+let courseDataG = null;
+let studentDataG = null;
+let currentStudentId = null;
+let courseIdG = null;
+let currentVideoIndex = 0;
+let plyrInstance = null;
+let lastTrackedSeconds = 0;
+let videoDurationSeconds = 0;
+
+// تنسيق الثواني لصيغة (دقيقة وثانية)
+function formatTimeAr(seconds) {
+    let s = Math.floor(seconds || 0);
+    let m = Math.floor(s / 60);
+    let remS = s % 60;
+    return `${m} دقيقة و ${remS} ثانية`;
 }
 
-// 🚨 إرسال إشعار الخروج الدقيق لولي الأمر عند إغلاق أو مغادرة الصفحة 🚨
-function handleStudentExitNotification() {
-    if (isExitNoticeSent || !studentDataG || !studentDataG.parentPhone || currentVideoCurrentTime <= 5) return;
-    isExitNoticeSent = true;
-
-    const stoppedAtText = formatSecondsToTime(currentVideoCurrentTime);
-    const remainingSeconds = Math.max(0, currentVideoDuration - currentVideoCurrentTime);
-    const remainingText = formatSecondsToTime(remainingSeconds);
-    const cName = courseDataG ? (courseDataG.title || courseDataG.name) : "الحصة";
-
-    const msg = `إشعار من Primee Academy 🔔\nولي أمر الطالب/ة: *${studentDataG.fullName}*\n\nغادر الطالب حصة (*${cName}*) - مقطع (*${currentVideoTitleGlobal}*).\n⏱️ توقف عند: *${stoppedAtText}*\n⏳ المتبقي من المقطع: *${remainingText}*`;
-
-    // إرسال عبر الواتساب بشكل فوري ومضمون
-    getSecureApiKeys().then(keys => {
-        if (!keys || !keys.wapilot_instance) return;
-        let cleanPhone = studentDataG.parentPhone.replace(/\D/g, '');
-        if (cleanPhone.startsWith('0')) cleanPhone = '2' + cleanPhone;
-        let chatId = cleanPhone + "@c.us";
-        let url = `https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message`;
-
-        const payload = JSON.stringify({ chat_id: chatId, text: msg });
-        if (navigator.sendBeacon) {
-            const blob = new Blob([payload], { type: 'application/json' });
-            navigator.sendBeacon(url, blob);
-        } else {
-            fetch(url, { method: "POST", headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keys.wapilot_token}` }, body: payload, keepalive: true });
-        }
-    });
+// 🚨 إرسال إشعار الخروج لولي الأمر فور إغلاق الصفحة أو التنقل 🚨
+function handleStudentExit() {
+    if (!studentDataG || !studentDataG.parentPhone || videoDurationSeconds === 0) return;
+    
+    let stoppedAt = lastTrackedSeconds;
+    let remaining = Math.max(0, videoDurationSeconds - stoppedAt);
+    
+    // إذا كان خرج بعد مشاهدة 15 ثانية على الأقل
+    if (stoppedAt >= 15 && remaining > 30) {
+        let stoppedStr = formatTimeAr(stoppedAt);
+        let remStr = formatTimeAr(remaining);
+        let cName = courseDataG.title || courseDataG.name || "الحصة";
+        
+        let msg = `🔔 إشعار متابعة من Primee Academy:\n\nولي أمر الطالب/ة: *${studentDataG.fullName}*\nنحيطكم علماً بأن الطالب قد خرج من حصة (*${cName}*).\n⏱️ توقف عند الدقيقة: *${stoppedStr}*\n⏳ الوقت المتبقي لإنهاء الحصة: *${remStr}*.`;
+        
+        // إرسال عبر sendBeacon لضمان الخروج بدون انقطاع
+        getSecureApiKeys().then(keys => {
+            if(keys && keys.wapilot_instance) {
+                let cleanPhone = studentDataG.parentPhone.replace(/\D/g, '');
+                let formatted = cleanPhone.startsWith('0') ? '2' + cleanPhone : cleanPhone;
+                let payload = JSON.stringify({ chat_id: formatted + "@c.us", text: msg });
+                
+                let blob = new Blob([payload], { type: 'application/json' });
+                navigator.sendBeacon(`https://api.wapilot.net/api/v2/${keys.wapilot_instance}/send-message?token=${keys.wapilot_token}`, blob);
+            }
+        });
+    }
 }
 
-window.addEventListener('beforeunload', handleStudentExitNotification);
-window.addEventListener('pagehide', handleStudentExitNotification);
+window.addEventListener('beforeunload', handleStudentExit);
+window.addEventListener('pagehide', handleStudentExit);
 
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -105,10 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(() => {
             const container = document.getElementById('vimeoWrapper');
             if(container && watermark) {
-                const maxX = container.clientWidth - 150; 
-                const maxY = container.clientHeight - 30;
-                const randomX = Math.max(0, Math.floor(Math.random() * maxX));
-                const randomY = Math.max(0, Math.floor(Math.random() * maxY));
+                const maxX = container.clientWidth - 160; 
+                const maxY = container.clientHeight - 35;
+                const randomX = Math.max(10, Math.floor(Math.random() * maxX));
+                const randomY = Math.max(10, Math.floor(Math.random() * maxY));
                 watermark.style.top = `${randomY}px`;
                 watermark.style.left = `${randomX}px`;
             }
@@ -139,7 +151,7 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
         const myPackages = studentDataG.myPackages || [];
 
         if (!myCourses.includes(courseId) && !myPackages.includes(courseId)) {
-            document.body.innerHTML = `<div style="text-align:center; padding:60px 20px; font-family:'Cairo';"><h2>غير مصرح لك بمشاهدة هذه الحصة ❌</h2><p>يرجى الاشتراك أولاً للتمكن من الدخول.</p><a href="student-dashboard.html" style="background:#3b82f6; color:#fff; padding:10px 25px; border-radius:10px; text-decoration:none; font-weight:bold;">العودة للوحة التحكم</a></div>`;
+            document.body.innerHTML = `<div style="text-align:center; padding:80px 20px; font-family:'Cairo';"><h2>غير مصرح لك بالدخول إلى هذه الحصة ❌</h2><p>يرجى الاشتراك أولاً للوصول للمحتوى.</p><a href="student-dashboard.html" style="background:#6366f1; color:#fff; padding:10px 25px; border-radius:10px; text-decoration:none; font-weight:800;">العودة للوحة التحكم</a></div>`;
             return; 
         }
 
@@ -151,12 +163,15 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
         if (courseSnap.exists()) {
             courseDataG = courseSnap.data();
             
-            document.getElementById('courseTitle').textContent = courseDataG.title || courseDataG.name || "حصة بدون عنوان";
+            document.getElementById('courseTitle').textContent = courseDataG.title || courseDataG.name || "حصة تعليمية";
             document.getElementById('courseInstructor').textContent = courseDataG.instructor || "أستاذ المادة";
             
             if(courseDataG.pdfUrl && courseDataG.pdfUrl.trim() !== "") {
-                document.getElementById('pdfSection').style.display = 'flex';
-                document.getElementById('btnDownloadPdf').href = courseDataG.pdfUrl;
+                const pdfSec = document.getElementById('pdfSection');
+                if (pdfSec) {
+                    pdfSec.style.display = 'flex';
+                    document.getElementById('btnDownloadPdf').href = courseDataG.pdfUrl;
+                }
             }
 
             let studentViewsMap = studentDataG.courseViews || {};
@@ -165,13 +180,18 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
             
             if(maxViews > 0) {
                 let left = maxViews - myViews;
-                document.getElementById('viewsLeftText').textContent = left > 0 ? left : 0;
+                document.getElementById('viewsLeftText').textContent = `${Math.max(0, left)} من ${maxViews}`;
                 if(left <= 0) {
-                    document.getElementById('vimeoWrapper').innerHTML = `<div class="status-box"><i class="fas fa-eye-slash" style="color:#ef4444; font-size:60px; margin-bottom:15px;"></i><h2 style="color:#fff;">انتهت مشاهداتك المسموحة</h2><p style="color:#cbd5e1;">لقد استنفذت عدد المشاهدات المخصصة لهذه الحصة.</p></div>`;
+                    document.getElementById('vimeoWrapper').innerHTML = `
+                        <div class="status-box">
+                            <i class="fas fa-eye-slash" style="color:#ef4444;"></i>
+                            <h2 style="color:var(--text-main); margin-bottom:8px;">انتهت مشاهداتك المسموحة</h2>
+                            <p style="color:var(--text-muted);">لقد استنفذت عدد المشاهدات المخصصة لهذه الحصة بالتنسيق مع المدرس.</p>
+                        </div>`;
                     return;
                 }
             } else {
-                document.getElementById('viewsLeftText').textContent = "لا محدود";
+                document.getElementById('viewsLeftText').textContent = "مشاهدة غير محدودة";
             }
 
             let ratingsArray = courseDataG.ratings || [];
@@ -182,6 +202,7 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
             if(videosList.length === 0 && courseDataG.videoUrl) {
                 videosList = [{ title: courseDataG.title || "المقطع الرئيسي", url: courseDataG.videoUrl, requiredExamId: courseDataG.requiredExamId }];
             }
+            
             renderPlaylist(videosList);
             
             if(videosList.length > 0) {
@@ -194,9 +215,10 @@ async function verifyAccessAndLoadCourse(phone, courseId) {
 window.updateRatingUI = function(ratings) {
     const statsEl = document.getElementById('ratingStats');
     const stars = document.querySelectorAll('.rating-stars i');
+    if (!statsEl) return;
     
-    if (!ratings || ratings.length === 0) {
-        statsEl.textContent = "(لم يُقيم بعد)";
+    if (ratings.length === 0) {
+        statsEl.textContent = "(لم يُقيّم بعد)";
         return;
     }
 
@@ -205,9 +227,7 @@ window.updateRatingUI = function(ratings) {
 
     ratings.forEach(r => {
         sum += r.stars;
-        if (r.studentId === currentStudentId) {
-            myPreviousRating = r.stars;
-        }
+        if (r.studentId === currentStudentId) myPreviousRating = r.stars;
     });
 
     let avg = (sum / ratings.length).toFixed(1);
@@ -215,27 +235,14 @@ window.updateRatingUI = function(ratings) {
 
     stars.forEach(s => {
         let val = parseInt(s.getAttribute('data-val'));
-        if (val <= myPreviousRating) s.style.color = '#f59e0b';
+        if (val <= myPreviousRating) s.style.color = 'var(--accent-gold)';
         else s.style.color = '#cbd5e1';
     });
-}
+};
 
 function setupRating() {
     const stars = document.querySelectorAll('.rating-stars i');
     stars.forEach(star => {
-        star.addEventListener('mouseover', (e) => {
-            let hoverVal = parseInt(e.target.getAttribute('data-val'));
-            stars.forEach(s => {
-                if (parseInt(s.getAttribute('data-val')) <= hoverVal) s.style.color = '#f59e0b';
-                else s.style.color = '#cbd5e1';
-            });
-        });
-
-        star.parentElement.addEventListener('mouseleave', () => {
-            let ratingsArray = courseDataG.ratings || [];
-            updateRatingUI(ratingsArray);
-        });
-
         star.addEventListener('click', async (e) => {
             const val = parseInt(e.target.getAttribute('data-val'));
             let ratingsArray = courseDataG.ratings || [];
@@ -252,21 +259,25 @@ function setupRating() {
     });
 }
 
-// 🚨 عرض أسماء المقاطع الحقيقية المكتوبة في لوحة التحكم 🚨
+// 📋 عرض قائمة الفيديوهات بالأسماء الحقيقية المكتوبة في الداش بورد
 function renderPlaylist(videos) {
     const container = document.getElementById('playlistContainer');
+    const badge = document.getElementById('playlistCountBadge');
+    if (!container) return;
+    
+    if (badge) badge.textContent = `${videos.length} مقطع`;
     let html = '';
+    
     videos.forEach((vid, i) => {
         let examIdCheck = vid.requiredExamId || courseDataG.requiredExamId;
-        let icon = examIdCheck ? '<i class="fas fa-lock" style="color:#f59e0b;"></i>' : '<i class="fas fa-play-circle" style="color:#10b981;"></i>';
-        let vTitle = vid.title && vid.title.trim() !== "" ? vid.title : `مقطع ${i + 1}`;
+        let icon = examIdCheck ? '<i class="fas fa-lock" style="color:var(--accent-gold);" title="مربوط بامتحان"></i>' : '<i class="fas fa-play-circle" style="color:var(--primary);"></i>';
         
+        // عرض اسم المقطع المخصص من الداش بورد
+        let displayName = vid.title && vid.title.trim() !== "" ? vid.title : `مقطع شرح ${i + 1}`;
+
         html += `
         <div class="playlist-item" id="playBtn_${i}" onclick="loadVideoIndex(${i})">
-            <div class="vid-title-text">
-                <i class="fas fa-video" style="color: var(--primary-color);"></i>
-                <span>${vTitle}</span>
-            </div>
+            <span class="vid-title-text"><i class="fas fa-video"></i> ${displayName}</span>
             ${icon}
         </div>`;
     });
@@ -275,17 +286,15 @@ function renderPlaylist(videos) {
 
 window.loadVideoIndex = async function(index) {
     currentVideoIndex = index;
-    isExitNoticeSent = false;
     let videosList = courseDataG.videos || [{ title: courseDataG.title || "المقطع الرئيسي", url: courseDataG.videoUrl, requiredExamId: courseDataG.requiredExamId }];
     const vidObj = videosList[index];
-    currentVideoTitleGlobal = vidObj.title || `مقطع ${index + 1}`;
     
     document.querySelectorAll('.playlist-item').forEach(el => el.classList.remove('active'));
-    const activeBtn = document.getElementById(`playBtn_${index}`);
-    if (activeBtn) activeBtn.classList.add('active');
+    document.getElementById(`playBtn_${index}`)?.classList.add('active');
 
     const examOverlay = document.getElementById('examFullscreenOverlay');
     const examArea = document.getElementById('examContentArea');
+
     let examId = vidObj.requiredExamId || courseDataG.requiredExamId;
 
     if (examId && examId.trim() !== "") {
@@ -310,20 +319,20 @@ window.loadVideoIndex = async function(index) {
             examOverlay.style.display = 'flex';
             examArea.innerHTML = `
                 <div class="status-box">
-                    <i class="fas fa-times-circle" style="color: #ef4444; font-size: 70px; margin-bottom: 20px;"></i>
-                    <h2 style="color: #f8fafc; font-size: 26px;">لم تجتز الامتحان بنجاح</h2>
-                    <p style="color: #94a3b8; font-size: 20px; font-weight:800;">درجتك: ${score} من ${totalQs}</p>
-                    <p style="color: #cbd5e1; font-weight: 800; margin-top: 15px;">الفيديو مغلق. يرجى التواصل مع أستاذ المادة للمساعدة.</p>
+                    <i class="fas fa-times-circle" style="color: #ef4444;"></i>
+                    <h2 style="color: var(--text-main); margin-bottom:6px;">لم تجتز الامتحان</h2>
+                    <p style="color: #ef4444; font-size: 20px; font-weight:900;">درجتك: ${score} من ${totalQs}</p>
+                    <p style="color: var(--text-muted); font-weight:700;">هذا المقطع مغلق حتى يتم إعادة الامتحان بالتنسيق مع إدارة المنصة.</p>
                 </div>`;
         }
         else if(examStatus === 'pending') {
             examOverlay.style.display = 'flex';
             examArea.innerHTML = `
                 <div class="status-box">
-                    <i class="fas fa-hourglass-half" style="color: #f59e0b; font-size: 70px; margin-bottom: 20px;"></i>
-                    <h2 style="color: #f8fafc; font-size: 26px;">إجاباتك قيد التصحيح والمراجعة</h2>
-                    <p style="color: #94a3b8; font-size: 16px;">يحتوي الامتحان على أسئلة مقالية يراجعها المدرس حالياً.</p>
-                    <p style="color: #10b981; font-weight: 800; margin-top: 15px;">سيتم فتح الحصة تلقائياً فور اعتماد النتيجة.</p>
+                    <i class="fas fa-hourglass-half" style="color: var(--accent-gold);"></i>
+                    <h2 style="color: var(--text-main); margin-bottom:6px;">جاري مراجعة إجاباتك</h2>
+                    <p style="color: var(--text-muted); font-size: 15px;">يحتوي الامتحان على أسئلة مقالية يتم تصحيحها من أستاذ المادة.</p>
+                    <p style="color: var(--primary); font-weight: 800; margin-top: 15px;">سيتم فتح الفيديو تلقائياً فور اعتماد النتيجة.</p>
                 </div>`;
         }
         else {
@@ -345,30 +354,31 @@ function renderExamForm(examData, examId, submissionId, container) {
     let html = `
         <div class="exam-form-container">
             <div class="exam-header-title">
+                <i class="fas fa-file-signature" style="font-size:36px; margin-bottom:8px;"></i>
                 <h2>${examData.title}</h2>
-                <p>يجب اجتياز الامتحان لتتمكن من فتح ومشاهدة هذا المقطع 🎯</p>
+                <p>يجب اجتياز هذا الامتحان لفتح مقطع الفيديو للمشاهدة</p>
             </div>
             <form id="studentExamForm" style="display: flex; flex-direction: column; height: 100%; flex: 1; overflow: hidden;">
                 <div class="exam-body-scroll">`;
                 
     questions.forEach((q, index) => {
         html += `<div class="exam-question">
-                    <h4 style="font-size: 18px; margin-bottom: 15px; color: var(--text-main);">س ${index + 1}: ${q.text}</h4>`;
-        if(q.imageUrl) html += `<img src="${q.imageUrl}" style="max-width: 100%; border-radius: 12px; margin-bottom: 15px;">`;
+                    <h4 class="exam-q-text">السؤال ${index + 1}: ${q.text}</h4>`;
+        if(q.imageUrl) html += `<img src="${q.imageUrl}" class="exam-q-img" style="max-width: 100%; border-radius: 12px; margin-bottom: 15px;">`;
         
         if (q.type === 'mcq') {
             q.options.forEach((opt, optIndex) => {
-                html += `<label class="mcq-option"><input type="radio" name="q_${index}" value="${optIndex}" required style="margin-left: 12px; transform: scale(1.3);"> ${opt}</label>`;
+                html += `<label class="mcq-option"><input type="radio" name="q_${index}" value="${optIndex}" required> ${opt}</label>`;
             });
         } else {
-            html += `<textarea class="essay-input" name="q_${index}" rows="4" placeholder="اكتب إجابتك النموذجية هنا..." required></textarea>`;
+            html += `<textarea class="essay-input" name="q_${index}" rows="4" placeholder="اكتب إجابتك النموذجية هنا بالتفصيل..." required></textarea>`;
         }
         html += `</div>`;
     });
     
     html += `   </div>
-                <div style="padding: 20px 35px; background: var(--bg-card); border-top: 1px solid var(--input-border);">
-                    <button type="submit" class="btn-submit-exam" id="btnSubmitForm">تسليم الامتحان <i class="fas fa-paper-plane"></i></button>
+                <div class="exam-footer">
+                    <button type="submit" class="btn-submit-exam" id="btnSubmitForm">تسليم الإجابات والتحقق <i class="fas fa-check-circle"></i></button>
                 </div>
             </form>
         </div>`;
@@ -427,13 +437,14 @@ async function submitExam(examData, examId, submissionId) {
         submittedAt: new Date().toISOString()
     });
 
-    let waMsg = `مرحباً ولي أمر الطالب/ة: *${studentDataG.fullName}*\nأنهى الطالب امتحان (${examData.title}) لحصة (${courseDataG.title || courseDataG.name}).\n`;
-    if(finalStatus === 'passed') waMsg += `النتيجة: ناجح ✅\nالدرجة: ${score} من ${totalQs}\nتم فتح الحصة للطالب.`;
-    else if(finalStatus === 'failed') waMsg += `النتيجة: راسب ❌\nالدرجة: ${score} من ${totalQs}\nتم إغلاق الحصة، يرجى المتابعة.`;
-    else waMsg += `النتيجة: قيد المراجعة ⏳\nيحتوي الامتحان على أسئلة مقالية سيصححها المدرس.`;
+    let waMsg = `🔔 تقرير امتحان من Primee Academy:\n\nولي أمر الطالب/ـة: *${studentDataG.fullName}*\nأنهى الطالب اختبار (*${examData.title}*) الخاص بحصة (*${courseDataG.title || courseDataG.name}*).\n`;
+    if(finalStatus === 'passed') waMsg += `النتيجة: *ناجح بتفوق ✅*\nالدرجة: *${score} من ${totalQs}*\nتم فتح مقطع الحصة للطالب بنجاح.`;
+    else if(finalStatus === 'failed') waMsg += `النتيجة: *راسب ❌*\nالدرجة: *${score} من ${totalQs}*\nتم إغلاق المقطع للمراجعة مع الإدارة.`;
+    else waMsg += `النتيجة: *قيد التصحيح ⏳*\nيحتوي الاختبار على أسئلة مقالية جاري مراجعتها.`;
     
     await sendWhatsAppToParent(studentDataG.parentPhone, waMsg);
 
+    // 🏆 لو جاب الدرجة النهائية 100% يظهر له كارت الشهادة الملكي الفاخر
     if(score === totalQs && !hasEssay) {
         document.getElementById('examFullscreenOverlay').style.display = 'none';
         document.getElementById('certStudentName').innerText = studentDataG.fullName;
@@ -448,7 +459,7 @@ async function submitExam(examData, examId, submissionId) {
     }
 }
 
-// 🚨 تشغيل الفيديو مع إعدادات الجودة وقائمة التحكم الحديثة 🚨
+// 🎬 تشغيل الفيديو مع دعم اختيار الجودة (Automatic & Manual) وكارت الاستكمال
 async function playVideoAndRecordView(videoUrl) {
     const vidContainer = document.getElementById('videoContainer');
     const vimeoID = extractVimeoID(videoUrl);
@@ -460,31 +471,34 @@ async function playVideoAndRecordView(videoUrl) {
         
         vidContainer.innerHTML = `
             <div class="plyr__video-embed" id="player">
-                <iframe src="https://player.vimeo.com/video/${vimeoID}?loop=false&amp;byline=false&amp;portrait=false&amp;title=false&amp;speed=true&amp;transparent=0&amp;gesture=media" allowfullscreen allowtransparency allow="autoplay"></iframe>
+                <iframe src="https://player.vimeo.com/video/${vimeoID}?loop=false&amp;byline=false&amp;portrait=false&amp;title=false&amp;speed=true&amp;transparent=0&amp;gesture=media&amp;quality=auto" allowfullscreen allowtransparency allow="autoplay"></iframe>
             </div>
-            <div id="resumeCard" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.92); z-index:100; justify-content:center; align-items:center; flex-direction:column; backdrop-filter:blur(8px); border-radius:24px;">
-                <i class="fas fa-history" style="font-size:55px; color:#3b82f6; margin-bottom:15px;"></i>
-                <h3 style="color:#fff; font-size:24px; margin:0 0 10px 0; font-weight:900;">استكمال الحصة من حيث توقفت</h3>
-                <p style="color:#cbd5e1; margin-bottom:25px; font-weight:600;">هل تود استكمال الحصة من آخر دقيقة أم البدء من جديد؟</p>
-                <div style="display:flex; gap:15px; flex-wrap:wrap; justify-content:center;">
-                    <button id="btnResumeVid" style="background:#10b981; color:#fff; border:none; padding:12px 28px; border-radius:12px; font-weight:900; font-size:16px; cursor:pointer;"><i class="fas fa-play"></i> استكمال المشاهدة</button>
-                    <button id="btnRestartVid" style="background:#ef4444; color:#fff; border:none; padding:12px 28px; border-radius:12px; font-weight:900; font-size:16px; cursor:pointer;"><i class="fas fa-redo"></i> البدء من الأول</button>
+            <div id="resumeCard" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(9,13,22,0.92); z-index:100; justify-content:center; align-items:center; flex-direction:column; backdrop-filter:blur(8px); border-radius:var(--player-radius);">
+                <i class="fas fa-history" style="font-size:55px; color:var(--primary); margin-bottom:15px;"></i>
+                <h3 style="color:#fff; font-size:22px; margin:0 0 8px 0; font-weight:900;">استكمال المشاهدة</h3>
+                <p style="color:#94a3b8; margin-bottom:20px; font-weight:600;">توقفت هنا في زيارتك السابقة، هل ترغب في الاستكمال؟</p>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+                    <button id="btnResumeVid" style="background:#10b981; color:#fff; border:none; padding:12px 26px; border-radius:12px; font-weight:900; font-size:15px; cursor:pointer;"><i class="fas fa-play"></i> نعم، استكمال الحصة</button>
+                    <button id="btnRestartVid" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid #ef4444; padding:12px 26px; border-radius:12px; font-weight:900; font-size:15px; cursor:pointer;"><i class="fas fa-redo"></i> البدء من الأول</button>
                 </div>
             </div>
         `;
 
         setTimeout(() => { 
-            // تهيئة Plyr مع دعم الجودة والسرعات والتحكم الأنيق
+            // تهيئة Plyr مع دعم اختيار الجودة والسرعات والتحكم الكامل
             plyrInstance = new Plyr('#player', {
-                controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
+                controls: [
+                    'play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'
+                ],
                 settings: ['quality', 'speed', 'loop'],
-                speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
-                quality: { default: 'auto', options: ['auto', 1080, 720, 540, 360], forced: true, onChange: (q) => console.log(q) },
-                i18n: {
-                    speed: 'السرعة',
-                    normal: 'عادي',
-                    quality: 'الجودة',
-                    auto: 'تلقائي (Auto)'
+                speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+                quality: {
+                    default: 'auto',
+                    options: ['auto', 1080, 720, 540, 360],
+                    forced: true,
+                    onChange: (quality) => {
+                        console.log("Quality switched to: " + quality);
+                    }
                 }
             }); 
             
@@ -493,10 +507,12 @@ async function playVideoAndRecordView(videoUrl) {
             let isFirstPlay = true;
 
             plyrInstance.on('ready', () => {
-                currentVideoDuration = plyrInstance.duration || 0;
-                if (savedTime > 10 && isFirstPlay) {
+                // التقاط إجمالي مدة الفيديو
+                videoDurationSeconds = plyrInstance.duration || 0;
+
+                if (savedTime > 15 && isFirstPlay) {
                     const resumeCard = document.getElementById('resumeCard');
-                    resumeCard.style.display = 'flex';
+                    if (resumeCard) resumeCard.style.display = 'flex';
 
                     document.getElementById('btnResumeVid').onclick = () => {
                         plyrInstance.currentTime = savedTime;
@@ -515,15 +531,17 @@ async function playVideoAndRecordView(videoUrl) {
             });
 
             plyrInstance.on('timeupdate', () => {
-                currentVideoCurrentTime = plyrInstance.currentTime || 0;
-                currentVideoDuration = plyrInstance.duration || currentVideoDuration;
-                if(!isFirstPlay || savedTime <= 10) {
-                    localStorage.setItem(savedTimeKey, currentVideoCurrentTime);
+                lastTrackedSeconds = plyrInstance.currentTime;
+                videoDurationSeconds = plyrInstance.duration || videoDurationSeconds;
+                
+                if(!isFirstPlay || savedTime <= 15) {
+                    localStorage.setItem(savedTimeKey, plyrInstance.currentTime);
                 }
             });
 
             plyrInstance.on('ended', () => {
                 localStorage.removeItem(savedTimeKey);
+                lastTrackedSeconds = 0;
             });
 
         }, 150);
@@ -534,6 +552,6 @@ async function playVideoAndRecordView(videoUrl) {
         
     } else {
         vidContainer.style.display = 'flex';
-        vidContainer.innerHTML = `<p style="color:#ef4444; font-weight:bold; font-size:20px;">رابط الفيديو غير متوفر.</p>`;
+        vidContainer.innerHTML = `<p style="color:#ef4444; font-weight:bold; font-size:18px;">عذراً، رابط الفيديو غير متاح حالياً.</p>`;
     }
 }
