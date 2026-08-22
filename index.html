@@ -5,35 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Primee Academy - المنصة التعليمية الأولى</title>
 
-    <!-- الخطوط الرسمية -->
+    <!-- الخطوط -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Baloo+Bhaijaan+2:wght@600;700;800;900&display=swap" rel="stylesheet">
 
-    <!-- المكتبات الخارجية -->
+    <!-- المكتبات -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
     <style>
         /* ==========================================================
-           🎨 PRIMEE ACADEMY — THEME & VARIABLES
+           🎨 متغيرات التصميم والألوان (LIGHT & DARK MODE)
            ========================================================== */
         :root {
             --pm-primary: #3b82f6;
             --pm-primary-dark: #1d4ed8;
             --pm-secondary: #7c3aed;
             --pm-secondary-dark: #5b21b6;
-            --pm-accent-green: #10b981;
-            --pm-accent-amber: #f59e0b;
-            --pm-accent-pink: #ec4899;
+            --pm-green: #10b981;
+            --pm-amber: #f59e0b;
+            --pm-pink: #ec4899;
             --pm-bg-body: #f8fafc;
             --pm-bg-card: #ffffff;
             --pm-border: rgba(148, 163, 184, 0.25);
             --pm-text-main: #0f172a;
             --pm-text-muted: #64748b;
-            --pm-nav-bg: rgba(255, 255, 255, 0.92);
-            --pm-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-            --pm-card-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            --pm-nav-bg: rgba(255, 255, 255, 0.95);
+            --pm-card-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
             --pm-radius: 20px;
         }
 
@@ -43,9 +42,8 @@
             --pm-border: rgba(255, 255, 255, 0.12);
             --pm-text-main: #f8fafc;
             --pm-text-muted: #94a3b8;
-            --pm-nav-bg: rgba(15, 23, 42, 0.92);
-            --pm-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            --pm-card-shadow: 0 14px 35px rgba(0, 0, 0, 0.5);
+            --pm-nav-bg: rgba(15, 23, 42, 0.95);
+            --pm-card-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
         }
 
         * {
@@ -64,16 +62,16 @@
             transition: background-color 0.3s, color 0.3s;
         }
 
-        h1, h2, h3, h4, .nav-brand, .modern-section-title, .hero-title {
+        h1, h2, h3, h4, .nav-brand, .section-title, .hero-title {
             font-family: 'Baloo Bhaijaan 2', 'Cairo', sans-serif !important;
         }
 
         a { text-decoration: none; color: inherit; }
         button { font-family: inherit; }
 
-        /* خلفية الأورورا الناعمة */
+        /* خلفية الأورورا */
         .pm-aurora { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-        .pm-aurora span { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.15; animation: pmFloat 18s ease-in-out infinite; }
+        .pm-aurora span { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.14; animation: pmFloat 18s ease-in-out infinite; }
         .pm-aurora span:nth-child(1) { width: 500px; height: 500px; background: var(--pm-primary); top: -150px; right: -100px; }
         .pm-aurora span:nth-child(2) { width: 450px; height: 450px; background: var(--pm-secondary); bottom: -150px; left: -100px; animation-delay: -6s; }
         @keyframes pmFloat { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -25px); } }
@@ -84,11 +82,9 @@
         .main-navbar {
             position: sticky;
             top: 0;
-            left: 0;
             width: 100%;
             background: var(--pm-nav-bg);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--pm-border);
             z-index: 999;
             padding: 12px 20px;
@@ -104,7 +100,7 @@
         .nav-right-side {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
         .nav-brand {
             font-size: 28px;
@@ -122,12 +118,12 @@
             list-style: none;
         }
         .nav-links a {
-            font-weight: 700;
+            font-weight: 800;
             font-size: 15px;
             color: var(--pm-text-muted);
             transition: 0.25s;
-            position: relative;
             padding: 6px 0;
+            position: relative;
         }
         .nav-links a:hover, .nav-links a.active {
             color: var(--pm-primary);
@@ -167,7 +163,6 @@
             color: var(--pm-primary);
             transform: translateY(-2px);
         }
-
         .btn-hamburger { display: none; }
 
         .btn-nav-login {
@@ -194,7 +189,6 @@
         }
         .btn-nav-signup:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4); }
 
-        /* شارة الطالب عند تسجيل الدخول */
         .logged-in-badge {
             display: flex;
             align-items: center;
@@ -208,11 +202,10 @@
         }
         .logged-in-badge:hover { border-color: var(--pm-primary); }
         .badge-info { display: flex; flex-direction: column; text-align: right; line-height: 1.2; }
-        .s-name { font-weight: 800; font-size: 13px; color: var(--pm-text-main); }
-        .s-wallet { font-weight: 900; font-size: 12px; color: var(--pm-accent-green); }
+        .s-name { font-weight: 800; font-size: 13px; }
+        .s-wallet { font-weight: 900; font-size: 12px; color: var(--pm-green); }
         .badge-avatar { width: 34px; height: 34px; border-radius: 50%; background: rgba(59, 130, 246, 0.15); color: var(--pm-primary); display: flex; align-items: center; justify-content: center; overflow: hidden; }
 
-        /* الإشعارات */
         .nav-bell-wrapper { position: relative; }
         .nav-bell-wrapper .badge { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; display: none; border: 2px solid var(--pm-bg-card); }
         .notifications-dropdown {
@@ -224,11 +217,10 @@
         .notifications-dropdown.active { display: flex; }
         .notifications-dropdown h4 { font-size: 15px; font-weight: 800; border-bottom: 1px solid var(--pm-border); padding-bottom: 8px; margin: 0; }
         .notif-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; background: rgba(148, 163, 184, 0.06); font-size: 13px; }
-        .notif-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
 
-        /* ==========================================
+        /* ==========================================================
            📱 2. القائمة الجانبية للموبايل (DRAWER)
-           ========================================== */
+           ========================================================== */
         .side-drawer {
             position: fixed; top: 0; right: -320px; width: 300px; max-width: 85vw; height: 100vh;
             background: var(--pm-bg-card); border-left: 1px solid var(--pm-border);
@@ -253,7 +245,7 @@
             width: 52px; height: 28px; background: #cbd5e1; border-radius: 30px; border: none; cursor: pointer; position: relative; padding: 2px;
         }
         .pm-switch-circle {
-            width: 24px; height: 24px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--pm-accent-amber); transition: 0.3s;
+            width: 24px; height: 24px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--pm-amber); transition: 0.3s;
         }
         body[data-theme="dark"] .pm-switch-btn { background: var(--pm-primary); }
         body[data-theme="dark"] .pm-switch-circle { transform: translateX(-24px); color: var(--pm-primary); }
@@ -266,7 +258,7 @@
         .btn-logout-premium { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 16px; border-radius: 10px; font-weight: 800; cursor: pointer; margin-top: 10px; width: 100%; }
 
         .drawer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-        .drawer-links li a { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; font-weight: 700; color: var(--pm-text-main); transition: 0.25s; }
+        .drawer-links li a { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; font-weight: 800; color: var(--pm-text-main); transition: 0.25s; }
         .drawer-links li a:hover, .drawer-links li a.active { background: rgba(59, 130, 246, 0.1); color: var(--pm-primary); }
         .drawer-divider { height: 1px; background: var(--pm-border); margin: 12px 0; }
         .drawer-subtitle { font-size: 12px; color: var(--pm-text-muted); font-weight: 800; text-transform: uppercase; margin-bottom: 6px; }
@@ -276,7 +268,7 @@
            ========================================================== */
         .modern-hero-section {
             text-align: center;
-            padding: 80px 20px 60px;
+            padding: 70px 20px 50px;
             max-width: 900px;
             margin: 0 auto;
             position: relative;
@@ -292,7 +284,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         .hero-title {
             font-size: 50px;
@@ -335,7 +327,6 @@
             gap: 8px;
         }
         .btn-hero-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(59, 130, 246, 0.45); }
-        
         .btn-hero-secondary {
             background: var(--pm-bg-card);
             color: var(--pm-text-main);
@@ -353,13 +344,79 @@
         .btn-hero-secondary:hover { border-color: var(--pm-primary); color: var(--pm-primary); transform: translateY(-2px); }
 
         /* ==========================================================
-           👨‍🏫 4. سكشن نخبة المعلمين (GREEN BANNER & CARDS)
+           🌟 4. سكشن النصائح والإرشادات (مع الـ 3 صور)
+           ========================================================== */
+        .feature-banners-section {
+            max-width: 1250px;
+            margin: 20px auto 60px;
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .feature-banner-card {
+            background: var(--pm-bg-card);
+            border: 1px solid var(--pm-border);
+            border-radius: 28px;
+            padding: 30px 40px;
+            box-shadow: var(--pm-card-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            transition: transform 0.35s, box-shadow 0.35s;
+        }
+        .feature-banner-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 18px 40px rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        .feature-banner-card.reverse {
+            flex-direction: row-reverse;
+        }
+        .feature-banner-content {
+            flex: 1;
+            text-align: right;
+        }
+        .feature-banner-content h3 {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--pm-text-main);
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+        .feature-banner-content p {
+            font-size: 17px;
+            color: var(--pm-text-muted);
+            font-weight: 600;
+            line-height: 1.7;
+        }
+        .feature-banner-image {
+            flex: 0 0 340px;
+            max-width: 340px;
+            height: 220px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+        .feature-banner-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+        .feature-banner-card:hover .feature-banner-image img {
+            transform: scale(1.05);
+        }
+
+        /* ==========================================================
+           👨‍🏫 5. كروت نخبة المعلمين (DESIGN REDESIGNED)
            ========================================================== */
         .teachers-section-wrapper {
             background: linear-gradient(135deg, #10b981, #059669);
             border-radius: 36px;
-            padding: 60px 25px;
-            margin: 20px auto 70px;
+            padding: 50px 20px;
+            margin: 30px auto 70px;
             max-width: 1250px;
             box-shadow: 0 20px 45px rgba(16, 185, 129, 0.25);
             position: relative;
@@ -369,13 +426,12 @@
         }
         .section-header-white {
             text-align: center;
-            margin-bottom: 35px;
+            margin-bottom: 30px;
             color: #fff;
         }
-        .section-header-white h2 { font-size: 38px; font-weight: 900; margin-bottom: 8px; }
+        .section-header-white h2 { font-size: 38px; font-weight: 900; margin-bottom: 6px; }
         .section-header-white p { font-size: 16px; opacity: 0.9; font-weight: 600; }
 
-        /* الفلاتر */
         .packages-filters-container {
             display: flex;
             align-items: center;
@@ -397,9 +453,9 @@
             backdrop-filter: blur(8px);
         }
         .modern-filter-btn.active, .modern-filter-btn:hover {
-            background: var(--pm-accent-amber);
+            background: var(--pm-amber);
             color: #0f172a;
-            border-color: var(--pm-accent-amber);
+            border-color: var(--pm-amber);
             box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);
         }
 
@@ -408,7 +464,7 @@
             justify-content: center;
             gap: 8px;
             flex-wrap: wrap;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
         .sub-filter-btn {
             background: rgba(255, 255, 255, 0.1);
@@ -422,114 +478,130 @@
         }
         .sub-filter-btn.active { background: #fff; color: #059669; font-weight: 900; }
 
-        /* سلايدر كروت المدرسين */
         .teachers-slider-container {
             position: relative;
             padding: 10px 0;
         }
         .teachers-slider .swiper-slide {
-            width: 260px !important;
+            width: 290px !important;
             display: flex;
             justify-content: center;
         }
-        .primee-teacher-card {
-            width: 260px;
-            height: 450px;
-            background: #0d1527;
+
+        /* كارت المدرس المربع والشيك */
+        .primee-teacher-box-card {
+            width: 290px;
+            background: var(--pm-bg-card);
             border-radius: 24px;
+            border: 1px solid var(--pm-border);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.18);
             overflow: hidden;
-            position: relative;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            text-align: center;
+            transition: transform 0.35s, box-shadow 0.35s;
             cursor: pointer;
-            transition: 0.35s;
         }
-        .primee-teacher-card:hover {
+        .primee-teacher-box-card:hover {
             transform: translateY(-8px);
-            border-color: var(--pm-primary);
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
         }
-        .pt-card-bg-glow {
-            position: absolute;
-            inset: 0;
-            z-index: 1;
+        .t-card-photo-wrapper {
+            width: 100%;
+            height: 220px;
+            position: relative;
+            background: #0f172a;
+            overflow: hidden;
         }
-        .pt-card-subject-tag {
+        .t-card-photo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+        .primee-teacher-box-card:hover .t-card-photo-wrapper img {
+            transform: scale(1.06);
+        }
+        .t-card-subject-badge {
             position: absolute;
             top: 14px;
             right: 14px;
-            z-index: 4;
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
             color: #fbbf24;
-            padding: 5px 12px;
-            border-radius: 10px;
-            font-size: 12px;
+            padding: 5px 14px;
+            border-radius: 12px;
+            font-size: 13px;
             font-weight: 800;
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
-        .pt-card-img {
-            width: 100%;
-            height: 250px;
-            object-fit: contain;
-            position: relative;
-            z-index: 2;
-            margin-top: 25px;
-            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5));
-            transition: transform 0.35s;
+        .t-card-body {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 1;
         }
-        .primee-teacher-card:hover .pt-card-img { transform: scale(1.04); }
-
-        .pt-card-info-box {
-            position: relative;
-            z-index: 3;
-            background: linear-gradient(180deg, rgba(13, 21, 39, 0.2) 0%, rgba(13, 21, 39, 0.98) 35%, #0d1527 100%);
-            padding: 16px 14px;
-            text-align: center;
-            width: 100%;
-        }
-        .pt-card-name {
-            font-size: 19px;
+        .t-card-name {
+            font-size: 20px;
             font-weight: 900;
-            color: #fff;
-            margin-bottom: 12px;
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+            color: var(--pm-text-main);
+            margin: 0;
         }
-        .pt-card-actions {
+        .t-card-stages-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: center;
+            min-height: 24px;
+        }
+        .t-stage-chip {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--pm-primary);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+        .t-card-buttons {
             display: flex;
             flex-direction: column;
             gap: 8px;
+            margin-top: 5px;
         }
-        .btn-view-lessons {
+        .btn-t-courses {
             background: linear-gradient(135deg, var(--pm-primary), var(--pm-secondary));
             color: #fff;
             border: none;
-            padding: 9px;
+            padding: 10px;
             border-radius: 12px;
             font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: 0.25s;
+        }
+        .btn-t-courses:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(59, 130, 246, 0.35); }
+        .btn-t-follow {
+            background: rgba(148, 163, 184, 0.1);
+            color: var(--pm-text-main);
+            border: 1px solid var(--pm-border);
+            padding: 8px;
+            border-radius: 12px;
+            font-weight: 700;
             font-size: 13px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
+            transition: 0.25s;
         }
-        .btn-follow-modern {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #e2e8f0;
-            padding: 8px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
+        .btn-t-follow:hover { border-color: #ef4444; color: #ef4444; }
 
         .swiper-nav-btn {
             position: absolute;
@@ -552,7 +624,7 @@
         .swiper-nav-next { left: -15px; }
 
         /* ==========================================================
-           📚 5. سكشن الحصص والمحاضرات (LATEST COURSES)
+           📚 6. سكشن الحصص والمحاضرات (LATEST COURSES)
            ========================================================== */
         .section-container {
             max-width: 1250px;
@@ -600,38 +672,68 @@
             align-items: center;
             justify-content: space-between;
         }
-        .c-slide-bottom .price { font-size: 18px; font-weight: 900; color: var(--pm-accent-green); }
+        .c-slide-bottom .price { font-size: 18px; font-weight: 900; color: var(--pm-green); }
         .btn-buy-course { background: var(--pm-primary); color: #fff; border: none; padding: 8px 18px; border-radius: 10px; font-weight: 800; cursor: pointer; }
-        .btn-bought-course { background: rgba(16, 185, 129, 0.1); color: var(--pm-accent-green); border: 1px solid var(--pm-accent-green); padding: 8px 14px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        .btn-bought-course { background: rgba(16, 185, 129, 0.1); color: var(--pm-green); border: 1px solid var(--pm-green); padding: 8px 14px; border-radius: 10px; font-weight: 800; cursor: pointer; }
 
         /* ==========================================================
-           🎁 6. سكشن الباقات الشاملة (PACKAGES)
+           🎁 7. سكشن الباقات الشاملة (PREMIUM REDESIGNED)
            ========================================================== */
         .packages-slider .swiper-slide {
             width: 320px !important;
         }
-        .premium-package-card {
+        .premium-package-box {
             background: var(--pm-bg-card);
-            border: 1px solid var(--pm-border);
-            border-radius: 22px;
-            padding: 20px;
+            border: 2px solid var(--pm-border);
+            border-radius: 26px;
+            padding: 24px;
             box-shadow: var(--pm-card-shadow);
             display: flex;
             flex-direction: column;
-            height: 100%;
             position: relative;
+            transition: all 0.35s ease;
         }
-        .pkg-glow-image { width: 100%; height: 160px; object-fit: cover; border-radius: 14px; margin-bottom: 15px; }
-        .premium-package-card h3 { font-size: 20px; font-weight: 900; margin-bottom: 4px; color: var(--pm-text-main); }
-        .premium-package-card p { font-size: 13px; color: var(--pm-text-muted); margin-bottom: 15px; }
-        .pkg-features { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--pm-text-muted); margin-bottom: 20px; flex-grow: 1; }
-        .pkg-price-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--pm-border); padding-top: 15px; margin-bottom: 15px; }
-        .old-price { text-decoration: line-through; color: #ef4444; font-weight: 700; }
-        .new-price { font-size: 24px; font-weight: 900; color: var(--pm-accent-green); }
-        .btn-buy-pkg { width: 100%; background: linear-gradient(135deg, var(--pm-secondary), var(--pm-primary)); color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; }
+        .premium-package-box:hover {
+            transform: translateY(-8px);
+            border-color: var(--pm-secondary);
+            box-shadow: 0 20px 45px rgba(124, 58, 237, 0.18);
+        }
+        .pkg-badge-discount {
+            position: absolute;
+            top: -12px;
+            right: 24px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 900;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        .pkg-image-wrapper {
+            width: 100%;
+            height: 160px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .pkg-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .premium-package-box h3 { font-size: 22px; font-weight: 900; margin-bottom: 4px; color: var(--pm-text-main); }
+        .premium-package-box .pkg-grade { font-size: 13px; color: var(--pm-text-muted); margin-bottom: 15px; font-weight: 700; }
+        .pkg-features-list { list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--pm-text-muted); margin-bottom: 22px; flex-grow: 1; text-align: right; }
+        .pkg-features-list li { display: flex; align-items: center; gap: 8px; }
+        .pkg-pricing-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--pm-border); padding-top: 16px; margin-bottom: 16px; }
+        .pkg-old-price { text-decoration: line-through; color: #ef4444; font-weight: 700; font-size: 15px; }
+        .pkg-new-price { font-size: 26px; font-weight: 900; color: var(--pm-green); }
+        .btn-subscribe-pkg { width: 100%; background: linear-gradient(135deg, var(--pm-secondary), var(--pm-primary)); color: #fff; border: none; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 16px; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3); }
+        .btn-subscribe-pkg:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(124, 58, 237, 0.4); }
 
         /* ==========================================================
-           💡 7. خطوات العمل (HOW IT WORKS)
+           💡 8. خطوات العمل (HOW IT WORKS)
            ========================================================== */
         .primee-steps-grid {
             display: grid;
@@ -646,7 +748,6 @@
             padding: 30px 24px;
             text-align: center;
             box-shadow: var(--pm-card-shadow);
-            position: relative;
         }
         .step-icon-wrap {
             width: 65px;
@@ -660,12 +761,12 @@
         }
         .step-1 .step-icon-wrap { background: rgba(59, 130, 246, 0.15); color: var(--pm-primary); }
         .step-2 .step-icon-wrap { background: rgba(124, 58, 237, 0.15); color: var(--pm-secondary); }
-        .step-3 .step-icon-wrap { background: rgba(16, 185, 129, 0.15); color: var(--pm-accent-green); }
+        .step-3 .step-icon-wrap { background: rgba(16, 185, 129, 0.15); color: var(--pm-green); }
         .step-card h3 { font-size: 20px; font-weight: 900; margin-bottom: 10px; color: var(--pm-text-main); }
         .step-card p { font-size: 14px; color: var(--pm-text-muted); line-height: 1.6; }
 
         /* ==========================================================
-           🦶 8. الفوتر (FOOTER)
+           🦶 9. الفوتر (FOOTER)
            ========================================================== */
         .modern-footer {
             background: var(--pm-bg-card);
@@ -701,13 +802,13 @@
         }
 
         /* ==========================================================
-           🤖 9. زرار وشات ماجي السري (AI CHAT)
+           🤖 10. زرار وشات ماجي (AI CHAT)
            ========================================================== */
         .floating-ai-btn {
             position: fixed !important;
             bottom: 25px !important;
             right: 25px !important;
-            background: linear-gradient(135deg, var(--pm-primary), var(--pm-secondary), var(--pm-accent-pink)) !important;
+            background: linear-gradient(135deg, var(--pm-primary), var(--pm-secondary), var(--pm-pink)) !important;
             color: #fff !important;
             padding: 12px 22px !important;
             border-radius: 35px !important;
@@ -750,7 +851,7 @@
         .maggie-options button:hover { background: rgba(59, 130, 246, 0.2); border-color: var(--pm-primary); }
 
         /* ==========================================================
-           🪟 10. النوافذ المنبثقة (MODALS)
+           🪟 11. النوافذ المنبثقة (MODALS)
            ========================================================== */
         .custom-modal-overlay {
             position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
@@ -778,6 +879,14 @@
             .nav-links { display: none; }
             .btn-hamburger { display: flex; }
             .hero-title { font-size: 38px; }
+            .feature-banner-card, .feature-banner-card.reverse {
+                flex-direction: column;
+                padding: 25px 20px;
+                text-align: center;
+                gap: 20px;
+            }
+            .feature-banner-content { text-align: center; }
+            .feature-banner-image { width: 100%; max-width: 100%; height: 200px; }
             .teachers-section-wrapper { border-radius: 28px; padding: 40px 15px; }
             .swiper-nav-btn { display: none; }
         }
@@ -787,6 +896,8 @@
             .hero-desc { font-size: 15px; }
             .hero-action-buttons { flex-direction: column; width: 100%; }
             .btn-hero-primary, .btn-hero-secondary { width: 100%; justify-content: center; }
+            .feature-banner-content h3 { font-size: 24px; }
+            .feature-banner-content p { font-size: 14px; }
             .section-header-white h2 { font-size: 28px; }
             .section-header-clean h2 { font-size: 26px; }
             .floating-ai-btn { bottom: 15px !important; right: 15px !important; padding: 10px 18px !important; font-size: 13px !important; }
@@ -816,6 +927,7 @@
                 </div>
             </div>
 
+            <!-- روابط النافبار واضحة على اللابتوب -->
             <ul class="nav-links">
                 <li><a href="index.html" class="active">الرئيسية</a></li>
                 <li><a href="#teachersSection">المدرسين</a></li>
@@ -831,7 +943,7 @@
         </div>
     </nav>
 
-    <!-- القائمة الجانبية للموبايل -->
+    <!-- القائمة الجانبية للموبايل (ظاهر فيها كل الروابط) -->
     <div id="stagesDrawer" class="side-drawer">
         <div class="drawer-header">
             <div class="nav-brand">Primee<span>.</span></div>
@@ -850,7 +962,8 @@
 
         <ul class="drawer-links">
             <li><a href="index.html" class="active"><i class="fas fa-home"></i> الرئيسية</a></li>
-            <li><a href="#" onclick="document.getElementById('parentModal').classList.add('active'); closeDrawer();"><i class="fas fa-user-shield"></i> بوابة ولي الأمر</a></li>
+            <li><a href="#teachersSection" onclick="closeDrawerFunc()"><i class="fas fa-chalkboard-user"></i> المدرسين</a></li>
+            <li><a href="#" onclick="document.getElementById('parentModal').classList.add('active'); closeDrawerFunc();"><i class="fas fa-user-shield"></i> ولي الأمر</a></li>
             <li id="mobileMyCoursesLink" style="display: none;"><a href="student-dashboard.html"><i class="fas fa-laptop-code"></i> كورساتي</a></li>
             <div class="drawer-divider"></div>
             <span class="drawer-subtitle">الدعم الفني:</span>
@@ -870,11 +983,47 @@
         </div>
     </header>
 
-    <!-- 2. سكشن نخبة المعلمين (بالخلفية الخضراء الكرتونية والكروت الفخمة) -->
+    <!-- 2. سكشن النصائح والإرشادات الحصري (بالصور الثلاث من R2) -->
+    <section class="feature-banners-section">
+        <!-- النصيحة 1 -->
+        <div class="feature-banner-card">
+            <div class="feature-banner-content">
+                <h3>كورسات مختارة<br>مخصوص ليك 🎯</h3>
+                <p>ريحنـا دماغك وجمعنا لك كورسات وشروحات على مزاجك، مختارة بحب وعناية كأننا بنعمل شوبينج لأحسن محتوى يساعدك وتضمن الدرجة النهائية!</p>
+            </div>
+            <div class="feature-banner-image">
+                <img src="https://pub-ccaed99c36df41e19efe5f7fcecc9803.r2.dev/1f80dea09a25b0b596368ebf5ca86fe4.jpg" alt="كورسات مختارة" loading="lazy">
+            </div>
+        </div>
+
+        <!-- النصيحة 2 (معكوسة) -->
+        <div class="feature-banner-card reverse">
+            <div class="feature-banner-content">
+                <h3>ذاكر بذكاء<br>ووفر مجهودك 💡</h3>
+                <p>تنظيم الوقت والتدريب المستمر على الامتحانات هو سر التفوق الحقيقي. فيديوهات قصيرة مركزة وملخصات ذكية تثبت المعلومة في دماغك من أول مرة.</p>
+            </div>
+            <div class="feature-banner-image">
+                <img src="https://pub-ccaed99c36df41e19efe5f7fcecc9803.r2.dev/29dddbb74db0c68adc5358271281e03a.jpg" alt="ذاكر بذكاء" loading="lazy">
+            </div>
+        </div>
+
+        <!-- النصيحة 3 -->
+        <div class="feature-banner-card">
+            <div class="feature-banner-content">
+                <h3>نخبة المعلمين<br>معاك خطوة بخطوة 🚀</h3>
+                <p>مش هتحتار ولا تدور كتير، أفضل الأساتذة في كل المواد جاهزين لشرح كل فكرة صعبة وحل كل الأسئلة في أي وقت ومن أي مكان.</p>
+            </div>
+            <div class="feature-banner-image">
+                <img src="https://pub-ccaed99c36df41e19efe5f7fcecc9803.r2.dev/468bc883dda769afbd066f44d5aa8b8a.jpg" alt="نخبة المعلمين" loading="lazy">
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. سكشن نخبة المعلمين (كروت مربعة منظمة بالبيانات الكاملة) -->
     <section id="teachersSection" class="teachers-section-wrapper">
         <div class="section-header-white">
             <h2>نخبة المعلمين عندنا</h2>
-            <p>اخترنا لك نخبة من أفضل مدرسي مصر بطريقة شرح سهلة وتفاعلية.</p>
+            <p>اخترنا لك نخبة من أفضل مدرسي مصر بطريقة شرح سهلة وممتعة.</p>
         </div>
 
         <!-- فلاتر المراحل -->
@@ -899,22 +1048,22 @@
         </div>
     </section>
 
-    <!-- 3. أحدث المحاضرات والحصص -->
+    <!-- 4. أحدث المحاضرات والحصص -->
     <section class="section-container">
         <div class="section-header-clean">
             <h2>أحدث الحصص المضافة 🔥</h2>
-            <p>تابع جديد المذكرات، الحصص والمراجعات أولاً بأول</p>
+            <p>تابع جديد الحصص والمذكرات والمراجعات أولاً بأول</p>
         </div>
         <div class="swiper latest-courses-slider">
             <div class="swiper-wrapper" id="latestCoursesGrid"></div>
         </div>
     </section>
 
-    <!-- 4. الباقات الشاملة -->
+    <!-- 5. الباقات الشاملة (تصميم فخم وأنيق ومميز) -->
     <section class="section-container">
         <div class="section-header-clean">
-            <h2>الباقات الشاملة <span style="color: var(--pm-accent-amber);"><i class="fas fa-crown"></i></span></h2>
-            <p>وفر واشترك في باقات مجمعة لأقوى مدرسي المنصة</p>
+            <h2>الباقات الشاملة <span style="color: var(--pm-amber);"><i class="fas fa-crown"></i></span></h2>
+            <p>وفر فلوسك واشترك في باقات مجمعة لأقوى مدرسي المنصة</p>
         </div>
         <div class="packages-filters-container" id="packagesMainFilters">
             <button class="modern-filter-btn active" data-filter="all">الكل</button>
@@ -927,7 +1076,7 @@
         </div>
     </section>
 
-    <!-- 5. كيف تعمل المنصة؟ -->
+    <!-- 6. كيف تعمل المنصة؟ -->
     <section class="section-container">
         <div class="section-header-clean">
             <h2>إزاي Primee بتساعدك تتفوق؟ 🚀</h2>
@@ -952,7 +1101,7 @@
         </div>
     </section>
 
-    <!-- 6. الفوتر -->
+    <!-- 7. الفوتر -->
     <footer class="modern-footer">
         <div class="footer-container">
             <div class="footer-brand">
@@ -1006,11 +1155,9 @@
     
     <div id="teacherCoursesModal" class="custom-modal-overlay"><div class="custom-modal-content" style="max-width: 850px; text-align:right;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h3 id="modalTeacherName" style="margin:0;">حصص الأستاذ</h3><button onclick="document.getElementById('teacherCoursesModal').classList.remove('active')" style="border:none; background:none; font-size:20px; cursor:pointer; color:#ef4444;"><i class="fas fa-times"></i></button></div><div id="modalCoursesGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:15px; max-height:65vh; overflow-y:auto;"></div></div></div>
     
-    <div id="allTeachersModal" class="custom-modal-overlay"><div class="custom-modal-content" style="max-width: 1050px; text-align:right;"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h3>نخبة المعلمين</h3><button onclick="document.getElementById('allTeachersModal').classList.remove('active')" style="border:none; background:none; font-size:20px; cursor:pointer; color:#ef4444;"><i class="fas fa-times"></i></button></div><div id="allTeachersGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:15px; max-height:70vh; overflow-y:auto;"></div></div></div>
-
     <div id="stageSelectionModal" class="custom-modal-overlay"><div class="custom-modal-content"><h3>اختر المرحلة الدراسية 📚</h3><p style="color:var(--pm-text-muted); margin-bottom:20px;">علشان نعرضلك حصص الأستاذ المناسبة ليك</p><div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:10px;"><button onclick="selectStageAndLoadCourses('ابتدائي')" class="btn-confirm" style="background:rgba(59,130,246,0.1); color:#3b82f6;">ابتدائي</button><button onclick="selectStageAndLoadCourses('إعدادي')" class="btn-confirm" style="background:rgba(16,185,129,0.1); color:#10b981;">إعدادي</button><button onclick="selectStageAndLoadCourses('ثانوي')" class="btn-confirm" style="background:rgba(245,158,11,0.1); color:#f59e0b;">ثانوي</button><button onclick="selectStageAndLoadCourses('بكالوريا')" class="btn-confirm" style="background:rgba(217,70,239,0.1); color:#d946ef;">بكالوريا</button></div></div></div>
 
-    <div id="confirmBuyModal" class="custom-modal-overlay"><div class="custom-modal-content"><h3>تأكيد الاشتراك</h3><p id="confirmBuyText" style="margin:15px 0;"></p><div style="display:flex; gap:8px; margin-bottom:15px;"><input type="text" id="promoCodeInput" placeholder="كود الخصم (إن وجد)" style="margin:0;"><button id="btnApplyPromo" class="btn-confirm" style="flex:0 0 80px;">تطبيق</button></div><p id="promoStatusMsg" style="font-size:13px; font-weight:bold; margin-bottom:15px;"></p><div class="modal-actions"><button class="btn-confirm" id="btnExecuteBuy" style="background:var(--pm-accent-green);">اشترك الآن</button><button class="btn-cancel" onclick="document.getElementById('confirmBuyModal').classList.remove('active')">إلغاء</button></div></div></div>
+    <div id="confirmBuyModal" class="custom-modal-overlay"><div class="custom-modal-content"><h3>تأكيد الاشتراك</h3><p id="confirmBuyText" style="margin:15px 0;"></p><div style="display:flex; gap:8px; margin-bottom:15px;"><input type="text" id="promoCodeInput" placeholder="كود الخصم (إن وجد)" style="margin:0;"><button id="btnApplyPromo" class="btn-confirm" style="flex:0 0 80px;">تطبيق</button></div><p id="promoStatusMsg" style="font-size:13px; font-weight:bold; margin-bottom:15px;"></p><div class="modal-actions"><button class="btn-confirm" id="btnExecuteBuy" style="background:var(--pm-green);">اشترك الآن</button><button class="btn-cancel" onclick="document.getElementById('confirmBuyModal').classList.remove('active')">إلغاء</button></div></div></div>
 
     <div id="pmNotifyModal" class="custom-modal-overlay"><div class="custom-modal-content"><div id="pmNotifyIcon" style="font-size:40px; margin-bottom:10px;"></div><h3 id="pmNotifyTitle"></h3><p id="pmNotifyMessage" style="color:var(--pm-text-muted); margin:10px 0 20px;"></p><button class="btn-confirm" id="pmNotifyBtn" onclick="document.getElementById('pmNotifyModal').classList.remove('active')">تمام</button></div></div>
 
@@ -1018,6 +1165,6 @@
 
     <!-- السكريبتات -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script type="module" src="index-script.js?v=160"></script>
+    <script type="module" src="index-script.js?v=170"></script>
 </body>
 </html>
